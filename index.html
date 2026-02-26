@@ -401,7 +401,7 @@ table tr:nth-child(even):hover td{background:var(--panel2);}
   <div class="card">
     <div class="frow">
       <div class="form-group"><label class="form-label">대회</label><select class="form-select" id="regTS" onchange="onRegTC()"><option value="">-- 대회 선택 --</option></select></div>
-      <div class="form-group"><label class="form-label">부서</label><select class="form-select" id="regDS" onchange="renderRegList()"><option value="">-- 부서 선택 --</option></select></div>
+      <div class="form-group"><label class="form-label">부서</label><select class="form-select" id="regDS" onchange="renderRL()"><option value="">-- 부서 선택 --</option></select></div>
     </div>
   </div>
   <div id="regSection" style="display:none">
@@ -719,7 +719,25 @@ async function stM(key){
 }
 async function stP(n){try{await setDoc(doc(db,'players',n.replace(/[\/\.#\$\[\]]/g,'_')),{...G.players[n],name:n});}catch(e){}}
 async function fbLog(t,i='📌'){try{await addDoc(collection(db,'activityLog'),{text:t,icon:i,time:new Date().toISOString()});}catch(e){}}
-function onDU(){upDash();const p=document.querySelector('.nav-tab.active')?.dataset.page;if(p==='tournament')renderTL();if(p==='register'){popSel();renderRL();}if(p==='bracket')renderBracket();if(p==='ranking')renderRanking();popSel();}
+function onDU(){
+  // 새로고침 후 관리자 세션 복원
+  if(!AD && sessionStorage.getItem('adm')==='1'){
+    AD=true;
+    document.body.classList.add('admin-mode');
+    ge('adminBadge').classList.add('show');
+    ge('adminToggleBtn').classList.add('active');
+    ge('adminToggleBtn').textContent='로그아웃';
+    document.querySelectorAll('[id^="ao"]').forEach(e=>e.style.display='block');
+    ge('regActHdr').textContent='관리';
+  }
+  upDash();
+  const p=document.querySelector('.nav-tab.active')?.dataset.page;
+  if(p==='tournament')renderTL();
+  if(p==='register'){popSel();renderRL();}
+  if(p==='bracket')renderBracket();
+  if(p==='ranking')renderRanking();
+  popSel();
+}
 function sl(s){let el=ge('gLd');if(!el){el=document.createElement('div');el.id='gLd';el.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;height:3px;background:linear-gradient(90deg,#1565c0,#f5a623);animation:ldA 1.2s ease-in-out infinite;';document.head.insertAdjacentHTML('beforeend','<style>@keyframes ldA{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}</style>');document.body.appendChild(el);}el.style.display=s?'block':'none';}
 
 function showPage(n){
@@ -733,13 +751,40 @@ function showPage(n){
 }
 
 function toggleAdmin(){
-  if(AD){AD=false;document.body.classList.remove('admin-mode');ge('adminBadge').classList.remove('show');ge('adminToggleBtn').classList.remove('active');ge('adminToggleBtn').textContent='관리자 로그인';document.querySelectorAll('[id^="ao"]').forEach(e=>e.style.display='none');ge('regActHdr').textContent='';toast('로그아웃','info');}
-  else om('mAdmin');
+  if(AD){
+    AD=false;
+    sessionStorage.removeItem('adm');
+    document.body.classList.remove('admin-mode');
+    ge('adminBadge').classList.remove('show');
+    ge('adminToggleBtn').classList.remove('active');
+    ge('adminToggleBtn').textContent='관리자 로그인';
+    document.querySelectorAll('[id^="ao"]').forEach(e=>e.style.display='none');
+    ge('regActHdr').textContent='';
+    toast('로그아웃','info');
+  } else om('mAdmin');
 }
 function doLogin(){
   const pw=ge('adminPw').value;
-  if(pw===G.meta.pw){AD=true;document.body.classList.add('admin-mode');cm('mAdmin');ge('adminBadge').classList.add('show');ge('adminToggleBtn').classList.add('active');ge('adminToggleBtn').textContent='로그아웃';ge('adminPw').value='';document.querySelectorAll('[id^="ao"]').forEach(e=>e.style.display='block');ge('regActHdr').textContent='관리';toast('관리자 로그인 ✅','success');const pg=document.querySelector('.nav-tab.active').dataset.page;if(pg==='tournament')renderTL();if(pg==='register')renderRL();if(pg==='bracket')renderBracket();}
-  else{toast('비밀번호 오류','error');ge('adminPw').select();}
+  if(pw===G.meta.pw){
+    AD=true;
+    sessionStorage.setItem('adm','1');
+    document.body.classList.add('admin-mode');
+    cm('mAdmin');
+    ge('adminBadge').classList.add('show');
+    ge('adminToggleBtn').classList.add('active');
+    ge('adminToggleBtn').textContent='로그아웃';
+    ge('adminPw').value='';
+    document.querySelectorAll('[id^="ao"]').forEach(e=>e.style.display='block');
+    ge('regActHdr').textContent='관리';
+    toast('관리자 로그인 ✅','success');
+    const pg=document.querySelector('.nav-tab.active').dataset.page;
+    if(pg==='tournament')renderTL();
+    if(pg==='register')renderRL();
+    if(pg==='bracket')renderBracket();
+  } else {
+    toast('비밀번호 오류','error');
+    ge('adminPw').select();
+  }
 }
 
 
@@ -840,7 +885,23 @@ function popSel(){
   const cs=ge('regClub');
   if(cs)cs.innerHTML='<option value="">-- 클럽 선택 --</option>'+G.clubs.map(c=>`<option>${c}</option>`).join('');
 }
-function onRegTC(){const tid=ge('regTS').value,ds=ge('regDS');if(!tid){ds.innerHTML='<option value="">-- 부서 선택 --</option>';ge('regSection').style.display='none';return;}const t=G.tournaments.find(t=>t.id===tid);ds.innerHTML='<option value="">-- 부서 선택 --</option>'+t.divisions.map(d=>`<option value="${d}">${dl(d)}</option>`).join('');ge('regSection').style.display='none';}
+function onRegTC(){
+  const tid=ge('regTS').value, ds=ge('regDS');
+  if(!tid){
+    ds.innerHTML='<option value="">-- 부서 선택 --</option>';
+    ge('regSection').style.display='none';
+    return;
+  }
+  const t=G.tournaments.find(t=>t.id===tid);
+  ds.innerHTML='<option value="">-- 부서 선택 --</option>'+t.divisions.map(d=>`<option value="${d}">${dl(d)}</option>`).join('');
+  // 부서가 1개면 자동 선택 후 바로 렌더링
+  if(t.divisions.length===1){
+    ds.value=t.divisions[0];
+    renderRL();
+  } else {
+    ge('regSection').style.display='none';
+  }
+}
 function renderRL(){
   const tid=ge('regTS').value,div=ge('regDS').value;if(!tid||!div)return;
   ge('regSection').style.display='block';ge('aoReg').style.display=AD?'block':'none';
@@ -2478,14 +2539,12 @@ async function restoreFromJSON(input){
   input.value='';
 }
 
-function exportPlayersCSV(){
+function buildPlayerRows(){
   const rows=[['이름','소속','총참가','금배참가','은배참가','동배참가','테린이참가','팀승','팀패','승률','최고순위']];
-  // Firebase 선수
   const fbNames=new Set(Object.keys(G.players));
   const histNames=new Set();
   HIST_DATA.forEach(t=>t.teams.forEach(tm=>(tm.players||[]).forEach(pn=>{if(pn&&pn.trim())histNames.add(pn.trim());})));
   const allNames=[...new Set([...fbNames,...histNames])].sort();
-
   allNames.forEach(name=>{
     const p=G.players[name]||{clubs:[],history:[],wins:0,losses:0};
     const histRecs=[];
@@ -2503,6 +2562,11 @@ function exportPlayersCSV(){
     histRecs.forEach(r=>{if(r.rank&&(!bestRank||r.rank<bestRank))bestRank=r.rank;});
     rows.push([name,allClubs.join('/'),total,dCnt['금'],dCnt['은'],dCnt['동'],dCnt['테린이'],p.wins||0,p.losses||0,wr+'%',bestRank?bestRank+'위':'-']);
   });
+  return rows;
+}
+
+function exportPlayersCSV(){
+  const rows=buildPlayerRows();
   const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const BOM='\uFEFF';
   const blob=new Blob([BOM+csv],{type:'text/csv;charset=utf-8'});
@@ -2512,15 +2576,41 @@ function exportPlayersCSV(){
   a.click();toast('CSV 저장 완료 📄','success');
 }
 
-function exportPlayersExcel(){
-  // SheetJS-like 간단 xlsx via CSV with UTF-8 BOM (opens in Excel)
-  exportPlayersCSV();
-  // 추가 안내
-  setTimeout(()=>toast('CSV 파일을 Excel에서 열 수 있습니다','info'),1200);
+async function exportPlayersExcel(){
+  toast('엑셀 생성 중...','info');
+  try{
+    // SheetJS 동적 로드
+    if(!window.XLSX){
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        s.onload=res; s.onerror=rej;
+        document.head.appendChild(s);
+      });
+    }
+    const rows=buildPlayerRows();
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    // 열 너비 설정
+    ws['!cols']=[{wch:10},{wch:12},{wch:8},{wch:8},{wch:8},{wch:8},{wch:10},{wch:7},{wch:7},{wch:7},{wch:8}];
+    // 헤더 스타일 (굵게)
+    const range=XLSX.utils.decode_range(ws['!ref']);
+    for(let c=range.s.c;c<=range.e.c;c++){
+      const cell=ws[XLSX.utils.encode_cell({r:0,c})];
+      if(cell) cell.s={font:{bold:true},fill:{fgColor:{rgb:'1565C0'}},font:{bold:true,color:{rgb:'FFFFFF'}}};
+    }
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'선수기록');
+    const d=new Date().toISOString().substring(0,10);
+    XLSX.writeFile(wb,`장유연합회_선수기록_${d}.xlsx`);
+    toast('엑셀 저장 완료 📊','success');
+  }catch(e){
+    toast('엑셀 생성 실패: '+e.message,'error');
+    console.error(e);
+  }
 }
 
 function backupPlayersExcel(){
-  exportPlayersCSV();
+  exportPlayersExcel();
 }
 
 // ─── 대진표 이미지/PDF 저장 ─────────────────────────────
