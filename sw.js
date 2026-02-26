@@ -1,12 +1,12 @@
-const CACHE_NAME = "jangyu-tennis-v2";
+const CACHE_NAME = "jangyu-tennis-v3";
 const ASSETS = [
-  "./",
-  "./index.html",
-  "./manifest.json",
-  "./sw.js",
-  "./icon-192.png",
-  "./icon-512.png",
-  "./icon-180.png"
+  "/",
+  "/index.html",
+  "/manifest.json",
+  "/sw.js",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/icon-180.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -46,7 +46,7 @@ self.addEventListener("fetch", (event) => {
           }
         } catch (e) {}
         return resp;
-      }).catch(() => cached || caches.match("./index.html"));
+      }).catch(() => caches.match("/index.html"));
     })
   );
 });
