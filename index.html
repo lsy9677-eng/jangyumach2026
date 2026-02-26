@@ -631,7 +631,7 @@ table tr:nth-child(even):hover td{background:var(--panel2);}
 <script type="module">
 'use strict';
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getFirestore,collection,doc,getDoc,setDoc,addDoc,updateDoc,onSnapshot,query,orderBy,serverTimestamp,writeBatch}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import{getFirestore,collection,doc,getDoc,setDoc,addDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,serverTimestamp,writeBatch}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 const FB={apiKey:"AIzaSyBCohLbcWMSBkkk_6rhcqxi2WSejtIaaCw",authDomain:"jangyumach2026.firebaseapp.com",projectId:"jangyumach2026",storageBucket:"jangyumach2026.firebasestorage.app",messagingSenderId:"594638304093",appId:"1:594638304093:web:c0c40d684d17a021d92eb4"};
 const db=getFirestore(initializeApp(FB));
 let AD=false;
@@ -2134,7 +2134,7 @@ function buildPH(name,p){
         const rank=h.rank;
         const rankStr=rank===1?'🥇 1위':rank===2?'🥈 2위':rank===3?'🥉 3위':rank?rank+'위':'참가';
         const badgeCls=rank===1?'bg-gold':rank===2?'bg-silver':rank===3?'bg-bronze':'bg-gray';
-        const srcBadge=h.source==='hist'?`<span style="font-size:.55rem;background:var(--panel2);border:1px solid var(--border);color:var(--text3);padding:1px 4px;border-radius:4px;margin-left:4px">과거</span>`:'';
+        const srcBadge='';
         return`<div class="hist-row">
           <div class="hist-yr">${h.date.substring(0,4)}</div>
           <div class="hist-detail">
@@ -2245,7 +2245,7 @@ function renderAllP(){
     histRecs.forEach(r=>{if(r.rank&&(!br||r.rank<br))br=r.rank;});
     const isFb=fbNames.has(name);
     return`<tr>
-      <td style="font-weight:700;cursor:pointer;color:var(--primary)" onclick="showP('${name}')">${name}${isFb?'':' <small style="color:var(--text3);font-weight:400">과거</small>'}${AD&&isFb?` <button class="btn btn-outline" style="font-size:.6rem;padding:1px 6px;margin-left:4px" onclick="event.stopPropagation();openEditPlayer('${name}')">✏️</button>`:''}</td>
+      <td style="font-weight:700;cursor:pointer;color:var(--primary)" onclick="showP('${name}')">${name}${AD?` <button class="btn btn-outline" style="font-size:.6rem;padding:1px 6px;margin-left:4px" onclick="event.stopPropagation();openEditPlayer('${name}')">✏️</button>`:''}</td>
       <td>${lc}</td><td>${cnt}</td>
       <td>${dCnt['금']||'-'}</td><td>${dCnt['은']||'-'}</td>
       <td>${dCnt['동']||'-'}</td><td>${dCnt['테린이']||'-'}</td>
@@ -2287,31 +2287,65 @@ function openEditPlayer(name){
 }
 
 async function saveEditPlayer(){
-  const oldName=EP_name,newName=ge('epNewName').value.trim();
+  const oldName=EP_name, newName=ge('epNewName').value.trim();
   const clubsRaw=ge('epClubs').value.trim();
   const clubs=clubsRaw?clubsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
-  const p=G.players[oldName];if(!p)return;
-  // 삭제할 이력
-  const delIdxs=[...document.querySelectorAll('.ep-del-hist:checked')].map(el=>parseInt(el.dataset.idx));
-  const newHist=(p.history||[]).filter((_,i)=>!delIdxs.includes(i));
-  // 이름 변경
   const finalName=newName||oldName;
-  const newP={...p,name:finalName,clubs,history:newHist};
+  const delIdxs=[...document.querySelectorAll('.ep-del-hist:checked')].map(el=>parseInt(el.dataset.idx));
+
+  // HIST 전용 선수(Firebase 없음) → HIST 이름만 수정
+  if(!G.players[oldName]){
+    if(finalName!==oldName){
+      let cnt=0;
+      HIST_DATA.forEach(t=>t.teams.forEach(tm=>{
+        tm.players=tm.players.map(pn=>{if(pn===oldName){cnt++;return finalName;}return pn;});
+      }));
+      toast(cnt>0?'"'+finalName+'"으로 변경됨 ✅':'변경할 기록 없음','success');
+      cm('mEditP');renderAllP();
+    }
+    return;
+  }
+
+  const p=G.players[oldName];
+  const myHist=(p.history||[]).filter((_,i)=>!delIdxs.includes(i));
+
   sl(true);
   try{
     if(finalName!==oldName){
-      // 이름 변경: 새 문서 생성 + 구 문서 삭제
-      await setDoc(doc(db,'players',finalName.replace(/[\/\.#\$\[\]]/g,'_')),newP);
-      await deleteDoc(doc(db,'players',oldName.replace(/[\/\.#\$\[\]]/g,'_')));
+      const existing=G.players[finalName];
+      let mergedHist=[...myHist];
+      let mergedWins=(p.wins||0);
+      let mergedLosses=(p.losses||0);
+      let mergedClubs=[...new Set([...clubs,...(existing?.clubs||[])])];
+
+      if(existing){
+        // 기존 동명 선수 기록과 합치기
+        const seen=new Set(myHist.map(h=>h.tid+'|'+h.div));
+        (existing.history||[]).forEach(h=>{if(!seen.has(h.tid+'|'+h.div))mergedHist.push(h);});
+        mergedWins+=(existing.wins||0);
+        mergedLosses+=(existing.losses||0);
+        await deleteDoc(doc(db,'players',finalName.replace(/[/.#$[\]]/g,'_')));
+      }
+
+      const newP={...p,name:finalName,clubs:mergedClubs,history:mergedHist,wins:mergedWins,losses:mergedLosses};
+      await setDoc(doc(db,'players',finalName.replace(/[/.#$[\]]/g,'_')),newP);
+      await deleteDoc(doc(db,'players',oldName.replace(/[/.#$[\]]/g,'_')));
       delete G.players[oldName];
+      if(existing) delete G.players[finalName];
       G.players[finalName]=newP;
+
+      HIST_DATA.forEach(t=>t.teams.forEach(tm=>{
+        tm.players=tm.players.map(pn=>pn===oldName?finalName:pn);
+      }));
+      toast(existing?'"'+oldName+'"과 "'+finalName+'" 합치기 완료 ✅':'"'+finalName+'"으로 변경 완료 ✅','success');
     } else {
-      G.players[oldName]=newP;
+      G.players[oldName]={...p,clubs,history:myHist};
       await stP(oldName);
+      toast('저장 완료 ✅','success');
     }
-    sl(false);cm('mEditP');toast('선수 정보 저장 완료 ✅','success');
-    await fbLog(`선수수정: ${oldName}→${finalName}`,'✏️');
-  }catch(e){sl(false);toast('저장 실패: '+e.message,'error');}
+    sl(false);cm('mEditP');renderAllP();
+    await fbLog('선수수정: '+oldName+'→'+finalName,'✏️');
+  }catch(e){sl(false);toast('저장 실패: '+e.message,'error');console.error(e);}
 }
 
 async function deletePlayer(){
