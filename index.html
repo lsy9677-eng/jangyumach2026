@@ -3,7 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
 <title>장유테니스연합회 대회관리 시스템</title>
+<script>
+  // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
+  // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
+  const APP_VERSION = "2026-02-27-01";
+
+  (function forceUpdateOnNewVersion() {
+    const key = "APP_VERSION";
+    const prev = localStorage.getItem(key);
+
+    if (prev !== APP_VERSION) {
+      localStorage.setItem(key, APP_VERSION);
+
+      // Cache Storage(PWA/서비스워커 캐시 포함) 삭제 시도
+      const bust = () => {
+        const url = new URL(location.href);
+        url.searchParams.set("v", Date.now().toString());
+        location.replace(url.toString());
+      };
+
+      if ("caches" in window) {
+        caches.keys()
+          .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+          .catch(() => {}
+          )
+          .finally(bust);
+      } else {
+        bust();
+      }
+    }
+  })();
+</script>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Oswald:wght@400;600&display=swap');
 :root {
