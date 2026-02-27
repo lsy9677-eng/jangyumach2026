@@ -190,9 +190,14 @@ table tr:nth-child(even):hover td{background:var(--panel2);}
 .s-finished{background:#f0f0f0;color:#555;}
 
 /* PLAYER SLOT */
-.pslot{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel2);border-radius:var(--radius);border:1.5px solid var(--border);margin-bottom:8px;}
+.pslot{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--panel2);border-radius:var(--radius);border:1.5px solid var(--border);margin-bottom:6px;min-width:0;overflow:hidden;}
 .pslot-num{width:24px;height:24px;background:var(--primary);color:white;border-radius:50%;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.pslot input{flex:1;border:none;background:transparent;font-family:'Noto Sans KR',sans-serif;font-size:.85rem;color:var(--text);outline:none;}
+.pslot input{flex:1;min-width:0;border:none;background:transparent;font-family:'Noto Sans KR',sans-serif;font-size:.82rem;color:var(--text);outline:none;}
+.pslot input{min-width:0;}
+.pslot{min-width:0;}
+.pslot button{flex-shrink:0;}
+body{overflow-x:hidden;}
+
 .phint{font-size:.68rem;color:var(--text3);margin-top:-4px;margin-bottom:6px;padding-left:32px;min-height:16px;}
 .team-num{width:26px;height:26px;background:var(--primary);color:white;border-radius:50%;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 
@@ -462,7 +467,7 @@ table tr:nth-child(even):hover td{background:var(--panel2);}
       </div>
       <div class="form-group">
         <label class="form-label">주전 선수 <span style="color:var(--text3);font-size:.72rem;font-weight:400">1·2번=1복식 / 3·4번=2복식 / 5·6번=3복식</span></label>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px">
+        <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:6px">
           <div><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">① 1복식</div>
             <div class="pslot"><div class="pslot-num">1</div><input type="text" id="p1" placeholder="1번" autocomplete="off" oninput="phint(this,1)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p1')">기록</button></div><div class="phint" id="h1"></div>
             <div class="pslot"><div class="pslot-num">2</div><input type="text" id="p2" placeholder="2번" autocomplete="off" oninput="phint(this,2)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p2')">기록</button></div><div class="phint" id="h2"></div>
@@ -476,7 +481,7 @@ table tr:nth-child(even):hover td{background:var(--panel2);}
             <div class="pslot"><div class="pslot-num">6</div><input type="text" id="p6" placeholder="6번" autocomplete="off" oninput="phint(this,6)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p6')">기록</button></div><div class="phint" id="h6"></div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
           <div><div style="font-size:.68rem;font-weight:700;color:var(--text3);padding:3px 0 5px">후보1 (선택)</div>
             <div class="pslot" style="border-style:dashed"><div class="pslot-num" style="background:var(--bg2);color:var(--text3)">7</div><input type="text" id="p7" placeholder="후보..." autocomplete="off" oninput="phint(this,7)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p7')">기록</button></div><div class="phint" id="h7"></div>
           </div>
@@ -860,7 +865,19 @@ async function stM(key){
 }
 async function stP(n){try{await setDoc(doc(db,'players',n.replace(/[\/\.#\$\[\]]/g,'_')),{...G.players[n],name:n});}catch(e){}}
 async function fbLog(t,i='📌'){try{await addDoc(collection(db,'activityLog'),{text:t,icon:i,time:new Date().toISOString()});}catch(e){}}
-function onDU(){upDash();const p=document.querySelector('.nav-tab.active')?.dataset.page;if(p==='tournament')renderTL();if(p==='register'){popSel();renderRL();}if(p==='bracket')renderBracket();if(p==='ranking')renderRanking();popSel();}
+function onDU(){
+  // 새로고침 후 관리자 세션 복원
+  if(!AD && sessionStorage.getItem('adm')==='1'){
+    applyAdminUI();
+  }
+  upDash();
+  const p=document.querySelector('.nav-tab.active')?.dataset.page;
+  if(p==='tournament')renderTL();
+  if(p==='register'){popSel();renderRL();}
+  if(p==='bracket')renderBracket();
+  if(p==='ranking')renderRanking();
+  popSel();
+}
 function sl(s){let el=ge('gLd');if(!el){el=document.createElement('div');el.id='gLd';el.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;height:3px;background:linear-gradient(90deg,#1565c0,#f5a623);animation:ldA 1.2s ease-in-out infinite;';document.head.insertAdjacentHTML('beforeend','<style>@keyframes ldA{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}</style>');document.body.appendChild(el);}el.style.display=s?'block':'none';}
 
 function showPage(n){
@@ -881,13 +898,44 @@ function showPage(n){
 }
 
 function toggleAdmin(){
-  if(AD){AD=false;document.body.classList.remove('admin-mode');ge('adminBadge').classList.remove('show');ge('adminToggleBtn').classList.remove('active');ge('adminToggleBtn').textContent='관리자 로그인';document.querySelectorAll('[id^="ao"]').forEach(e=>e.style.display='none');ge('regActHdr').textContent='';cm('mAdminSettings');toast('로그아웃','info');}
-  else om('mAdmin');
+  if(AD){
+    AD=false;
+    sessionStorage.removeItem('adm');
+    document.body.classList.remove('admin-mode');
+    ge('adminBadge').classList.remove('show');
+    ge('adminToggleBtn').classList.remove('active');
+    ge('adminToggleBtn').textContent='관리자 로그인';
+    document.querySelectorAll('[id^="ao"]').forEach(e=>e.style.display='none');
+    ge('regActHdr').textContent='';
+    cm('mAdminSettings');
+    toast('로그아웃','info');
+  } else om('mAdmin');
+}
+function applyAdminUI(){
+  AD=true;
+  document.body.classList.add('admin-mode');
+  ge('adminBadge').classList.add('show');
+  ge('adminToggleBtn').classList.add('active');
+  ge('adminToggleBtn').textContent='로그아웃';
+  document.querySelectorAll('[id^="ao"]').forEach(e=>e.style.display='block');
+  ge('regActHdr').textContent='관리';
 }
 function doLogin(){
   const pw=ge('adminPw').value;
-  if(pw===G.meta.pw){AD=true;document.body.classList.add('admin-mode');cm('mAdmin');ge('adminBadge').classList.add('show');ge('adminToggleBtn').classList.add('active');ge('adminToggleBtn').textContent='로그아웃';ge('adminPw').value='';document.querySelectorAll('[id^="ao"]').forEach(e=>e.style.display='block');ge('regActHdr').textContent='관리';toast('관리자 로그인 ✅','success');const pg=document.querySelector('.nav-tab.active').dataset.page;if(pg==='tournament')renderTL();if(pg==='register')renderRL();if(pg==='bracket')renderBracket();}
-  else{toast('비밀번호 오류','error');ge('adminPw').select();}
+  if(pw===G.meta.pw){
+    applyAdminUI();
+    sessionStorage.setItem('adm','1');
+    cm('mAdmin');
+    ge('adminPw').value='';
+    toast('관리자 로그인 ✅','success');
+    const pg=document.querySelector('.nav-tab.active').dataset.page;
+    if(pg==='tournament')renderTL();
+    if(pg==='register')renderRL();
+    if(pg==='bracket')renderBracket();
+  } else {
+    toast('비밀번호 오류','error');
+    ge('adminPw').select();
+  }
 }
 
 
@@ -1082,10 +1130,10 @@ function openETeam(key,idx){
   ge('mETeamB').innerHTML=`<div style="margin-bottom:12px;padding:8px 14px;background:var(--primary);color:white;border-radius:var(--radius);font-weight:700">${tdn(team,key,idx)} — ${dl(div)}</div>
     <div class="form-group"><label class="form-label">클럽</label><select class="form-select" id="etTC">${G.clubs.map(c=>`<option ${c===team.club?'selected':''}>${c}</option>`).join('')}</select></div>
     <div class="form-group"><label class="form-label">선수 (주전 6명 필수)</label>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:6px">
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:6px">
       ${[0,1,2].map(r=>`<div><div style="font-size:.65rem;font-weight:700;color:var(--primary);margin-bottom:4px">${r+1}복식</div>${[0,1].map(j=>`<input type="text" id="ep${r*2+j+1}" class="form-input" style="margin-bottom:4px" value="${p[r*2+j]||''}" placeholder="${r*2+j+1}번">`).join('')}</div>`).join('')}
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input type="text" id="ep7" class="form-input" value="${p[6]||''}" placeholder="후보1(선택)"><input type="text" id="ep8" class="form-input" value="${p[7]||''}" placeholder="후보2(선택)"></div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px"><input type="text" id="ep7" class="form-input" value="${p[6]||''}" placeholder="후보1(선택)"><input type="text" id="ep8" class="form-input" value="${p[7]||''}" placeholder="후보2(선택)"></div>
     </div>`;
   om('mETeam');
 }
