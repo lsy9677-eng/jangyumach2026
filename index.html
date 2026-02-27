@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "2026-02-27-10";
+  const APP_VERSION = "2026-02-28-01";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -556,7 +556,7 @@ body{overflow-x:hidden;}
   <div class="card">
     <div class="frow">
       <div class="form-group"><label class="form-label">대회</label><select class="form-select" id="rankTS" onchange="onRankTC()"><option value="">-- 대회 선택 --</option></select></div>
-      <div class="form-group"><label class="form-label">부서 <span style="font-size:.72rem;font-weight:400;color:var(--text2)">(미선택 시 전체)</span></label><select class="form-select" id="rankDS" onchange="renderRanking()"><option value="">전체 부서</option></select></div>
+      <div class="form-group"><label class="form-label">부서 <span style="font-size:.72rem;font-weight:400;color:var(--text2)">(미선택 시 전체)</span></label><select class="form-select" id="rankDS" onchange="renderRanking()"><option value="">전체 부서</option><option value="__GUIDE__">📌 요강</option></select></div>
     </div>
   </div>
   <div id="rankContent"><div class="empty-state card"><div class="empty-icon">📋</div><p>대회를 선택하세요</p></div></div>
@@ -613,6 +613,11 @@ body{overflow-x:hidden;}
 </div>
 </div></div>
 <div class="modal-overlay" id="mTD"><div class="modal-box" style="max-width:680px"><div class="modal-header"><h3 id="mTDT">대회 상세</h3><button class="modal-close" onclick="cm('mTD')">✕</button></div><div class="modal-body" id="mTDB"></div><div class="modal-footer"><button class="btn btn-gray" onclick="cm('mTD')">닫기</button></div></div></div>
+<div class="modal-overlay" id="mGuide"><div class="modal-box" style="max-width:760px">
+  <div class="modal-header"><h3 id="mGuideT">📌 대회 요강</h3><button class="modal-close" onclick="cm('mGuide')">✕</button></div>
+  <div class="modal-body" id="mGuideB"></div>
+  <div class="modal-footer"><button class="btn btn-gray" onclick="cm('mGuide')">닫기</button></div>
+</div></div>
 <div class="modal-overlay" id="mET"><div class="modal-box" style="max-width:600px"><div class="modal-header"><h3 id="mETT">대회 편집</h3><button class="modal-close" onclick="cm('mET')">✕</button></div><div class="modal-body" id="mETB"></div><div class="modal-footer"><button class="btn btn-gray" onclick="cm('mET')">닫기</button><button class="btn btn-primary" onclick="saveET()">💾 저장</button></div></div></div>
 <div class="modal-overlay" id="mETeam"><div class="modal-box" style="max-width:520px"><div class="modal-header"><h3>✏️ 팀 수정</h3><button class="modal-close" onclick="cm('mETeam')">✕</button></div><div class="modal-body" id="mETeamB"></div><div class="modal-footer"><button class="btn btn-gray" onclick="cm('mETeam')">취소</button><button class="btn btn-primary" onclick="saveETeam()">💾 저장</button></div></div></div>
 <div class="modal-overlay" id="mRoster"><div class="modal-box" style="max-width:700px"><div class="modal-header"><h3 id="mRosterT">선수 명단</h3><button class="modal-close" onclick="cm('mRoster')">✕</button></div><div class="modal-body" id="mRosterB"></div><div class="modal-footer"><button class="btn btn-gray" onclick="cm('mRoster')">닫기</button></div></div></div>
@@ -1213,6 +1218,18 @@ function openTD(tid){
     </div>${t.notice?`<div style="background:var(--panel2);padding:10px;border-radius:var(--radius);border:1px solid var(--border);margin-top:8px"><b>공지:</b><br><span style="font-size:.83rem;white-space:pre-line">${t.notice}</span></div>`:''}${renderGuideBlock(t,'📌 대회 요강')}`;
   om('mTD');
 }
+
+function openGuide(tid){
+  // 📌 대회 요강만 보기 (누구나 열람)
+  const t=G.tournaments.find(t=>t.id===tid);
+  if(!t){toast('대회 정보를 찾을 수 없습니다','error');return;}
+  if(!guideHasContent(t.guide)){toast('등록된 요강이 없습니다','info');return;}
+  ge('mGuideT').textContent = '📌 ' + (t.name||'대회') + ' 요강';
+  ge('mGuideB').innerHTML = `<div style="font-size:.8rem;color:var(--text2);margin-bottom:10px">📅 ${t.date||''}${t.venue?' | 📍 '+t.venue:''}</div>` + renderGuideBlock(t,'');
+  om('mGuide');
+}
+
+
 
 
 function popSel(){
@@ -2270,7 +2287,7 @@ async function autoAdv(key,mid){
 
 function onRankTC(){
   const tid=ge('rankTS').value, ds=ge('rankDS');
-  ds.innerHTML='<option value="">전체 부서</option>';
+  ds.innerHTML='<option value="">전체 부서</option><option value="__GUIDE__">📌 요강</option>';
   if(!tid)return;
   // Firebase 대회 또는 내장 과거 대회 모두 검색
   const t=[...G.tournaments,...HIST_DATA].find(t=>t.id===tid);
@@ -2285,6 +2302,26 @@ function getHistTournament(tid){
 function renderRanking(){
   const tid=ge('rankTS').value, div=ge('rankDS').value, cont=ge('rankContent');
   if(!tid){cont.innerHTML='<div class="empty-state card"><div class="empty-icon">📋</div><p>대회를 선택하세요</p></div>';return;}
+
+  // 📌 요강만 보기
+  if(div==='__GUIDE__'){
+    const isHist=HIST_DATA.some(t=>t.id===tid);
+    if(isHist){
+      cont.innerHTML='<div class="empty-state card"><div class="empty-icon">📌</div><p>과거 대회는 요강 데이터가 없습니다</p></div>';
+      return;
+    }
+    const t=G.tournaments.find(t=>t.id===tid);
+    if(!t || !guideHasContent(t.guide)){
+      cont.innerHTML='<div class="empty-state card"><div class="empty-icon">📌</div><p>등록된 요강이 없습니다</p></div>';
+      return;
+    }
+    cont.innerHTML = `<div class="card" style="background:linear-gradient(135deg,#eef2ff,#dce8fb);border:1.5px solid var(--success);margin-bottom:12px">
+      <div style="font-weight:800;font-size:1rem">${t.name||'대회 요강'}</div>
+      <div style="font-size:.78rem;color:var(--text2);margin-top:4px">📅 ${t.date||''}${t.venue?' | 📍 '+t.venue:''}</div>
+    </div>` + renderGuideBlock(t,'📌 대회 요강');
+    return;
+  }
+
 
   // Firebase 대회인지 내장 과거 대회인지 판별
   const isHist=HIST_DATA.some(t=>t.id===tid);
@@ -2346,9 +2383,6 @@ function renderLiveRanking(tid,div,cont){
   const t=G.tournaments.find(t=>t.id===tid);if(!t)return;
   const divs=div?[div]:(t.divisions||[]);
   let html='';
-  if(t && t.guide && ((t.guide.text&&t.guide.text.trim()) || (t.guide.items&&t.guide.items.length))){
-    html += renderGuideBlock(t,'📌 대회 요강');
-  }
   divs.forEach(d=>{
     const key=tid+'_'+d,teams=G.teams[key]||[],draw=G.draws[key];
     const allMs=G.matches[key]||[];
@@ -2409,7 +2443,15 @@ function upDash(){
   const clubs=new Set();Object.values(G.teams).forEach(a=>a.forEach(t=>clubs.add(t.club)));
   ge('sClubs').textContent=clubs.size;ge('sTeams').textContent=tt;ge('sMatches').textContent=tm;ge('sPlayers').textContent=tp;ge('regBadge').textContent=tt;ge('heroClubs').textContent=`🏟 ${clubs.size}개 클럽`;ge('heroTeams').textContent=`👥 ${tt}팀`;
   const at=G.tournaments.find(t=>t.status==='ongoing')||G.tournaments.find(t=>t.status==='open')||G.tournaments[0];
-  if(at){const slbl={open:'접수중',closed:'접수마감',ongoing:'진행중',finished:'종료'};ge('heroTitle').textContent=at.name;ge('heroStatus').textContent='📌 '+slbl[at.status];ge('homeTournInfo').innerHTML=`<div style="display:flex;flex-direction:column;gap:8px"><div style="font-weight:700;font-size:1rem">${at.name}</div><div style="font-size:.82rem;color:var(--text2)">📅 ${at.date}${at.venue?' | 📍 '+at.venue:''}</div><div style="display:flex;gap:6px;flex-wrap:wrap">${at.divisions.map(d=>`<span class="dpill ${dc(d)}" style="cursor:pointer" onclick="openRoster('${at.id}','${d}')">${dl(d)} <small>${(G.teams[at.id+'_'+d]||[]).length}팀</small></span>`).join('')}</div>${at.notice?`<div style="font-size:.78rem;background:var(--panel2);padding:8px;border-radius:var(--radius);border:1px solid var(--border);white-space:pre-line">${at.notice}</div>`:''}</div>`;ge('homeDivStatus').innerHTML=at.divisions.map(d=>{
+  if(at){const slbl={open:'접수중',closed:'접수마감',ongoing:'진행중',finished:'종료'};ge('heroTitle').textContent=at.name;ge('heroStatus').textContent='📌 '+slbl[at.status];ge('homeTournInfo').innerHTML=`<div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-weight:700;font-size:1rem">${at.name}</div>
+      <div style="font-size:.82rem;color:var(--text2)">📅 ${at.date}${at.venue?' | 📍 '+at.venue:''}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${at.divisions.map(d=>`<span class="dpill ${dc(d)}" style="cursor:pointer" onclick="openRoster('${at.id}','${d}')">${dl(d)} <small>${(G.teams[at.id+'_'+d]||[]).length}팀</small></span>`).join('')}</div>
+      ${guideHasContent(at.guide)?`<div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-outline" style="font-size:.75rem;padding:6px 12px" onclick="openGuide('${at.id}')">📌 요강 보기</button>
+      </div>`:''}
+      ${at.notice?`<div style="font-size:.78rem;background:var(--panel2);padding:8px;border-radius:var(--radius);border:1px solid var(--border);white-space:pre-line">${at.notice}</div>`:''}
+    </div>`;ge('homeDivStatus').innerHTML=at.divisions.map(d=>{
     const k=`${at.id}_${d}`;
     const tc=(G.teams[k]||[]).length;
     const allMs=G.matches[k]||[];
@@ -3043,7 +3085,7 @@ async function bracketToPDF(){
 }
 Object.assign(window,{
   showPage,toggleAdmin,doLogin,openAdminSettings,saveAdminPassword,goBracket,
-  createTournament,renderTL,chgTS,delT,openET,saveET,openTD,applyRec,saveDivS,
+  createTournament,renderTL,chgTS,delT,openET,saveET,openTD,openGuide,applyRec,saveDivS,
   onRegTC,renderRL,registerTeam,delTeam,phint,openPHist,openETeam,saveETeam,
   onBrTC,renderBracket,openDraw,confirmDraw,startDraw,buildMain,openMainDraw,startMainDraw,
   openManualEdit,saveManualEdit,toggleByeEdit,
