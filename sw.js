@@ -2,10 +2,10 @@ const CACHE_NAME = "jangyu-tennis-v4";
 
 // 정적 자산만 캐시 (index.html 제외 - 항상 최신본 사용)
 const STATIC_ASSETS = [
-  "/manifest.json",
-  "/icon-192.png",
-  "/icon-512.png",
-  "/icon-180.png"
+  "./manifest.json",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-180.png"
 ];
 
 // SKIP_WAITING 메시지 수신 → 즉시 활성화
@@ -48,18 +48,23 @@ self.addEventListener("fetch", (event) => {
     url.hostname.includes("fonts.gstatic.com")
   ) return;
 
-  // ② index.html / 루트 → 항상 네트워크 우선 (캐시 무효화 핵심!)
-  if (url.pathname === "/" || url.pathname === "/index.html") {
+  // ② HTML 네비게이션(루트/인덱스) → 항상 네트워크 우선 (캐시 무효화 핵심!)
+  if (req.mode === "navigate" || url.pathname.endsWith("/") || url.pathname.endsWith("/index.html")) {
     event.respondWith(
       fetch(req)
-        .then(resp => {
-          // 성공하면 캐시도 갱신
-          const clone = resp.clone();
-          caches.open(CACHE_NAME).then(c => c.put(req, clone));
-          return resp;
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+          return res;
         })
-        .catch(() => caches.match(req)) // 오프라인이면 캐시 사용
+        .catch(() => caches.match(req))
     );
+    return;
+  }
+
+  // ③ SW/manifest → 네트워크 우선 (업데이트 반영)
+  if (url.pathname.endsWith("/sw.js") || url.pathname.endsWith("/manifest.json")) {
+    event.respondWith(fetch(req).catch(() => caches.match(req)));
     return;
   }
 
