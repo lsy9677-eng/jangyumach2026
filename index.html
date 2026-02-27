@@ -2788,6 +2788,130 @@ document.addEventListener('DOMContentLoaded',()=>initFB());
     });
   }
 </script>
+<script>
+/* ===============================
+   📱 모바일 스와이프 페이지 전환 (오작동 최소화)
+   - 입력 요소/모달/가로스크롤 영역에서는 스와이프 전환 금지
+================================= */
+(function(){
+  const tabs = ['home','tournament','register','bracket','players','ranking'];
+  const MIN_SWIPE_PX = 70;      // 살짝 올려서 오작동 감소
+  const MAX_TAP_TIME = 900;     // 너무 길게 누르면 스와이프 취급 안 함(드래그/스크롤 혼동 방지)
+
+  let startX = 0, startY = 0, startT = 0;
+  let isTracking = false;
+
+  function getCurrentPage(){
+    const active = document.querySelector('.nav-tab.active');
+    return active ? active.dataset.page : 'home';
+  }
+  function goToPage(page){
+    if(typeof showPage === 'function') showPage(page);
+  }
+
+  function hasOpenModal(){
+    return !!document.querySelector('.modal-overlay.open');
+  }
+
+  // 부모 체인을 타고 올라가면서 "가로 스크롤 가능한" 영역이면 true
+  function isInHorizontalScrollArea(el){
+    const selectors = ['.nav-tabs','.bracket-wrap','.t-bracket','.table-wrap','.sf-flow','.bracket-content','.main-content'];
+    // 명시적으로 스와이프를 막을 UI 영역들(테이블/대진표/상단탭/진행스텝 등)
+    if(el.closest(selectors.join(','))) {
+      // 다만 main-content는 전체 컨테이너라서 무조건 막으면 안 됨 -> 아래 스타일 검사로 판정
+    }
+    let cur = el;
+    while(cur && cur !== document.body){
+      // 특정 클래스면 바로 차단
+      if(cur.classList && (
+        cur.classList.contains('nav-tabs') ||
+        cur.classList.contains('bracket-wrap') ||
+        cur.classList.contains('t-bracket') ||
+        cur.classList.contains('table-wrap') ||
+        cur.classList.contains('sf-flow')
+      )) return true;
+
+      // CSS overflow-x가 스크롤이고 실제로 가로로 넘칠 때 차단
+      try{
+        const st = window.getComputedStyle(cur);
+        const ox = st.overflowX;
+        if((ox === 'auto' || ox === 'scroll') && cur.scrollWidth > cur.clientWidth + 2){
+          return true;
+        }
+      }catch(e){}
+      cur = cur.parentElement;
+    }
+    return false;
+  }
+
+  function shouldIgnoreStart(e){
+    if(hasOpenModal()) return true; // 모달 열려 있으면 스와이프 전환 금지
+    const t = e.target;
+    if(!t) return true;
+
+    // 입력요소/버튼/링크 등은 상호작용 우선
+    const tag = (t.tagName || '').toLowerCase();
+    if(['input','textarea','select','button','a','label'].includes(tag)) return true;
+    if(t.isContentEditable) return true;
+
+    // 모달 내부/가로스크롤 영역/표/대진표 등에서 시작한 터치는 무시
+    if(t.closest('.modal-box')) return true;
+    if(isInHorizontalScrollArea(t)) return true;
+
+    return false;
+  }
+
+  document.addEventListener('touchstart', function(e){
+    if(e.touches.length !== 1) return;
+    if(shouldIgnoreStart(e)) return;
+
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startT = Date.now();
+    isTracking = true;
+  }, {passive:true});
+
+  document.addEventListener('touchmove', function(e){
+    // 세로 스크롤이明显하면 추적 종료(오작동 감소)
+    if(!isTracking) return;
+    const x = e.touches[0].clientX, y = e.touches[0].clientY;
+    const dx = x - startX, dy = y - startY;
+    if(Math.abs(dy) > Math.abs(dx) + 8) {
+      isTracking = false;
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchend', function(e){
+    if(!isTracking) return;
+    isTracking = false;
+
+    const dt = Date.now() - startT;
+    if(dt > MAX_TAP_TIME) return;
+
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+
+    const diffX = endX - startX;
+    const diffY = endY - startY;
+
+    // 세로가 더 크면 스와이프 전환 안 함
+    if(Math.abs(diffY) > Math.abs(diffX)) return;
+
+    // 최소 이동 거리
+    if(Math.abs(diffX) < MIN_SWIPE_PX) return;
+
+    const current = getCurrentPage();
+    const idx = tabs.indexOf(current);
+    if(idx === -1) return;
+
+    if(diffX < 0 && idx < tabs.length - 1){
+      goToPage(tabs[idx + 1]); // 좌로 → 다음
+    } else if(diffX > 0 && idx > 0){
+      goToPage(tabs[idx - 1]); // 우로 → 이전
+    }
+  }, {passive:true});
+})();
+</script>
 
 </body>
 </html>
