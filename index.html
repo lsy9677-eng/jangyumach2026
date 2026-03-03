@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "2026-03-03-01";
+  const APP_VERSION = "2026-03-04-jangyu-slot-v2-fix-select";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -370,8 +370,23 @@ body{overflow-x:hidden;}
   background:var(--accent);
   width:16px;border-radius:3px;
 }
-</style>
 
+/* ✅ 선수기록(전체 선수 목록) 이름: 좌측정렬 + 모바일에서 안 잘리게(줄바꿈) */
+#page-players .table-wrap table{table-layout:auto;}
+#page-players .table-wrap table th:nth-child(1),
+#page-players .table-wrap table td:nth-child(1){text-align:left !important;}
+#page-players .table-wrap table th:nth-child(1){min-width:110px;}
+#page-players .table-wrap table td:nth-child(1){
+  white-space:normal;          /* 줄바꿈 허용 */
+  overflow:visible;            /* 잘림 방지 */
+  text-overflow:clip;
+  word-break:keep-all;         /* 한글 단어 단위 유지 */
+  overflow-wrap:anywhere;      /* 아주 긴 문자열 대비 */
+  line-height:1.25;
+}
+#page-players .table-wrap table td:nth-child(1) small{margin-left:6px; color:var(--text3);}
+
+</style>
 
 <!-- PWA -->
 <link rel="manifest" href="./manifest.json">
@@ -1168,6 +1183,21 @@ function showPage(n){
   if(activeTab) activeTab.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});
   if(n==='home')upDash();if(n==='tournament')renderTL();if(n==='register'){popSel();renderRL();}
   if(n==='bracket')popSel();if(n==='players'){renderAllP();popCF();}if(n==='ranking')popSel();
+
+  // ✅ 페이지 진입 시 기본 대회(접수중) 자동 선택
+  if(n==='register'){
+    const el=ge('regTS');
+    if(el && !el.value){ el.value = pickDefaultTournamentId(); onRegTC(); }
+  }
+  if(n==='bracket'){
+    const el=ge('brTS');
+    if(el && !el.value){ el.value = pickDefaultTournamentId(); onBrTC(); }
+  }
+  if(n==='ranking'){
+    const el=ge('rankTS');
+    if(el && !el.value){ el.value = pickDefaultTournamentId(); onRankTC(); }
+  }
+
   window.scrollTo(0,0);
 }
 
@@ -1265,6 +1295,16 @@ function _normalizePhone(p){
 function _adminPhone(){
   return _normalizePhone((G.meta&&G.meta.adminPhone)||'');
 }
+// ✅ 기본 대회 선택: "접수중(open)" 우선 → 없으면 "진행중(ongoing)" → 최신 1개
+function pickDefaultTournamentId(){
+  if(!Array.isArray(G.tournaments) || G.tournaments.length===0) return '';
+  const openT = G.tournaments.find(t=>t.status==='open');
+  if(openT) return openT.id;
+  const onT = G.tournaments.find(t=>t.status==='ongoing');
+  if(onT) return onT.id;
+  return G.tournaments[0].id;
+}
+
 async function saveAdminPhone(){
   if(!AD){ toast('관리자 로그인 필요','info'); return; }
   const inp = ge('adminPhoneInput');
@@ -1570,22 +1610,40 @@ function openTD(tid){
 
 
 function popSel(){
+  // regTS / brTS : 기본은 "접수중(open)" 대회 우선 선택
   ['regTS','brTS'].forEach(id=>{
-    const el=ge(id);if(!el)return;
-    const v=el.value;
+    const el=ge(id); if(!el) return;
+    let v = el.value;
+
+    if(!v) v = pickDefaultTournamentId();
+
     el.innerHTML='<option value="">-- 대회 선택 --</option>'+
-      G.tournaments.map(t=>`<option value="${t.id}" ${t.id===v?'selected':''}>${t.name} (${t.date})</option>`).join('');
+      G.tournaments.map(t=>{
+        // ✅ 선택은 가능(마감/종료도 보기 가능). 팀등록은 renderRL/registerTeam에서 별도 잠금 처리
+        const label = `${t.name} (${t.date})` + (t.status==='open'?' [접수중]':t.status==='ongoing'?' [진행중]':t.status==='closed'?' [마감]':t.status==='finished'?' [종료]':'');
+        return `<option value="${t.id}" ${t.id===v?'selected':''}>${label}</option>`;
+      }).join('');
   });
+
   // rankTS: Firebase 대회 + 과거 내장 대회 모두 표시
   const rankEl=ge('rankTS');
   if(rankEl){
-    const v=rankEl.value;
-    const allT=[...G.tournaments,...HIST_DATA].sort((a,b)=>b.date.localeCompare(a.date));
+    let v = rankEl.value;
+    if(!v) v = pickDefaultTournamentId();
+    const allT=[...G.tournaments,...HIST_DATA].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     rankEl.innerHTML='<option value="">-- 대회 선택 --</option>'+
-      allT.map(t=>`<option value="${t.id}" ${t.id===v?'selected':''}>${t.name} (${t.date?.substring(0,7)||''})</option>`).join('');
+      allT.map(t=>`<option value="${t.id}" ${t.id===v?'selected':''}>${t.name} (${(t.date||'').substring(0,7)||''})</option>`).join('');
   }
+
   const cs=ge('regClub');
-  if(cs)cs.innerHTML='<option value="">-- 클럽 선택 --</option>'+G.clubs.map(c=>`<option>${c}</option>`).join('');
+  if(cs) cs.innerHTML='<option value="">-- 클럽 선택 --</option>'+G.clubs.map(c=>`<option>${c}</option>`).join('');
+
+  // ✅ popSel 후 현재 값 기준으로 즉시 UI 갱신
+  setTimeout(()=>{
+    const regEl=ge('regTS'); if(regEl&&regEl.value) onRegTC();
+    const brEl=ge('brTS'); if(brEl&&brEl.value) onBrTC();
+    const rkEl=ge('rankTS'); if(rkEl&&rkEl.value) onRankTC();
+  }, 0);
 }
 function onRegTC(){
   const tid=ge('regTS').value,ds=ge('regDS');
@@ -1605,22 +1663,52 @@ function updateRegisterSlots(){
 
 function renderRL(){
   const tid=ge('regTS').value,div=ge('regDS').value;if(!tid||!div)return;
-  ge('regSection').style.display='block';ge('aoReg').style.display=AD?'block':'none';
+
+  const t=G.tournaments.find(t=>t.id===tid);
+  const isOpen = (t?.status==='open');
+
+  ge('regSection').style.display='block';
+  ge('aoReg').style.display=AD?'block':'none';
+
   // 부서 변경 시 슬롯 업데이트
   updateRegisterSlots();
+
+  // ✅ 접수중(open) 대회가 아니면(일반 사용자) 팀 등록 UI 비활성화
+  const lock = (!AD && !isOpen);
+
+  const clubSel=ge('regClub'); if(clubSel) clubSel.disabled = lock;
+  for(let i=1;i<=12;i++){ const el=ge('p'+i); if(el) el.disabled = lock; }
+  const regBtn = document.querySelector('#aoReg button.btn.btn-primary');
+  if(regBtn) regBtn.disabled = lock;
+
+  // 안내 메시지(없으면 생성)
+  let msg = ge('regLockMsg');
+  if(!msg){
+    msg = document.createElement('div');
+    msg.id = 'regLockMsg';
+    msg.style.cssText = 'margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);font-size:.78rem;color:var(--text2);line-height:1.5;display:none;';
+    const anchor = ge('aoReg');
+    if(anchor) anchor.insertAdjacentElement('afterend', msg);
+  }
+  if(lock){
+    msg.style.display='block';
+    msg.innerHTML = `⛔ 현재 선택한 대회는 <b>${t?.status==='finished'?'종료':t?.status==='closed'?'마감':'접수중 아님'}</b> 상태라 팀 등록이 비활성화 됩니다.<br>상단에서 <b>접수중 대회</b>를 선택해 주세요.`;
+  }else{
+    msg.style.display='none';
+  }
+
   const key=tid+'_'+div,teams=G.teams[key]||[];
   ge('regTCnt').textContent=teams.length+'팀';ge('regNo').value=teams.length+1;
   const tb=ge('regTBody');
   if(!teams.length){tb.innerHTML='<tr><td colspan="7"><div class="empty-state" style="padding:14px"><p>등록된 팀 없음</p></div></td></tr>';return;}
-  tb.innerHTML=teams.map((t,i)=>{
-    const p=t.players||[];
-    const isT=div==='terinee';
+  tb.innerHTML=teams.map((t2,i)=>{
+    const p=t2.players||[];
     const dbl=3;
     const mainCount=6;
-    const tc=esc(t.club||'');
+    const tc=esc(t2.club||'');
     const mk=(a,b)=>p[a]&&p[b]?`<span onclick="openPD('${esc(p[a])}','${tc}')" style="cursor:pointer;color:var(--primary)">${p[a]}</span>/<span onclick="openPD('${esc(p[b])}','${tc}')" style="cursor:pointer;color:var(--primary)">${p[b]}</span>`:p[a]?`<span onclick="openPD('${esc(p[a])}','${tc}')" style="cursor:pointer;color:var(--primary)">${p[a]}</span>`:'—';
     const sub=p.slice(mainCount).filter(Boolean).map(n=>`<span onclick="openPD('${esc(n)}','${tc}')" style="cursor:pointer;font-size:.73rem;color:var(--text3)">${n}</span>`).join(', ');
-    return`<tr><td><div class="team-num">${i+1}</div></td><td><b>${tdn(t,key,i)}</b></td><td style="font-size:.8rem">${mk(0,1)}</td><td style="font-size:.8rem">${mk(2,3)}</td><td style="font-size:.8rem">${mk(4,5)}</td><td>${sub||'-'}</td><td style="white-space:nowrap">${AD?`<button class="btn btn-outline" style="padding:3px 6px;font-size:.67rem;margin-right:2px" onclick="openETeam('${key}',${i})">수정</button><button class="btn btn-danger" style="padding:3px 6px;font-size:.67rem" onclick="delTeam('${key}',${i})">삭제</button>`:''}</td></tr>`;
+    return`<tr><td><div class="team-num">${i+1}</div></td><td><b>${tdn(t2,key,i)}</b></td><td style="font-size:.8rem">${mk(0,1)}</td><td style="font-size:.8rem">${mk(2,3)}</td><td style="font-size:.8rem">${mk(4,5)}</td><td>${sub||'-'}</td><td style="white-space:nowrap">${AD?`<button class="btn btn-outline" style="padding:3px 6px;font-size:.67rem;margin-right:2px" onclick="openETeam('${key}',${i})">수정</button><button class="btn btn-danger" style="padding:3px 6px;font-size:.67rem" onclick="delTeam('${key}',${i})">삭제</button>`:''}</td></tr>`;
   }).join('');
 }
 async function registerTeam(){
@@ -2389,6 +2477,76 @@ function updateMainSizeDisplay(){
 function nextPow2(n){let p=1;while(p<n)p*=2;return p;}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
+// 🎰 추첨 속도 (1=기본, 1.4=더 천천히)
+const DRAW_SPEED = 1.4;
+function dSleep(ms){ return sleep(ms * DRAW_SPEED); }
+
+// 🔊 WebAudio 효과음 (외부 파일 없이)
+let __SFX_CTX = null;
+function __sfxCtx(){
+  if(__SFX_CTX) return __SFX_CTX;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return null;
+  __SFX_CTX = new AC();
+  return __SFX_CTX;
+}
+function __beep(freq=440, ms=120, type='sine', gain=0.08){
+  const ctx = __sfxCtx();
+  if(!ctx) return;
+  if(ctx.state === 'suspended') ctx.resume().catch(()=>{});
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  g.gain.value = gain;
+  o.connect(g); g.connect(ctx.destination);
+  const t = ctx.currentTime;
+  o.start(t);
+  g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + ms/1000);
+  o.stop(t + ms/1000);
+}
+function playSound(kind){
+  // kind: 'spin' | 'reveal' | 'final'
+  if(kind==='spin'){ __beep(780, 60, 'square', 0.05); __beep(980, 60, 'square', 0.04); return; }
+  if(kind==='reveal'){ __beep(523, 120, 'triangle', 0.08); __beep(659, 140, 'triangle', 0.07); return; }
+  if(kind==='final'){ __beep(392, 160, 'sine', 0.10); __beep(523, 180, 'sine', 0.10); __beep(659, 220, 'sine', 0.10); return; }
+}
+
+// 🎰 슬롯 릴(팀 이름이 굴러가다 멈추는 버전)
+async function spinTeamSlot(teamList, duration=1200, labelHtml='🎰 추첨 중...'){
+  const stage = ge('mainStageContent');
+  if(!stage || !Array.isArray(teamList) || teamList.length===0) return;
+
+  const start = Date.now();
+  return new Promise(resolve=>{
+    const timer = setInterval(()=>{
+      const rand = teamList[Math.floor(Math.random()*teamList.length)];
+      stage.innerHTML = `
+        <div style="font-size:.9rem;font-weight:800;color:var(--text2);margin-bottom:10px">${labelHtml}</div>
+        <div style="
+          font-size:1.05rem;
+          font-weight:900;
+          background:linear-gradient(135deg,#0a2a6e,#1565c0,#1976d2);
+          color:white;
+          padding:14px 20px;
+          border-radius:16px;
+          box-shadow:0 10px 26px rgba(0,0,0,.28);
+          min-width:220px;
+          text-align:center;
+        ">${rand}</div>
+        <div style="margin-top:10px;font-size:.72rem;color:var(--text3);letter-spacing:.06em">🏟 STADIUM DRAW</div>
+      `;
+      playSound('spin');
+      if(Date.now()-start>duration){
+        clearInterval(timer);
+        resolve();
+      }
+    }, 90);
+  });
+}
+
+
 function buildSnakeOrder(grps,opt){
   opt = opt || {};
   const order=[];
@@ -2457,10 +2615,10 @@ async function startDraw(){
     ge('drawProgressBar').style.width=`${(i/shuffled.length)*100}%`;
     // 스피닝 공
     ge('drawStageContent').innerHTML=`<div style="font-size:.85rem;font-weight:700;color:var(--text2);margin-bottom:6px">${i+1} / ${shuffled.length}번째 추첨</div><div class="draw-ball spinning">?</div>`;
-    await sleep(420);
+    await dSleep(420);
     // 팀명 공개
     ge('drawStageContent').innerHTML=`<div style="font-size:.85rem;font-weight:700;color:var(--success);margin-bottom:6px">✨ ${gi+1}조 배정!</div><div class="draw-ball popped" style="background:var(--success);font-size:.8rem">${dn}</div>`;
-    await sleep(320);
+    await dSleep(320);
     // 슬롯 채우기
     const slots=ge('dg_slots_'+gi);
     const emptySlot=slots.querySelector('.draw-team-slot:not(.filled)');
@@ -2470,12 +2628,12 @@ async function startDraw(){
       if(sameClub)emptySlot.classList.add('same-club');
       grps[gi].teams.push(ti);
     }
-    await sleep(180);
+    await dSleep(180);
   }
 
   ge('drawProgressBar').style.width='100%';
   ge('drawStageContent').innerHTML=`<div style="font-size:1.1rem;font-weight:700;color:var(--success);margin:10px 0">🎉 추첨 완료!</div>`;
-  await sleep(500);
+  await dSleep(500);
 
   const groupData=grps.map(g=>({teams:g.teams,courts:[]}));
   G.draws[key]={groups:groupData,shuffled,advance};
@@ -2569,15 +2727,6 @@ function openMainDraw(tid,div){
 //     match4: E vs F  ← 2위팀끼리
 // 단계: ①부전승팀 추첨 → ②일반매치 1위 자리 배정 → ③2위팀 상대/자리 배정
 // ─────────────────────────────────────────────────────────
-function pickSpacedByeIdxs(matchCount, byeCount){
-  // 부전승 매치가 서로 바로 붙지 않도록 최대한 띄워서 선택
-  const ev=[], od=[];
-  for(let i=0;i<matchCount;i++){ (i%2===0?ev:od).push(i); }
-  shuffle(ev); shuffle(od);
-  const order = ev.concat(od); // 짝수→홀수 (인접 최소화)
-  return order.slice(0, Math.min(byeCount, matchCount));
-}
-
 async function startMainDraw(){
   if(MD.isRunning)return;
   MD.isRunning=true;
@@ -2595,13 +2744,12 @@ async function startMainDraw(){
   // 매치 인덱스 풀 (섞기)
   const allIdxs=shuffle([...Array(matchCount).keys()]);
 
-  // 부전승 매치 인덱스: 최대한 띄워서 배정
-  const byeIdxs = pickSpacedByeIdxs(matchCount, byeCount);
-
+  // 부전승 매치 인덱스
+  const byeIdxs=allIdxs.slice(0,byeCount);
   // 일반 매치 인덱스
-  const byeSet = new Set(byeIdxs);
-  const normalIdxs = allIdxs.filter(i=>!byeSet.has(i));
-// 1위팀 셔플
+  const normalIdxs=allIdxs.slice(byeCount);
+
+  // 1위팀 셔플
   const rank1Pool=shuffle([...rank1]);
   // 2위팀 셔플
   const rank2Pool=shuffle([...rank2]);
@@ -2623,7 +2771,7 @@ async function startMainDraw(){
   // ═══ 단계 1: 부전승 매치에 팀 배정 ═══
   if(byeCount>0){
     showMainStageMsg(`<div style="font-size:1rem;font-weight:700;color:var(--accent)">🎫 부전승 추첨</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">1위팀이 부전승 자리를 받습니다</div>`);
-    await sleep(900);
+    await dSleep(900);
 
     const byeAllTeams=[...byeRank1,...byeRank2];
     for(let i=0;i<byeCount;i++){
@@ -2635,26 +2783,26 @@ async function startMainDraw(){
         <div style="display:flex;gap:8px;justify-content:center">
           <div class="draw-ball spinning" style="font-size:.75rem;width:70px;height:70px">${isR1?'👑':'🥈'}</div>
         </div>`);
-      await sleep(700);
+      await dSleep(700);
 
       // 팀 공개 - 슬롯마다 텀 다르게
       showMainStageMsg(`<div style="font-size:.9rem;font-weight:700;color:${isR1?'var(--accent)':'var(--success)'};margin-bottom:8px">🎫 부전승 확정!</div>
         <div class="draw-ball popped" style="background:${isR1?'var(--accent)':'var(--success)'};font-size:.8rem;width:80px;height:80px">${isR1?'👑':'🥈'} ${team.nm}</div>`);
-      await sleep(600);
+      await dSleep(600);
 
       matchSlots[byeIdxs[i]].t1={...team};
       matchSlots[byeIdxs[i]].bye=true;
       renderMainPreview(matchSlots,n,teams,key);
       stepDone++;
       ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-      await sleep(400);
+      await dSleep(400);
     }
   }
 
   // ═══ 단계 2: 일반매치에 1위팀 배정 ═══
   if(normalRank1.length>0){
     showMainStageMsg(`<div style="font-size:1rem;font-weight:700;color:var(--primary)">👑 1위팀 자리 배정</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">일반 대진에서 1위팀 자리를 배정합니다</div>`);
-    await sleep(900);
+    await dSleep(900);
 
     // 1위팀 배정할 일반 매치 인덱스 (normalIdxs에서 앞 n개)
     const r1MatchIdxs=shuffle([...normalIdxs]).slice(0,normalRank1.length);
@@ -2665,17 +2813,17 @@ async function startMainDraw(){
 
       showMainStageMsg(`<div style="font-size:.85rem;font-weight:700;color:var(--text2);margin-bottom:8px">👑 ${i+1}번째 1위팀 추첨</div>
         <div class="draw-ball spinning" style="font-size:.85rem;width:72px;height:72px">👑</div>`);
-      await sleep(680);
+      await dSleep(680);
 
       showMainStageMsg(`<div style="font-size:.85rem;font-weight:700;color:var(--primary);margin-bottom:8px">✨ ${i+1}번 자리 배정!</div>
         <div class="draw-ball popped" style="font-size:.8rem;width:78px;height:78px">👑 ${team.nm}</div>`);
-      await sleep(520);
+      await dSleep(520);
 
       matchSlots[mIdx].t1={...team};
       renderMainPreview(matchSlots,n,teams,key);
       stepDone++;
       ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-      await sleep(350);
+      await dSleep(350);
     }
   }
 
@@ -2685,7 +2833,7 @@ async function startMainDraw(){
   //   b) 아직 비어있는 일반매치 → t1, t2 자리 (2위팀끼리 대결)
   if(rank2Remaining.length>0){
     showMainStageMsg(`<div style="font-size:1rem;font-weight:700;color:var(--success)">🥈 2위팀 대진 추첨</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">상대팀을 추첨으로 결정합니다</div>`);
-    await sleep(900);
+    await dSleep(900);
 
     // t1이 있고 bye아닌 일반매치 (1위팀 상대 배정)
     const vsRank1Idxs=shuffle(normalIdxs.filter(i=>matchSlots[i].t1&&!matchSlots[i].bye));
@@ -2703,7 +2851,7 @@ async function startMainDraw(){
 
       showMainStageMsg(`<div style="font-size:.85rem;font-weight:700;color:var(--text2);margin-bottom:8px">🥈 ${team.nm} 상대 추첨 중...</div>
         <div class="draw-ball spinning" style="background:#1a8a4a;font-size:.85rem;width:72px;height:72px">🥈</div>`);
-      await sleep(680);
+      await dSleep(680);
 
       showMainStageMsg(`<div style="font-size:.9rem;font-weight:700;color:var(--success);margin-bottom:10px">⚡ 대진 확정!</div>
         <div style="display:flex;gap:10px;justify-content:center;align-items:center">
@@ -2711,13 +2859,13 @@ async function startMainDraw(){
           <div style="font-size:1.4rem;font-weight:900;color:var(--text2)">VS</div>
           <div class="draw-ball popped" style="font-size:.72rem;width:72px;height:72px;background:#1a8a4a;animation-delay:.12s">🥈 ${team.nm}</div>
         </div>`);
-      await sleep(700);
+      await dSleep(700);
 
       matchSlots[mIdx].t2={...team};
       renderMainPreview(matchSlots,n,teams,key);
       stepDone++;r2done++;
       ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-      await sleep(380);
+      await dSleep(380);
     }
 
     // 남은 2위팀끼리 빈 매치에 배정
@@ -2730,23 +2878,23 @@ async function startMainDraw(){
 
       showMainStageMsg(`<div style="font-size:.85rem;font-weight:700;color:var(--text2);margin-bottom:8px">🥈 2위팀 간 대진 추첨</div>
         <div class="draw-ball spinning" style="background:#1a8a4a;font-size:.85rem;width:72px;height:72px">🥈</div>`);
-      await sleep(680);
+      await dSleep(680);
 
       if(teamA){
         matchSlots[mIdx].t1={...teamA};
         showMainStageMsg(`<div style="font-size:.85rem;font-weight:700;color:var(--success);margin-bottom:8px">✨ ${teamA.nm} 자리 배정</div>
           <div class="draw-ball popped" style="background:#1a8a4a;font-size:.78rem;width:76px;height:76px">🥈 ${teamA.nm}</div>`);
-        await sleep(500);
+        await dSleep(500);
         r2done++;
         renderMainPreview(matchSlots,n,teams,key);
         stepDone++;
         ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-        await sleep(300);
+        await dSleep(300);
       }
       if(teamB){
         showMainStageMsg(`<div style="font-size:.85rem;font-weight:700;color:var(--text2);margin-bottom:8px">🥈 상대 추첨...</div>
           <div class="draw-ball spinning" style="background:#1a8a4a;font-size:.85rem;width:72px;height:72px">?</div>`);
-        await sleep(600);
+        await dSleep(600);
 
         matchSlots[mIdx].t2={...teamB};
         showMainStageMsg(`<div style="font-size:.9rem;font-weight:700;color:var(--success);margin-bottom:10px">⚡ 대진 확정!</div>
@@ -2755,12 +2903,12 @@ async function startMainDraw(){
             <div style="font-size:1.4rem;font-weight:900;color:var(--text2)">VS</div>
             <div class="draw-ball popped" style="font-size:.72rem;width:72px;height:72px;background:#1a8a4a;animation-delay:.12s">🥈 ${teamB.nm}</div>
           </div>`);
-        await sleep(700);
+        await dSleep(700);
         r2done++;
         renderMainPreview(matchSlots,n,teams,key);
         stepDone++;
         ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-        await sleep(380);
+        await dSleep(380);
       }
     }
   }
@@ -2770,7 +2918,7 @@ async function startMainDraw(){
   showMainStageMsg(`<div style="font-size:1.3rem;font-weight:700;color:var(--success);margin:10px 0">🎉 본선 추첨 완료!</div>
     <div style="font-size:.8rem;color:var(--text2)">대진표를 확인하세요</div>`);
   renderMainPreview(matchSlots,n,teams,key,true);
-  await sleep(800);
+  await dSleep(800);
 
   const mainMs=buildMainMatches(matchSlots,n);
   await saveMainDraw(mainMs,n);
