@@ -948,11 +948,11 @@ body{overflow-x:hidden;}
 'use strict';
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getFirestore,collection,doc,getDoc,getDocs,setDoc,addDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,limit,serverTimestamp,writeBatch}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import{getStorage,ref,uploadBytes,getDownloadURL,deleteObject,listAll}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+// Firebase Storage 미사용 - 요강 파일은 Firestore에 base64로 직접 저장
 const FB={apiKey:"AIzaSyBCohLbcWMSBkkk_6rhcqxi2WSejtIaaCw",authDomain:"jangyumach2026.firebaseapp.com",projectId:"jangyumach2026",storageBucket:"jangyumach2026.firebasestorage.app",messagingSenderId:"594638304093",appId:"1:594638304093:web:c0c40d684d17a021d92eb4"};
 const _app=initializeApp(FB);
 const db=getFirestore(_app);
-const storage=getStorage(_app);
+// storage 변수 없음 - Firestore 직접 저장 방식 사용
 let AD=false;
 // ── 과거 대회 내장 데이터 ─────────────────────────────────
 let HIST_DATA = [{"id":"t_hist_17","name":"제17회 장유연합회 클럽대항전","date":"2025-10-18","year":2025,"seq":17,"season":"추계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"하모니A","div":"금","players":["엄성환","박홍수","문성균","황동현","이지헌","백정렬","권혁태","양우홍"],"rank":1},{"club":"하모니B","div":"금","players":["손병규","서종완","제해근","장재천","박철완","이명호","안웅수"],"rank":null},{"club":"능동","div":"금","players":["이창민","박명환","강해근","신수빈","홍명철","김미영"],"rank":3},{"club":"모던A","div":"금","players":["김병모","박병국","이경우","이규용","정민기","최인규","황성록"],"rank":null},{"club":"모던B","div":"금","players":["강대영","박영복","백성우","안증호","여찬윤","유병준","천수연"],"rank":2},{"club":"능동","div":"은","players":["김윤목","이상구","정태백","권오준","이영기","정종철","박진특"],"rank":1},{"club":"모던","div":"은","players":["강병수","김경준","김성준","김윤환","원동빈","조광식","한두현"],"rank":2},{"club":"하모니A","div":"동","players":["장홍일","윤장호","황인범","윤수일","배병철","전진규","윤종윤","김홍희"],"rank":2},{"club":"하모니B","div":"동","players":["손덕상","하종식","홍종호","김홍식","김광수","이재아"],"rank":null},{"club":"하모니C","div":"동","players":["송화진","홍영주","남진애","진경희","남미경","도경식"],"rank":null},{"club":"하모니D","div":"동","players":["노경수","노상영","이국원","고경덕","김찬순","서준근"],"rank":1},{"club":"하모니E","div":"동","players":["이형원","최종렬","강인주","조성수","홍성환","김진우","양수석"],"rank":null},{"club":"능동A","div":"동","players":["최경환","허주철","이말수","허형선","이상곤","공대환"],"rank":3},{"club":"능동B","div":"동","players":["정교진","정종만","장현숙","박민수","여진호","백수영","김재금"],"rank":null},{"club":"능동C","div":"동","players":["김종일","강태옹","정해경","이재환","전윤영","김단우","이성희"],"rank":null},{"club":"모던","div":"동","players":["김경재","심재갑","이주찬","차한성","최승환","최진영"],"rank":null},{"club":"테사모","div":"동","players":["정금숙","김영렬","강덕호","정현주","정성한","송윤정","엄창언"],"rank":null},{"club":"불사조","div":"동","players":["강동현","김석용","박방구","이호철","최상철","박지동","김종호","조영태"],"rank":3},{"club":"하모니","div":"테린이","players":["이동헌","정순권","이종희","최유찬","서은혜","이은정"],"rank":2},{"club":"능동A","div":"테린이","players":["김지범","염철중","전수진","유미선","강동기","정지한"],"rank":1},{"club":"능동B","div":"테린이","players":["이서희","윤윤미","장혜경","박인자","이수민","한수정","신승환"],"rank":3},{"club":"테사모","div":"테린이","players":["박진규","강윤국","김진국","김다혜","황혜진","박선정"],"rank":null}]},{"id":"t_hist_16","name":"제16회 장유연합회장배 테니스대회","date":"2025-05-01","year":2025,"seq":16,"season":"춘계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"하모니A","div":"금","players":["엄성환","문성균","박홍수","안인출","이지헌","김일중","박재우"],"rank":1},{"club":"하모니B","div":"금","players":["이외종","재해근","전용규","황동헌","백정렬","이명호","이은호"],"rank":3},{"club":"하모니C","div":"금","players":["장재천","권혁태","손범규","박철완","조민철","양우홍","안웅수"],"rank":null},{"club":"능동","div":"금","players":["이창민","강해근","정현식","박명환","신수빈","홍명철","조덕헌","배기효"],"rank":2},{"club":"모던A","div":"금","players":["강대영","김의용","박준열","백성우","여찬윤","이상영","천수연"],"rank":3},{"club":"모던B","div":"금","players":["김호진","박영복","안증호","이경우","이규용","최인규"],"rank":null},{"club":"모던C","div":"금","players":["강기홍","김병모","남철현","김성민","원동빈","장혜성"],"rank":null},{"club":"테사모","div":"금","players":["임성태","윤성구","김욱중","이순보","박종성","오태섭","배인공"],"rank":null},{"club":"능동","div":"은","players":["김윤목","오창수","오정윤","이성희","하병호","김재금","박진특"],"rank":3},{"club":"모던A","div":"은","players":["나창만","박병국","서교수","유병준","임민택","정민기"],"rank":1},{"club":"모던B","div":"은","players":["강병수","김경준","조광식","김윤환","황성록"],"rank":2},{"club":"테사모","div":"은","players":["하태명","장일권","정연석","박재홍","엄창언","김영렬","김인석"],"rank":null},{"club":"하모니A","div":"동","players":["윤장호","장홍일","고경덕","조찬걸","전진규","노경수","양수석"],"rank":1},{"club":"하모니B","div":"동","players":["김치도","이완병","배병철","이형원","윤수일","김경수","홍성환"],"rank":3},{"club":"하모니C","div":"동","players":["홍종호","이재아","하종식","김광수","장순애","홍영주","도경식"],"rank":null},{"club":"능동A","div":"동","players":["이상구","박용오","허주철","정창수","권오준","최성호","이말수"],"rank":2},{"club":"능동B","div":"동","players":["최경환","오정석","오원근","여진호","허형선","박민수","차진숙"],"rank":null},{"club":"능동C","div":"동","players":["김종일","김지범","이재환","곽영란","백수영","최양호"],"rank":null},{"club":"모던","div":"동","players":["김경재","김성재","김경탁","이주찬","최승환","최진영"],"rank":3},{"club":"테사모","div":"동","players":["조성호","강윤국","정성한","김용찬","정현주","강재이","송윤정"],"rank":null},{"club":"불사조","div":"동","players":["김석용","서정호","구영록","오경실","이수연","김경화","김정화","양진석"],"rank":null},{"club":"하모니A","div":"테린이","players":["강준호","김진우","이진혁","정순권","이은정","임다정","강배진"],"rank":2},{"club":"하모니B","div":"테린이","players":["이동헌","신진기","여어진","이지아","황수진","이종희","유수완"],"rank":null},{"club":"능동A","div":"테린이","players":["정교진","구수한","강동기","임재훈","이건혁","전수진"],"rank":3},{"club":"능동B","div":"테린이","players":["정해경","강태옹","정지한","박인자","장혜경","이서희"],"rank":3},{"club":"모던","div":"테린이","players":["김도리","김택헌","박철영","부신영","이종화","차한성"],"rank":null},{"club":"불사조","div":"테린이","players":["최상철","김종호","공우택","조영태","김헌경","허정은","옥성윤","김승태"],"rank":1}]},{"id":"t_hist_15","name":"제15회 장유연합회장배 테니스대회","date":"2024-11-10","year":2024,"seq":15,"season":"추계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"능동A","div":"금","players":["강해근","손봉룔","홍명철","신수빈","홍경산","정현식"],"rank":2},{"club":"등동B","div":"금","players":["조덕현","이상구","이창민","박명환","최진우","배기효"],"rank":null},{"club":"모던","div":"금","players":["이상영","강대영","여찬윤","안증호","이규용","박준열","김호진","최인규"],"rank":1},{"club":"하모니A","div":"금","players":["이지현","박재우","안인출","이외종","문성균","김일중"],"rank":3},{"club":"하모니B","div":"금","players":["황동현","제해근","박흥수","전용규","백정렬","서종완"],"rank":3},{"club":"하모니C","div":"금","players":["국동구","안응수","장재천","박철완","손범규","조민철","양우홍"],"rank":null},{"club":"테사모","div":"금","players":["배인공","신만생","박종성","차해윤","김선화","신석","임성태"],"rank":null},{"club":"모던A","div":"은","players":["유병준","원동빈","박병국","서교수","이종호","김성대"],"rank":3},{"club":"모던B","div":"은","players":["이경우","김성준","장혜성","강기홍","김성민","김병모"],"rank":1},{"club":"모던C","div":"은","players":["김정화","감해상","남철현","김윤환","임민택","김경준"],"rank":2},{"club":"능동A","div":"은","players":["오창수","박기영","정창수","정종철","김윤묵","이성희","차진숙"],"rank":null},{"club":"능동B","div":"은","players":["허주철","박진득","김성희","오정윤","이상곤","최성호","김재금"],"rank":3},{"club":"테사모A","div":"은","players":["정연석","하태명","오태섭","강호상","박유도","이정렬","윤성구"],"rank":null},{"club":"테사모B","div":"은","players":["장일권","조정민","노동진","김인석","엄창언","이순보","정금숙"],"rank":null},{"club":"모던","div":"동","players":["강병수","최현준","조광식","남덕현","정민기","이도"],"rank":1},{"club":"능동","div":"동","players":["정미경","장현숙","박민수","이성대","최경환","공대환","김규언"],"rank":null},{"club":"하모니A","div":"동","players":["이국원","이용수","조찬걸","민영규","배병철","윤수일"],"rank":2},{"club":"하모니B","div":"동","players":["김찬순","노경수","하종식","김경수","강인주","황인범"],"rank":3},{"club":"하모니C","div":"동","players":["강명옥","장순애","임다정","여어진","조용현","이은정","김상옥"],"rank":null},{"club":"테사모","div":"동","players":["김용찬","정성한","송윤정","박진규","정현주","강재이"],"rank":null},{"club":"불사조","div":"동","players":["김동현","손지훈","김석용","이호철","서정호","오경실","구영록","김경화"],"rank":3},{"club":"모던A","div":"테린이","players":["최승환","최진영","이주찬","김경재","부신영","김성재"],"rank":2},{"club":"모던B","div":"테린이","players":["이종화","황유진","차한성","안이타","김택현","이영옥"],"rank":null},{"club":"능동","div":"테린이","players":["여진호","박경주","김종일","정교진","고경빈","이재환","김지범","임정희"],"rank":3},{"club":"불사조","div":"테린이","players":["박지동","공우택","김종호","최상철","옥성윤","김현경","류병혁","양진석"],"rank":1}]},{"id":"t_hist_14","name":"제14회 장유연합회 클럽대항전","date":"2024-05-12","year":2024,"seq":14,"season":"춘계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"테사모","div":"금","players":["이두목","신만생","박종성","배인공","신석","임성태","곽현진","이상곤"],"rank":3},{"club":"테사모","div":"은","players":["하태명","이정렬","김인석","오태섭","정연석","엄창언","조정민","이준석"],"rank":3},{"club":"테사모","div":"동","players":["장일권","김영렬","박재홍","노동진","김용찬","정성한","정금숙","송윤정"],"rank":null},{"club":"테사모","div":"테린이","players":["조성호"],"rank":null},{"club":"테사모","div":"테린이","players":["정교진","이언주","윤혜진"],"rank":null},{"club":"하모니","div":"금","players":["제해근","문성균","박재우","이명호","이외종","이지현","김일중"],"rank":1},{"club":"하모니","div":"은","players":["국동구","손범규","신창륜","장재천","정남현","박철완"],"rank":1},{"club":"하모니","div":"동","players":["김찬순","노경수","서영완","양우홍","윤수일","조용현","황인범"],"rank":3},{"club":"하모니","div":"동","players":["강인주","김광수","김예","남미경","손덕상","이형원","조성수"],"rank":null},{"club":"하모니","div":"테린이","players":["민성규"],"rank":null},{"club":"하모니","div":"테린이","players":["서은혜","여어진","이은정","임다정","황수진"],"rank":null},{"club":"모던","div":"금","players":["강대영","박준렬","이규용","이상영","박영복","여찬윤","안증호"],"rank":null},{"club":"모던","div":"은","players":["유병준","원동빈","김정화","나창만","박성진","남철현"],"rank":3},{"club":"모던","div":"은","players":["박병국","이경우","이종호","김경준","임민택","김윤환"],"rank":2},{"club":"모던","div":"동","players":["이도","박병철","최승환","이주찬","심재갑","강병수","최현준"],"rank":3},{"club":"모던","div":"동","players":["최현석","장혜성","강기홍","강병모","김성준","김성민","김성대","조광식","김현수","김도리"],"rank":1},{"club":"모던","div":"테린이","players":["김경재","이종화"],"rank":null},{"club":"불사조","div":"동","players":["이호철","구영록","오경실","김동현","서정호","김석용","김경화","김혁진"],"rank":null},{"club":"불사조","div":"테린이","players":["구수한","공우택","박지동"],"rank":null},{"club":"능동","div":"금","players":["이상구","조덕현","이창민","박명환","배기효","박기영"],"rank":null},{"club":"능동","div":"금","players":["손봉룡","강해근","최진우","홍명철","신수빈","홍경산"],"rank":2},{"club":"능동","div":"은","players":["이영기","오정윤","이성희","권오준","정보암","허주철"],"rank":null},{"club":"능동","div":"은","players":["김재금","박상록","하병호","김성희","김윤묵","이재석"],"rank":null},{"club":"능동","div":"동","players":["이상곤","정종철","김교중","박진득","허형선","이성대"],"rank":2},{"club":"능동","div":"동","players":["장현숙","최경환","최양호","박민수","정종연","오정석","백수영"],"rank":null},{"club":"능동","div":"테린이","players":["김종일","박동건","여진호"],"rank":null},{"club":"능동","div":"테린이","players":["임정희","황경미"],"rank":null}]}]; // 장유 과거 대회 데이터
@@ -1533,9 +1533,18 @@ async function saveET(){
     // Storage 업로드 flush 먼저
     await flushGuideUploads(CE_tid, 'edit');
     const assets=GUIDE_FILES_EDIT||[];
-    await updateDoc(doc(db,'tournaments',CE_tid),{name:nm,date:ge('etDt').value,venue:ge('etVn').value.trim(),deadline:ge('etDl').value,status:ge('etSt').value,divisions:newD,divSettings:ds,notice:ge('etNt').value.trim(),guideText:ge('etGuideText')?.value.trim()||'',guideUrl:ge('etGuideUrl')?.value.trim()||'',hasGuideAssets:assets.length>0});
-    if(assets.length>0) await setDoc(doc(db,'tourGuides',CE_tid),{assets,updatedAt:serverTimestamp()});
-    await fbLog('대회 편집: '+nm,'✏️');sl(false);cm('mET');toast('저장 완료','success');
+    const guideText=ge('etGuideText')?.value.trim()||'';
+    const guideUrl=ge('etGuideUrl')?.value.trim()||'';
+    const hasGuideAssets=assets.length>0;
+    const notice=ge('etNt').value.trim();
+    const venue=ge('etVn').value.trim();
+    const updFields={name:nm,date:ge('etDt').value,venue,deadline:ge('etDl').value,status:ge('etSt').value,divisions:newD,divSettings:ds,notice,guideText,guideUrl,hasGuideAssets};
+    await updateDoc(doc(db,'tournaments',CE_tid),updFields);
+    if(hasGuideAssets) await setDoc(doc(db,'tourGuides',CE_tid),{assets,updatedAt:serverTimestamp()});
+    // ✅ 메모리 캐시 즉시 갱신 (onSnapshot 대기 없이 바로 반영)
+    const _ti=G.tournaments.findIndex(x=>x.id===CE_tid);
+    if(_ti>=0) Object.assign(G.tournaments[_ti],updFields);
+    await fbLog('대회 편집: '+nm,'✏️');sl(false);cm('mET');renderTL();toast('저장 완료 ✅','success');
   }catch(e){sl(false);toast('저장 실패: '+e.message,'error');}
 }
 
@@ -4300,22 +4309,23 @@ async function onGuideFilesSelected(input, mode){
   input.value='';
 }
 
-// 대회 저장 시 pending 파일들을 Storage에 업로드하고 URL 반환
+// 대회 저장 시 pending 파일들을 Firestore에 base64로 직접 저장
 async function flushGuideUploads(tid, mode){
   const pending = mode==='edit' ? GUIDE_FILES_EDIT_PENDING : GUIDE_FILES_CREATE_PENDING;
   if(!pending.length) return;
   const arr = _pickGuideStore(mode);
   for(const file of pending){
     try{
-      const fileRef = ref(storage, `guides/${tid}/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
-      // arr 안의 pending 항목을 Storage URL로 교체
+      // base64 변환 (이미지는 압축)
+      let dataUrl = await readFileAsDataUrl(file);
+      if(file.type.startsWith('image/') && dataUrl.length > 300_000){
+        dataUrl = await compressImageDataUrl(dataUrl, 1200, 0.78);
+      }
+      // _pending 항목을 base64 dataUrl로 교체
       const idx = arr.findIndex(a=>a._pending && a.name===file.name);
-      if(idx>=0){ arr[idx] = {name:file.name, type:file.type, dataUrl:url, isStorage:true}; }
-    }catch(e){ toast(`업로드 실패: ${file.name}`,'error'); }
+      if(idx>=0){ arr[idx] = {name:file.name, type:file.type||'application/octet-stream', dataUrl}; }
+    }catch(e){ toast(`파일 처리 실패: ${file.name}`,'error'); }
   }
-  // pending 비우기
   if(mode==='edit') GUIDE_FILES_EDIT_PENDING.length=0;
   else GUIDE_FILES_CREATE_PENDING.length=0;
   _setGuideStore(mode, arr);
@@ -4371,7 +4381,7 @@ function openGuide(tid){
   ge('mGuideB').innerHTML='<div style="text-align:center;padding:20px;color:var(--text3)">불러오는 중...</div>';
   om('mGuide');
 
-  // 과거대회: tourGuides 컬렉션 우선 → Storage 폴더 fallback
+  // tourGuides 컬렉션에서 파일 assets 조회 (Firestore base64 직접 저장 방식)
   const isHist = typeof HIST_DATA!=='undefined' && HIST_DATA.some(t=>t.id===tid);
   const ht = isHist ? HIST_DATA.find(t=>t.id===tid) : null;
   const liveT = G.tournaments.find(x=>x.id===tid);
@@ -4380,71 +4390,24 @@ function openGuide(tid){
   const text  = liveT?.guideText || '';
   const url   = liveT?.guideUrl  || '';
 
-  // tourGuides 컬렉션 먼저 조회
   getDoc(doc(db,'tourGuides',tid)).then(snap=>{
     const assets = snap.exists() ? (snap.data().assets||[]) : (liveT?.guideAssets||[]);
-    if(!text && !url && (!assets||!assets.length)){
-      // Storage 폴더 확인 (guides/{tid}/)
-      return loadGuideFromStorage(tid).then(storageAssets=>{
-        if(!storageAssets.length && !text && !url){
-          ge('mGuideB').innerHTML='<div style="text-align:center;padding:20px;color:var(--text3)">등록된 요강이 없습니다</div>';
-        } else {
-          ge('mGuideB').innerHTML=buildGuideHTML(title,text,url,storageAssets);
-        }
-      });
+    if(!text && !url && !assets.length){
+      ge('mGuideB').innerHTML='<div style="text-align:center;padding:20px;color:var(--text3)">등록된 요강이 없습니다</div>';
+      return;
     }
     ge('mGuideB').innerHTML=buildGuideHTML(title,text,url,assets);
   }).catch(()=>{
-    loadGuideFromStorage(tid).then(storageAssets=>{
-      const assets=liveT?.guideAssets||[];
-      const merged=[...storageAssets,...assets];
-      if(!text && !url && !merged.length){ ge('mGuideB').innerHTML='<div style="text-align:center;padding:20px;color:var(--text3)">등록된 요강이 없습니다</div>'; return; }
-      ge('mGuideB').innerHTML=buildGuideHTML(title,text,url,merged);
-    });
+    const assets = liveT?.guideAssets||[];
+    if(!text && !url && !assets.length){ ge('mGuideB').innerHTML='<div style="text-align:center;padding:20px;color:var(--text3)">등록된 요강이 없습니다</div>'; return; }
+    ge('mGuideB').innerHTML=buildGuideHTML(title,text,url,assets);
   });
 }
 
-// Firebase Storage에서 guides/{tid}/ 폴더의 파일 목록+URL 가져오기
-async function loadGuideFromStorage(tid){
-  try{
-    const folderRef = ref(storage, `guides/${tid}`);
-    const res = await listAll(folderRef);
-    const assets = await Promise.all(res.items.map(async itemRef=>{
-      const url = await getDownloadURL(itemRef);
-      const name = itemRef.name;
-      const ext = name.split('.').pop().toLowerCase();
-      const type = ext==='pdf'?'application/pdf':(ext==='png'?'image/png':'image/jpeg');
-      return {name, type, dataUrl:url, isStorage:true};
-    }));
-    return assets.sort((a,b)=>a.name.localeCompare(b.name));
-  }catch(e){ return []; }
-}
-
-// 요강 파일 업로드 (Storage)
-async function uploadGuideFiles(tid, files){
-  if(!files||!files.length) return [];
-  const uploaded=[];
-  for(const file of files){
-    try{
-      const fileRef = ref(storage, `guides/${tid}/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
-      uploaded.push({name:file.name, type:file.type, dataUrl:url, isStorage:true});
-      toast(`📎 ${file.name} 업로드 완료`,'success');
-    }catch(e){ toast(`업로드 실패: ${file.name}`,'error'); }
-  }
-  return uploaded;
-}
-
-// 요강 삭제 (Storage)
-async function deleteGuideFile(tid, fileName){
-  try{
-    const folderRef = ref(storage, `guides/${tid}`);
-    const res = await listAll(folderRef);
-    const target = res.items.find(it=>it.name===fileName || it.name.endsWith('_'+fileName));
-    if(target) await deleteObject(target);
-  }catch(e){}
-}
+// Storage 미사용 - 빈 함수 (하위 호환)
+async function loadGuideFromStorage(tid){ return []; }
+async function uploadGuideFiles(tid, files){ return []; }
+async function deleteGuideFile(tid, fileName){}
 // ─── 개별 경기 코트 배정 모달 (복수 선택) ──────────────────────────────
 let MC_MODAL = { key:null, mid:null };
 
@@ -4839,82 +4802,79 @@ async function uploadHistGuideFiles(){
 
   sl(true);
   let ok=0, fail=0;
-  for(const file of files){
-    try{
-      const fileName = `${Date.now()}_${file.name}`;
-      const fileRef = ref(storage, `guides/${tid}/${fileName}`);
-      await uploadBytes(fileRef, file);
-      ok++;
-      toast(`✅ ${file.name} 업로드 완료`,'success');
-    }catch(e){
-      fail++;
-      toast(`❌ ${file.name} 실패: ${e.message}`,'error');
+  const newAssets=[];
+  (async()=>{
+    for(const file of files){
+      try{
+        let dataUrl = await readFileAsDataUrl(file);
+        if(file.type.startsWith('image/') && dataUrl.length > 300000){
+          dataUrl = await compressImageDataUrl(dataUrl, 1200, 0.78);
+        }
+        newAssets.push({name:file.name, type:file.type||'application/octet-stream', dataUrl});
+        ok++;
+      }catch(e){ fail++; toast('파일 처리 실패: '+file.name,'error'); }
     }
-  }
-  sl(false);
-  window.HIST_GUIDE_PENDING=[];
-  renderHistGuidePending();
-  ge('histGuideFileInput').value='';
-  toast(`업로드 완료: ${ok}개 성공${fail?', '+fail+'개 실패':''}`,'success');
-
-  // tourGuides 컬렉션 hasGuideAssets 플래그 업데이트 (과거 대회 요강 표시용)
-  // hist_XX는 Firestore tournaments 문서가 없으므로 별도 처리
-  try{
-    await setDoc(doc(db,'tourGuides',tid),{hasGuideAssets:true,updatedAt:serverTimestamp()},{merge:true});
-  }catch(e){}
+    if(newAssets.length){
+      try{
+        const snap = await getDoc(doc(db,'tourGuides',tid));
+        const existing = snap.exists() ? (snap.data().assets||[]) : [];
+        await setDoc(doc(db,'tourGuides',tid),{assets:[...existing,...newAssets],hasGuideAssets:true,updatedAt:serverTimestamp()},{merge:true});
+      }catch(e){ toast('Firestore 저장 실패: '+e.message,'error'); }
+    }
+    sl(false);
+    window.HIST_GUIDE_PENDING=[];
+    renderHistGuidePending();
+    ge('histGuideFileInput').value='';
+    toast(`저장 완료: ${ok}개 성공${fail?', '+fail+'개 실패':''}`,'success');
+  })();
 }
 
 // ─── 업로드 현황 모달 ────────────────────────────────────────────
 async function manageHistGuide(){
   const tid = ge('histGuideUploadBar')?.dataset?.tid || ge('rankTS').value;
   if(!tid){ toast('대회를 먼저 선택하세요','error'); return; }
-
   ensureHistGuideModal();
   const t = [...G.tournaments,...HIST_DATA].find(t=>t.id===tid);
-  ge('mHGT').textContent = `📂 요강 파일 관리 — ${t?.name||tid}`;
+  ge('mHGT').textContent = '📂 요강 파일 관리 \u2014 '+(t?.name||tid);
   ge('mHGB').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">로딩 중...</div>';
   om('mHGModal');
-
   try{
-    const folderRef = ref(storage, `guides/${tid}`);
-    const res = await listAll(folderRef);
-    if(!res.items.length){
+    const snap = await getDoc(doc(db,'tourGuides',tid));
+    const items = snap.exists() ? (snap.data().assets||[]) : [];
+    if(!items.length){
       ge('mHGB').innerHTML='<div style="text-align:center;padding:24px;color:var(--text3)">업로드된 요강 파일이 없습니다</div>';
       return;
     }
-    const items = await Promise.all(res.items.map(async item=>{
-      const url = await getDownloadURL(item);
-      return {name:item.name, url, ref:item};
-    }));
-    ge('mHGB').innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">` +
-      items.map((item,i)=>`
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:white">
-          ${item.name.match(/\.(png|jpg|jpeg|gif|webp)$/i)
-            ? `<img src="${item.url}" style="width:60px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">`
-            : `<div style="width:60px;height:44px;background:var(--bg2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.4rem">📄</div>`}
-          <div style="flex:1;min-width:0">
-            <div style="font-size:.78rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.name.replace(/^\d+_/,'')}</div>
-            <a href="${item.url}" target="_blank" style="font-size:.68rem;color:var(--primary)">🔗 미리보기</a>
-          </div>
-          <button class="btn btn-danger" style="font-size:.72rem;padding:4px 10px;white-space:nowrap" onclick="deleteHistGuideFile('${tid}','${item.name}',this)">🗑️ 삭제</button>
-        </div>`).join('') +
-      `</div>`;
+    const rows = items.map((item,i)=>{
+      const isImg = item.type?.startsWith('image/');
+      const thumb = isImg
+        ? `<img src="${item.dataUrl}" style="width:60px;height:44px;object-fit:cover;border-radius:6px">`
+        : `<div style="width:60px;height:44px;background:var(--bg2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.4rem">📄</div>`;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:white">`
+        + thumb
+        + `<div style="flex:1;min-width:0"><div style="font-size:.78rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.name}</div></div>`
+        + `<button class="btn btn-danger" style="font-size:.72rem;padding:4px 10px;white-space:nowrap" data-tid="${tid}" data-idx="${i}" onclick="deleteHistGuideFile(this.dataset.tid,+this.dataset.idx,this)">🗑\ufe0f 삭제</button>`
+        + `</div>`;
+    }).join('');
+    ge('mHGB').innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">${rows}</div>`;
   }catch(e){
     ge('mHGB').innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)">불러오기 실패: ${e.message}</div>`;
   }
 }
 
-async function deleteHistGuideFile(tid, fileName, btn){
-  if(!confirm(`"${fileName.replace(/^\d+_/,'')}" 을(를) 삭제하시겠습니까?`)) return;
+async function deleteHistGuideFile(tid, idx, btn){
+  if(!confirm('이 파일을 삭제하시겠습니까?')) return;
   try{
     btn.disabled=true; btn.textContent='삭제 중...';
-    const fileRef = ref(storage, `guides/${tid}/${fileName}`);
-    await deleteObject(fileRef);
+    const snap = await getDoc(doc(db,'tourGuides',tid));
+    if(!snap.exists()) return;
+    const assets = snap.data().assets||[];
+    assets.splice(idx, 1);
+    await setDoc(doc(db,'tourGuides',tid),{assets,hasGuideAssets:assets.length>0,updatedAt:serverTimestamp()},{merge:true});
     toast('삭제 완료','success');
-    manageHistGuide(); // 새로고침
-  }catch(e){ toast('삭제 실패: '+e.message,'error'); btn.disabled=false; btn.textContent='🗑️ 삭제'; }
+    manageHistGuide();
+  }catch(e){ toast('삭제 실패: '+e.message,'error'); btn.disabled=false; btn.textContent='🗑\ufe0f 삭제'; }
 }
-
 function ensureHistGuideModal(){
   if(ge('mHGModal')) return;
   const wrap=document.createElement('div');
@@ -4935,13 +4895,7 @@ function ensureHistGuideModal(){
   wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.classList.remove('open'); });
 }
 
-// Storage 함수들을 window에 노출 (모듈 스코프 → 전역 접근용)
-window._storage = storage;
-window._storageRef = ref;
-window._uploadBytes = uploadBytes;
-window._getDownloadURL = getDownloadURL;
-window._listAll = listAll;
-window._deleteObject = deleteObject;
+// Storage 미사용
 
 
 // ──────────────────────────────────────────────────────────────
@@ -5482,7 +5436,7 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   mdSelectAll,
   mdUpdateCount});
 
-document.addEventListener('DOMContentLoaded',()=>initFB());
+initFB();
 </script>
 
 <script>
