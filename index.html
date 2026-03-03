@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "2026-03-02-01";
+  const APP_VERSION = "2026-03-03-01";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -751,6 +751,37 @@ body{overflow-x:hidden;}
     </div>
   </div>
 
+
+  <div class="form-group" style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px">
+    <div style="font-weight:700;font-size:.88rem;margin-bottom:10px;color:var(--primary-dark)">🧹 특정 경기 결과 삭제</div>
+    <div style="font-size:.72rem;color:var(--text3);line-height:1.5;margin-bottom:10px">
+      • 체크된 경기의 <b>winner/rubbers</b>만 초기화합니다. (대진 구조 유지)<br>
+      • 선수 승/패는 자동 롤백됩니다. (테스트 입력 정리용)
+    </div>
+    <div class="frow">
+      <div class="form-group"><label class="form-label">대회</label>
+        <select class="form-select" id="mdDelTS" onchange="onMatchDeleteTournamentChanged()"><option value="">-- 대회 선택 --</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">부서</label>
+        <select class="form-select" id="mdDelDS" onchange="loadMatchDeleteList()"><option value="">-- 부서 선택 --</option></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 8px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.78rem;color:var(--text2)">
+        <input type="checkbox" id="mdDelOnlyDone" checked onchange="loadMatchDeleteList()">
+        완료된 경기만 보기
+      </label>
+      <button class="btn btn-outline" style="font-size:.72rem;padding:4px 10px" onclick="mdSelectAll(true)">전체 선택</button>
+      <button class="btn btn-outline" style="font-size:.72rem;padding:4px 10px" onclick="mdSelectAll(false)">전체 해제</button>
+      <div style="flex:1"></div>
+      <span id="mdDelCount" class="badge bg-green" style="font-size:.72rem">0개 선택</span>
+    </div>
+    <div id="mdDelList" style="max-height:220px;overflow:auto;border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--panel2)"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px">
+      <button class="btn btn-danger" onclick="deleteSelectedMatches()">선택 경기 결과 삭제</button>
+    </div>
+  </div>
+
 <div style="font-weight:700;font-size:.88rem;margin-bottom:10px;color:var(--primary-dark)">🔐 관리자 비밀번호 변경</div>
     <div class="form-group"><label class="form-label">현재 비밀번호</label><input class="form-input" type="password" id="aspCur" placeholder="현재 비밀번호"></div>
     <div class="frow">
@@ -1095,6 +1126,16 @@ function baseClub(club){
   if(m && /[가-힣]/.test(m[1]) && m[1].trim().length>=2) return m[1].trim();
   return club;
 }
+// 클럽 팀 구분자 추출: "모던A" → "A", "UP A" → "A"
+function clubTeamSuffix(club){
+  club = (club||'').trim();
+  if(!club) return '';
+  let m = club.match(/\s+([A-D])$/);
+  if(m) return m[1];
+  m = club.match(/([A-D])$/);
+  if(m && /[가-힣]/.test(club.slice(0,-1))) return m[1];
+  return '';
+}
 function pKeyParse(key){ const i=(key||'').lastIndexOf('__'); return i>0?{name:key.slice(0,i),club:key.slice(i+2)}:{name:key,club:''}; }
 async function stP(k){try{const pk=pKeyParse(k);await setDoc(doc(db,'players',k.replace(/[\/\.#\$\[\]]/g,'_')),{...G.players[k],key:k,name:pk.name,club:pk.club||''});}catch(e){}}
 async function fbLog(t,i='📌'){try{await addDoc(collection(db,'activityLog'),{text:t,icon:i,time:new Date().toISOString()});}catch(e){}}
@@ -1181,6 +1222,7 @@ function openAdminSettings(){
   fillAdminPlayerClub();
   ge('apName') && (ge('apName').value='');
   if(ge('adminPhoneInput')) ge('adminPhoneInput').value = _adminPhone();
+  populateMatchDeleteSelectors();
   om('mAdminSettings');
 }
 
@@ -2518,6 +2560,15 @@ function openMainDraw(tid,div){
 //     match4: E vs F  ← 2위팀끼리
 // 단계: ①부전승팀 추첨 → ②일반매치 1위 자리 배정 → ③2위팀 상대/자리 배정
 // ─────────────────────────────────────────────────────────
+function pickSpacedByeIdxs(matchCount, byeCount){
+  // 부전승 매치가 서로 바로 붙지 않도록 최대한 띄워서 선택
+  const ev=[], od=[];
+  for(let i=0;i<matchCount;i++){ (i%2===0?ev:od).push(i); }
+  shuffle(ev); shuffle(od);
+  const order = ev.concat(od); // 짝수→홀수 (인접 최소화)
+  return order.slice(0, Math.min(byeCount, matchCount));
+}
+
 async function startMainDraw(){
   if(MD.isRunning)return;
   MD.isRunning=true;
@@ -2535,12 +2586,13 @@ async function startMainDraw(){
   // 매치 인덱스 풀 (섞기)
   const allIdxs=shuffle([...Array(matchCount).keys()]);
 
-  // 부전승 매치 인덱스
-  const byeIdxs=allIdxs.slice(0,byeCount);
-  // 일반 매치 인덱스
-  const normalIdxs=allIdxs.slice(byeCount);
+  // 부전승 매치 인덱스: 최대한 띄워서 배정
+  const byeIdxs = pickSpacedByeIdxs(matchCount, byeCount);
 
-  // 1위팀 셔플
+  // 일반 매치 인덱스
+  const byeSet = new Set(byeIdxs);
+  const normalIdxs = allIdxs.filter(i=>!byeSet.has(i));
+// 1위팀 셔플
   const rank1Pool=shuffle([...rank1]);
   // 2위팀 셔플
   const rank2Pool=shuffle([...rank2]);
@@ -3591,7 +3643,7 @@ function buildPH(name,p){
           <div class="hist-yr">${h.date.substring(0,4)}</div>
           <div class="hist-detail">
             <div style="font-weight:600;font-size:.82rem">${h.tname}${srcBadge}</div>
-            <div style="font-size:.7rem;color:var(--text2);margin-top:1px">${h.club} · <span class="dpill ${dc(h.div)}" style="font-size:.58rem;padding:1px 4px">${dl(h.div)}</span></div>
+            <div style="font-size:.7rem;color:var(--text2);margin-top:1px">${(h.baseClub||baseClub(h.club))}${clubTeamSuffix(h.club)?` <span class="badge bg-blue" style="font-size:.62rem;padding:1px 6px">팀 ${clubTeamSuffix(h.club)}</span>`:''} · <span class="dpill ${dc(h.div)}" style="font-size:.58rem;padding:1px 4px">${dl(h.div)}</span></div>
           </div>
           <div><span class="badge ${badgeCls}" style="white-space:nowrap;font-size:.72rem">${rankStr}</span></div>
         </div>`;
@@ -3701,7 +3753,7 @@ function renderAllP(){
       if((tm.players||[]).some(pn=>pn===name)&&(!keyClub||tm.club===keyClub))histRecs.push({club:tm.club,div:tm.div,rank:tm.rank});
     }));
     const allClubs=[...new Set([...p.clubs,...(keyClub?[keyClub]:[]),...histRecs.map(r=>r.club)])];
-    const lc=keyClub||allClubs.slice(-1)[0]||'-';
+    const lc=baseClub(keyClub||allClubs.slice(-1)[0]||'-');
     const cnt=(p.history||[]).length+histRecs.length;
     const dCnt={'금':0,'은':0,'동':0,'테린이':0};
     (p.history||[]).forEach(h=>{if(dCnt[h.div]!==undefined)dCnt[h.div]++;});
@@ -5160,6 +5212,248 @@ async function uploadHistFromExcel(){
 }
 
 
+
+// ═══════════════════════════════════════════════════════
+// 🧹 특정 경기 결과(선택) 삭제 — winner/rubbers만 초기화 (대진 유지)
+//  - 관리자 설정에서 대회/부서 선택 → 완료 경기 체크 → 선택 삭제
+//  - 선수 승/패 자동 롤백 + 본선 진행 자동 재구성(남은 결과 기준)
+// ═══════════════════════════════════════════════════════
+function populateMatchDeleteSelectors(){
+  const ts = ge('mdDelTS');
+  const ds = ge('mdDelDS');
+  const box = ge('mdDelList');
+  const cnt = ge('mdDelCount');
+  if(!ts || !ds || !box) return;
+
+  // 대회 목록(실시간 대회만) 채우기
+  const curT = ts.value;
+  ts.innerHTML = '<option value="">-- 대회 선택 --</option>' +
+    (G.tournaments||[]).map(t=>`<option value="${t.id}">${t.name} (${t.date})</option>`).join('');
+  if(curT && [...ts.options].some(o=>o.value===curT)) ts.value = curT;
+
+  // 부서 초기화
+  ds.innerHTML = '<option value="">-- 부서 선택 --</option>';
+  box.innerHTML = '<div style="color:var(--text3);font-size:.75rem">대회와 부서를 선택하세요</div>';
+  if(cnt) cnt.textContent = '0개 선택';
+}
+
+function onMatchDeleteTournamentChanged(){
+  const tid = ge('mdDelTS')?.value;
+  const ds  = ge('mdDelDS');
+  const box = ge('mdDelList');
+  const cnt = ge('mdDelCount');
+  if(!ds || !box) return;
+
+  ds.innerHTML = '<option value="">-- 부서 선택 --</option>';
+  if(!tid){
+    box.innerHTML = '<div style="color:var(--text3);font-size:.75rem">대회와 부서를 선택하세요</div>';
+    if(cnt) cnt.textContent='0개 선택';
+    return;
+  }
+  const t = (G.tournaments||[]).find(x=>x.id===tid);
+  if(!t){
+    box.innerHTML = '<div style="color:var(--text3);font-size:.75rem">대회 정보를 찾을 수 없습니다</div>';
+    if(cnt) cnt.textContent='0개 선택';
+    return;
+  }
+  ds.innerHTML = '<option value="">-- 부서 선택 --</option>' +
+    (t.divisions||[]).map(d=>`<option value="${d}">${dl(d)}</option>`).join('');
+  if((t.divisions||[]).length===1){
+    ds.value = t.divisions[0];
+    loadMatchDeleteList();
+  } else {
+    box.innerHTML = '<div style="color:var(--text3);font-size:.75rem">부서를 선택하세요</div>';
+    if(cnt) cnt.textContent='0개 선택';
+  }
+}
+
+function _mdGetKey(){
+  const tid = ge('mdDelTS')?.value || '';
+  const div = ge('mdDelDS')?.value || '';
+  if(!tid || !div) return '';
+  return tid + '_' + div;
+}
+
+function mdSelectAll(on){
+  const box = ge('mdDelList');
+  if(!box) return;
+  [...box.querySelectorAll('input[type="checkbox"].mdDelCb')].forEach(cb=>cb.checked=!!on);
+  mdUpdateCount();
+}
+
+function mdUpdateCount(){
+  const box = ge('mdDelList');
+  const cnt = ge('mdDelCount');
+  if(!box || !cnt) return;
+  const n = [...box.querySelectorAll('input[type="checkbox"].mdDelCb:checked')].length;
+  cnt.textContent = `${n}개 선택`;
+}
+
+function loadMatchDeleteList(){
+  const key = _mdGetKey();
+  const box = ge('mdDelList');
+  if(!box) return;
+  box.innerHTML = '';
+  mdUpdateCount();
+
+  if(!key){
+    box.innerHTML = '<div style="color:var(--text3);font-size:.75rem">대회와 부서를 선택하세요</div>';
+    return;
+  }
+
+  const onlyDone = !!ge('mdDelOnlyDone')?.checked;
+  const list = (G.matches[key]||[])
+    .filter(m => m && m.phase && m.id)
+    .filter(m => onlyDone ? (m.winner!=null || m.bye===true) : true)
+    .sort((a,b)=>{
+      // group 먼저, 그 다음 main / 라운드/슬롯
+      const pa = a.phase==='group'?0:1;
+      const pb = b.phase==='group'?0:1;
+      if(pa!==pb) return pa-pb;
+      if(a.phase==='group') return (a.group??0)-(b.group??0) || (a.id||'').localeCompare(b.id||'');
+      return (a.round??0)-(b.round??0) || (a.slot??0)-(b.slot??0);
+    });
+
+  if(!list.length){
+    box.innerHTML = '<div style="color:var(--text3);font-size:.75rem">표시할 경기(완료)가 없습니다</div>';
+    return;
+  }
+
+  const teams = G.teams[key] || [];
+  const rows = list.map(m=>{
+    const t1 = (m.t1!=null && teams[m.t1]) ? tdn(teams[m.t1], key, m.t1) : 'TBD';
+    const t2 = (m.t2!=null && teams[m.t2]) ? tdn(teams[m.t2], key, m.t2) : 'TBD';
+    const label = m.phase==='group'
+      ? `예선 ${((m.group??0)+1)}조`
+      : `본선 ${m.round!=null?('R'+m.round):''} ${m.slot!=null?('#'+(m.slot+1)):''}`;
+    const done = (m.winner!=null || m.bye===true);
+    const badge = done ? '<span class="badge bg-green" style="font-size:.62rem">완료</span>' : '<span class="badge bg-gray" style="font-size:.62rem">대기</span>';
+    return `<label style="display:flex;gap:8px;align-items:center;padding:7px 6px;border-bottom:1px solid var(--border);cursor:pointer">
+      <input class="mdDelCb" type="checkbox" value="${m.id}" onchange="mdUpdateCount()">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.72rem;color:var(--text3);font-weight:700">${label} ${badge}</div>
+        <div style="font-size:.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t1} <span style="color:var(--text3);font-weight:800">vs</span> ${t2}</div>
+      </div>
+    </label>`;
+  }).join('');
+  box.innerHTML = `<div style="background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden">${rows}</div>`;
+  mdUpdateCount();
+}
+
+async function deleteSelectedMatches(){
+  if(!AD){ toast('관리자 로그인 필요','info'); return; }
+  const key = _mdGetKey();
+  if(!key){ toast('대회/부서를 선택하세요','error'); return; }
+
+  const box = ge('mdDelList');
+  const ids = [...(box?.querySelectorAll('input.mdDelCb:checked')||[])].map(cb=>cb.value);
+  if(!ids.length){ toast('삭제할 경기를 선택하세요','error'); return; }
+
+  if(!confirm(`선택한 ${ids.length}개의 경기 결과를 초기화할까요?\n(대진 구조는 유지됩니다)`)) return;
+
+  const list = G.matches[key] || [];
+  const teams = G.teams[key] || [];
+
+  // ① 승패 롤백 + winner/rubbers 초기화
+  for(const mid of ids){
+    const m = list.find(x=>x.id===mid);
+    if(!m) continue;
+
+    // bye는 결과가 자동이므로 초기화만
+    if(m.bye){
+      m.winner = null;
+      m.rubbers = [];
+      // bye 유지 (대진 구조 유지 목적). 원하면 수동수정에서 변경 가능.
+      continue;
+    }
+
+    const prevW = m.winner;
+    if(prevW!=null){
+      const winT = teams[prevW];
+      const loseIdx = (prevW===m.t1) ? m.t2 : m.t1;
+      const loseT = (loseIdx!=null) ? teams[loseIdx] : null;
+
+      (winT?.players||[]).forEach(n=>{
+        const pk = getPlayerKey(n, baseClub(winT?.club||''));
+        if(G.players[pk]?.wins>0) G.players[pk].wins--;
+      });
+      (loseT?.players||[]).forEach(n=>{
+        const pk = getPlayerKey(n, baseClub(loseT?.club||''));
+        if(G.players[pk]?.losses>0) G.players[pk].losses--;
+      });
+    }
+
+    // 결과 초기화
+    m.winner = null;
+    m.rubbers = [];
+  }
+
+  // ② 본선 자동 재구성: round>0는 모두 초기화 후, round0 결과/부전승만 전파
+  const mainMs = list.filter(m=>m.phase==='main');
+  if(mainMs.length){
+    // 상위 라운드 초기화
+    mainMs.filter(m=>m.round>0).forEach(m=>{
+      m.t1 = null;
+      m.t2 = null;
+      m.winner = null;
+      // bye는 상위 라운드에서는 개념상 유지하지 않음
+      m.bye = false;
+      m.rubbers = m.rubbers || [];
+    });
+
+    // round0 부전승/완료된 winner만 전파
+    const r0 = mainMs.filter(m=>m.round===0);
+    // 부전승: winner가 없으면 재설정 (기존 구조 유지)
+    r0.forEach(m=>{
+      if(m.bye && m.t1!=null){
+        // bye는 t1이 직행
+        if(m.winner==null) m.winner = m.t1;
+      }
+    });
+
+    // 전파 함수
+    const maxR = Math.max(...mainMs.map(m=>m.round||0));
+    for(let r=0;r<maxR;r++){
+      const cur = mainMs.filter(m=>m.round===r);
+      cur.forEach(m=>{
+        if(m.winner==null) return;
+        const nm = mainMs.find(x=>x.round===r+1 && x.slot===Math.floor((m.slot||0)/2));
+        if(!nm) return;
+        if(((m.slot||0)%2)===0){
+          nm.t1 = m.winner;
+        } else {
+          nm.t2 = m.winner;
+        }
+        // 상위 라운드는 winner 자동 설정하지 않음
+        nm.winner = null;
+        nm.bye = false;
+      });
+    }
+  }
+
+  // ③ 선수 저장(변경된 선수만 저장하고 싶지만, 안전하게 전체 저장)
+  sl(true);
+  try{
+    // players 저장
+    const pkeys = Object.keys(G.players||{});
+    await Promise.all(pkeys.map(k=>stP(k)));
+    // matches 저장
+    await stM(key);
+    sl(false);
+    toast('선택 경기 결과 삭제 완료 ✅','success');
+
+    loadMatchDeleteList();
+    renderBracket();
+    renderAllP();
+    await fbLog(`선택 경기 결과 삭제: ${key} (${ids.length}경기)`,'🧹');
+  }catch(e){
+    sl(false);
+    toast('삭제 실패: '+e.message,'error');
+    console.error(e);
+  }
+}
+
+
 Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, adminAddPlayer, 
   showPage,toggleAdmin,doLogin,openAdminSettings,saveAdminPassword,goBracket,onGuideFilesSelected,removeGuideFile,openGuide,loadHistFromDB,uploadHistFromExcel,renderGuidePreview,onHistGuideFilesSelected,uploadHistGuideFiles,manageHistGuide,deleteHistGuideFile,removeHistGuidePending,
   createTournament,renderTL,chgTS,delT,openET,saveET,openTD,applyRec,saveDivS,
@@ -5180,7 +5474,13 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   saveAdminPhone,
   openSupportSMS,
   sendSupportSMS,
-  copySupportText});
+  copySupportText,
+  populateMatchDeleteSelectors,
+  onMatchDeleteTournamentChanged,
+  loadMatchDeleteList,
+  deleteSelectedMatches,
+  mdSelectAll,
+  mdUpdateCount});
 
 document.addEventListener('DOMContentLoaded',()=>initFB());
 </script>
