@@ -4240,7 +4240,7 @@ function backupJSON(){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   const d=new Date().toISOString().substring(0,10);
-  a.download=`김해테니스협회_백업_${d}.json`;
+  a.download=`장유테니스연합회_백업_${d}.json`;
   a.click();
   ge('backupStatus').textContent='✅ 백업 파일 다운로드 완료!';
   toast('백업 완료 💾','success');
@@ -4298,7 +4298,7 @@ function exportPlayersCSV(){
   const blob=new Blob([BOM+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=`김해테니스협회_선수기록_${new Date().toISOString().substring(0,10)}.csv`;
+  a.download=`장유테니스연합회_선수기록_${new Date().toISOString().substring(0,10)}.csv`;
   a.click();toast('CSV 저장 완료 📄','success');
 }
 
