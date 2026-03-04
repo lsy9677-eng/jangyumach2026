@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "2026-03-04-jangyu-slot-v2-fix-select";
+  const APP_VERSION = "2026-03-04-jangyu-slot-v2-sfx-slotspin-slow";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -2482,7 +2482,10 @@ const DRAW_SPEED = 1.4;
 function dSleep(ms){ return sleep(ms * DRAW_SPEED); }
 
 // 🔊 WebAudio 효과음 (외부 파일 없이)
+// 🔊 WebAudio 효과음 (룰렛/슬롯 느낌, 외부 파일 없이)
 let __SFX_CTX = null;
+let __NOISE_BUF = null;
+
 function __sfxCtx(){
   if(__SFX_CTX) return __SFX_CTX;
   const AC = window.AudioContext || window.webkitAudioContext;
@@ -2490,6 +2493,19 @@ function __sfxCtx(){
   __SFX_CTX = new AC();
   return __SFX_CTX;
 }
+
+function __ensureNoise(){
+  const ctx = __sfxCtx();
+  if(!ctx) return null;
+  if(__NOISE_BUF) return __NOISE_BUF;
+  const len = Math.floor(ctx.sampleRate * 0.25);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for(let i=0;i<len;i++) data[i] = (Math.random()*2-1) * 0.85;
+  __NOISE_BUF = buf;
+  return buf;
+}
+
 function __beep(freq=440, ms=120, type='sine', gain=0.08){
   const ctx = __sfxCtx();
   if(!ctx) return;
@@ -2498,7 +2514,6 @@ function __beep(freq=440, ms=120, type='sine', gain=0.08){
   const g = ctx.createGain();
   o.type = type;
   o.frequency.value = freq;
-  g.gain.value = gain;
   o.connect(g); g.connect(ctx.destination);
   const t = ctx.currentTime;
   o.start(t);
@@ -2506,11 +2521,86 @@ function __beep(freq=440, ms=120, type='sine', gain=0.08){
   g.gain.exponentialRampToValueAtTime(0.0001, t + ms/1000);
   o.stop(t + ms/1000);
 }
+
+// 노이즈 "딱" (룰렛 클릭감)
+function __noiseClick({gain=0.13, ms=22, freq=2400, q=10}={}){
+  const ctx = __sfxCtx();
+  if(!ctx) return;
+  if(ctx.state === 'suspended') ctx.resume().catch(()=>{});
+  const buf = __ensureNoise();
+
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+
+  const bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = freq;
+  bp.Q.value = q;
+
+  const g = ctx.createGain();
+  const t = ctx.currentTime;
+
+  src.connect(bp); bp.connect(g); g.connect(ctx.destination);
+
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(gain, t + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + (ms/1000));
+
+  src.start(t, Math.random()*0.05);
+  src.stop(t + (ms/1000) + 0.02);
+
+  // 짧은 톤을 섞어 "틱" 강화
+  const o = ctx.createOscillator();
+  const og = ctx.createGain();
+  o.type = 'square';
+  o.frequency.value = 1200 + Math.random()*600;
+  o.connect(og); og.connect(ctx.destination);
+  og.gain.setValueAtTime(0.0001, t);
+  og.gain.exponentialRampToValueAtTime(0.04, t + 0.001);
+  og.gain.exponentialRampToValueAtTime(0.0001, t + 0.012);
+  o.start(t);
+  o.stop(t + 0.015);
+}
+
 function playSound(kind){
   // kind: 'spin' | 'reveal' | 'final'
-  if(kind==='spin'){ __beep(780, 60, 'square', 0.05); __beep(980, 60, 'square', 0.04); return; }
-  if(kind==='reveal'){ __beep(523, 120, 'triangle', 0.08); __beep(659, 140, 'triangle', 0.07); return; }
-  if(kind==='final'){ __beep(392, 160, 'sine', 0.10); __beep(523, 180, 'sine', 0.10); __beep(659, 220, 'sine', 0.10); return; }
+  if(kind==='spin'){
+    __noiseClick({gain:0.11, ms:18 + Math.random()*10, freq:2200 + Math.random()*700, q:9});
+    return;
+  }
+  if(kind==='reveal'){
+    const ctx = __sfxCtx(); if(!ctx) return;
+    if(ctx.state === 'suspended') ctx.resume().catch(()=>{});
+    const t = ctx.currentTime;
+
+    // whoosh (노이즈 + 로우패스 스윕)
+    const buf = __ensureNoise();
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const lp = ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.setValueAtTime(400, t);
+    lp.frequency.exponentialRampToValueAtTime(2800, t + 0.12);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.10, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+    src.connect(lp); lp.connect(g); g.connect(ctx.destination);
+    src.start(t, Math.random()*0.03);
+    src.stop(t + 0.18);
+
+    // ding
+    __beep(988, 90, 'sine', 0.08);
+    __beep(1319, 110, 'sine', 0.06);
+    return;
+  }
+  if(kind==='final'){
+    __beep(392, 140, 'sine', 0.09);
+    setTimeout(()=>__beep(494, 140, 'sine', 0.09), 120);
+    setTimeout(()=>__beep(587, 160, 'sine', 0.09), 240);
+    setTimeout(()=>__beep(784, 220, 'sine', 0.10), 380);
+    setTimeout(()=>__noiseClick({gain:0.09, ms:28, freq:1800, q:6}), 260);
+    setTimeout(()=>__noiseClick({gain:0.09, ms:28, freq:2100, q:6}), 330);
+    setTimeout(()=>__noiseClick({gain:0.09, ms:28, freq:2400, q:6}), 400);
+    return;
+  }
 }
 
 // 🎰 슬롯 릴(팀 이름이 굴러가다 멈추는 버전)
@@ -2589,8 +2679,77 @@ function smartShuffle(indices,teams){
   const clubs=Object.values(byClub).sort((a,b)=>b.length-a.length);
   const result=[];const maxLen=clubs[0]?.length||0;
   for(let i=0;i<maxLen;i++){for(const club of clubs){if(i<club.length)result.push(club[i]);}}
-  toast('⚠️ 같은 클럽이 너무 많아 완전 분리가 어렵습니다','info');
+  const __n=result.length||arr.length;
+  if(maxLen>Math.ceil(__n/2)) toast('⚠️ 같은 클럽이 너무 많아 완전 분리가 어렵습니다','info');
   return result;
+}
+
+
+
+// 🎰 슬롯(릴) 스핀 UI (외부 라이브러리 없이)
+async function spinSlotIn(containerEl, nameList, durationMs, caption=''){
+  return new Promise((resolve)=>{
+    try{
+      if(!containerEl){ resolve(); return; }
+      const list = (Array.isArray(nameList)&&nameList.length)? nameList : ['?'];
+      // UI
+      containerEl.innerHTML = `
+        <div style="font-size:.85rem;font-weight:700;color:var(--text3);margin-bottom:6px">${caption||'추첨 중...'}</div>
+        <div style="display:flex;align-items:center;justify-content:center">
+          <div class="draw-ball" style="font-size:.9rem;min-width:220px;max-width:92%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">?</div>
+        </div>
+        <div style="height:10px"></div>
+        <div style="font-size:.78rem;color:var(--text3);text-align:center;opacity:.9">🎰 팀명이 돌아갑니다…</div>
+      `;
+      const ball = containerEl.querySelector('.draw-ball');
+      let idx = randInt(list.length);
+      let start = performance.now();
+      let lastTick = 0;
+      let lastSfx = 0;
+
+      // 이징: 끝날수록 느려지게
+      const easeOutCubic = (x)=> 1 - Math.pow(1-x, 3);
+
+      const tick = (now)=>{
+        const elapsed = now - start;
+        const p = Math.min(1, elapsed / Math.max(200, durationMs||1200));
+        // 초반 빠르게, 후반 느리게
+        const eased = easeOutCubic(p);
+        const interval = 35 + eased * 140; // ms (35 → 175)
+        if(now - lastTick >= interval){
+          idx = (idx + 1 + randInt(3)) % list.length;
+          const txt = list[idx];
+          if(ball) ball.textContent = txt;
+
+          // 스핀 사운드(과도한 연타 방지)
+          if(now - lastSfx >= 65){
+            playSound('spin');
+            lastSfx = now;
+          }
+          lastTick = now;
+        }
+        if(p < 1){
+          requestAnimationFrame(tick);
+        }else{
+          // 마지막 2~3번 '딸깍' 느낌으로 더 느리게
+          let extra = 3;
+          const slowClicks = ()=>{
+            if(extra<=0){ resolve(); return; }
+            idx = (idx + 1) % list.length;
+            if(ball) ball.textContent = list[idx];
+            playSound('spin');
+            extra--;
+            setTimeout(slowClicks, 130 + randInt(90));
+          };
+          setTimeout(slowClicks, 80);
+        }
+      };
+      requestAnimationFrame(tick);
+    }catch(e){
+      // 혹시 오류 나도 추첨 자체가 멈추지 않게
+      resolve();
+    }
+  });
 }
 
 
@@ -2612,13 +2771,19 @@ async function startDraw(){
 
   for(let i=0;i<assignOrder.length;i++){
     const gi=assignOrder[i];const ti=shuffled[i];const team=teams[ti];const dn=tdn(team,key,ti);
+
     ge('drawProgressBar').style.width=`${(i/shuffled.length)*100}%`;
-    // 스피닝 공
-    ge('drawStageContent').innerHTML=`<div style="font-size:.85rem;font-weight:700;color:var(--text2);margin-bottom:6px">${i+1} / ${shuffled.length}번째 추첨</div><div class="draw-ball spinning">?</div>`;
-    await dSleep(420);
-    // 팀명 공개
-    ge('drawStageContent').innerHTML=`<div style="font-size:.85rem;font-weight:700;color:var(--success);margin-bottom:6px">✨ ${gi+1}조 배정!</div><div class="draw-ball popped" style="background:var(--success);font-size:.8rem">${dn}</div>`;
-    await dSleep(320);
+    const stageEl = ge('drawStageContent');
+
+    // 🎰 슬롯 스핀(긴장감 ↑) + 효과음
+    const nameList = teams.map((t,idx)=>tdn(t,key,idx));
+    const spinDur = (900 + Math.random()*700) * DRAW_SPEED;
+    await spinSlotIn(stageEl, nameList, spinDur, `${i+1} / ${shuffled.length}번째 추첨`);
+
+    // 팀명 공개(뽑힘!) + 효과음
+    playSound('reveal');
+    stageEl.innerHTML=`<div style="font-size:.85rem;font-weight:700;color:var(--success);margin-bottom:6px">✨ ${gi+1}조 배정!</div><div class="draw-ball popped" style="background:var(--success);font-size:.8rem">${dn}</div>`;
+    await dSleep(520);
     // 슬롯 채우기
     const slots=ge('dg_slots_'+gi);
     const emptySlot=slots.querySelector('.draw-team-slot:not(.filled)');
@@ -2632,8 +2797,9 @@ async function startDraw(){
   }
 
   ge('drawProgressBar').style.width='100%';
+  playSound('final');
   ge('drawStageContent').innerHTML=`<div style="font-size:1.1rem;font-weight:700;color:var(--success);margin:10px 0">🎉 추첨 완료!</div>`;
-  await dSleep(500);
+  await dSleep(900);
 
   const groupData=grps.map(g=>({teams:g.teams,courts:[]}));
   G.draws[key]={groups:groupData,shuffled,advance};
