@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "2026-03-06-v10-tennis-ball-ui";
+  const APP_VERSION = "2026-03-06-v12-doubles-config-seednum";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -503,6 +503,10 @@ body{overflow-x:hidden;}
       <div class="form-group"><label class="form-label">조당 팀수</label><select class="form-select" id="tGrpSize"><option value="3">3팀</option><option value="4" selected>4팀</option><option value="5">5팀</option></select></div>
       <div class="form-group"><label class="form-label">본선 진출수</label><select class="form-select" id="tAdvance"><option value="1">조 1위만</option><option value="2" selected>상위 2팀</option><option value="3">상위 3팀</option></select></div>
     </div>
+    <div class="frow">
+      <div class="form-group"><label class="form-label">복식 수</label><select class="form-select" id="tDoubles"><option value="3" selected>3복식</option><option value="5">5복식</option></select></div>
+      <div></div>
+    </div>
     <div class="form-group"><label class="form-label">공지사항</label><textarea class="form-textarea" id="tNotice" placeholder="공지사항..."></textarea></div>
     <div class="form-group"><label class="form-label">대회요강 (텍스트)</label>
       <textarea class="form-textarea" id="tGuideText" placeholder="대회 요강 텍스트를 입력하세요 (선택)"></textarea>
@@ -533,7 +537,7 @@ body{overflow-x:hidden;}
   </div>
   <div id="regSection" style="display:none">
     <div class="card" id="aoReg" style="display:none">
-      <div class="card-title">📝 팀 등록 <span style="font-size:.73rem;font-weight:400;color:var(--text2)">— 3복식 | 주전 6명 필수 + 후보 최대 2명</span></div>
+      <div class="card-title">📝 팀 등록 <span id="regModeLabel" style="font-size:.73rem;font-weight:400;color:var(--text2)">— 3복식 | 주전 6명 필수 + 후보 최대 2명</span></div>
       <div class="frow">
         <div class="form-group"><label class="form-label">클럽<span class="req">*</span></label><select class="form-select" id="regClub"></select></div>
         <div class="form-group"><label class="form-label">팀 번호</label><input class="form-input" id="regNo" readonly style="background:var(--bg2)"></div>
@@ -567,7 +571,7 @@ body{overflow-x:hidden;}
     </div>
     <div class="card">
       <div class="card-title">📋 등록 팀 현황 <span id="regTCnt" class="badge bg-green">0팀</span></div>
-      <div class="table-wrap"><table><thead><tr><th>#</th><th>클럽</th><th>1복식</th><th>2복식</th><th>3복식</th><th>후보</th><th id="regActHdr"></th></tr></thead><tbody id="regTBody"><tr><td colspan="7"><div class="empty-state" style="padding:14px"><p>등록된 팀이 없습니다</p></div></td></tr></tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>#</th><th>클럽</th><th>1복식</th><th>2복식</th><th>3복식</th><th id="reg4Hdr" style="display:none">4복식</th><th id="reg5Hdr" style="display:none">5복식</th><th>후보</th><th id="regActHdr"></th></tr></thead><tbody id="regTBody"><tr><td colspan="9"><div class="empty-state" style="padding:14px"><p>등록된 팀이 없습니다</p></div></td></tr></tbody></table></div>
     </div>
   </div>
 </div>
@@ -1519,10 +1523,10 @@ async function createTournament(){
   if(!divs.length){toast('부서 최소 1개','error');return;}
   sl(true);
   try{
-    const fmt=ge('tFormat').value,gs=parseInt(ge('tGrpSize').value),adv=parseInt(ge('tAdvance').value);
-    const ds={};divs.forEach(d=>ds[d]={format:fmt,grpSize:gs,advance:adv});
+    const fmt=ge('tFormat').value,gs=parseInt(ge('tGrpSize').value),adv=parseInt(ge('tAdvance').value),dbl=parseInt(ge('tDoubles').value||'3');
+    const ds={};divs.forEach(d=>ds[d]={format:fmt,grpSize:gs,advance:adv,doublesCount:dbl});
     // guideAssets는 Firebase Storage에 업로드 → URL만 tourGuides에 저장
-    const tRef=await addDoc(collection(db,'tournaments'),{name:nm,date:dt,venue:ge('tVenue').value.trim(),deadline:ge('tDeadline').value,divisions:divs,format:fmt,grpSize:gs,advance:adv,divSettings:ds,notice:ge('tNotice').value.trim(),guideText:ge('tGuideText')?.value.trim()||'',guideUrl:ge('tGuideUrl')?.value.trim()||'',hasGuideAssets:(GUIDE_FILES_CREATE||[]).length>0||(GUIDE_FILES_CREATE_PENDING||[]).length>0,status:'open',createdAt:serverTimestamp()});
+    const tRef=await addDoc(collection(db,'tournaments'),{name:nm,date:dt,venue:ge('tVenue').value.trim(),deadline:ge('tDeadline').value,divisions:divs,format:fmt,grpSize:gs,advance:adv,doublesCount:dbl,divSettings:ds,notice:ge('tNotice').value.trim(),guideText:ge('tGuideText')?.value.trim()||'',guideUrl:ge('tGuideUrl')?.value.trim()||'',hasGuideAssets:(GUIDE_FILES_CREATE||[]).length>0||(GUIDE_FILES_CREATE_PENDING||[]).length>0,status:'open',createdAt:serverTimestamp()});
     // 선택한 파일들을 Storage에 업로드
     await flushGuideUploads(tRef.id, 'create');
     const assets=GUIDE_FILES_CREATE||[];
@@ -1530,7 +1534,7 @@ async function createTournament(){
       await setDoc(doc(db,'tourGuides',tRef.id),{assets,updatedAt:serverTimestamp()});
     }
     await fbLog('대회 생성: '+nm,'🏆');
-    ['tName','tDate','tVenue','tDeadline','tNotice','tGuideText','tGuideUrl'].forEach(id=>ge(id).value=''); GUIDE_FILES_CREATE=[]; GUIDE_FILES_CREATE_PENDING=[]; renderGuidePreview('create');
+    ['tName','tDate','tVenue','tDeadline','tNotice','tGuideText','tGuideUrl'].forEach(id=>ge(id).value=''); ge('tDoubles')&&(ge('tDoubles').value='3'); GUIDE_FILES_CREATE=[]; GUIDE_FILES_CREATE_PENDING=[]; renderGuidePreview('create');
     sl(false);toast('"'+nm+'" 생성됨','success');
   }catch(e){sl(false);toast('생성 실패: '+e.message,'error');}
 }
@@ -1582,6 +1586,7 @@ function openET(tid){
   ge('mETB').innerHTML=`<div class="form-group"><label class="form-label">대회명</label><input class="form-input" id="etN" value="${t.name||''}"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="form-group"><label class="form-label">일자</label><input class="form-input" type="date" id="etDt" value="${t.date||''}"></div><div class="form-group"><label class="form-label">장소</label><input class="form-input" id="etVn" value="${t.venue||''}"></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="form-group"><label class="form-label">마감</label><input class="form-input" type="date" id="etDl" value="${t.deadline||''}"></div><div class="form-group"><label class="form-label">상태</label><select class="form-select" id="etSt"><option value="open" ${t.status==='open'?'selected':''}>접수중</option><option value="closed" ${t.status==='closed'?'selected':''}>마감</option><option value="ongoing" ${t.status==='ongoing'?'selected':''}>진행중</option><option value="finished" ${t.status==='finished'?'selected':''}>종료</option></select></div></div>
+    <div class="frow"><div class="form-group"><label class="form-label">복식 수</label><select class="form-select" id="etDoubles"><option value="3" ${(t.doublesCount||3)===3?'selected':''}>3복식</option><option value="5" ${(t.doublesCount||3)===5?'selected':''}>5복식</option></select></div><div></div></div>
     <div class="form-group"><label class="form-label">부서</label><div style="display:flex;gap:12px;flex-wrap:wrap;padding:10px;background:var(--panel2);border-radius:var(--radius);border:1px solid var(--border);margin-top:6px">${aD.map(d=>{const has=(t.divisions||[]).includes(d);const cnt=(G.teams[tid+'_'+d]||[]).length;return`<label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="etD_${d}" ${has?'checked':''} ${cnt>0&&has?'disabled':''}><span class="dpill ${dc(d)}">${dl(d)}</span>${cnt>0?`<small style="color:var(--text3)">${cnt}팀</small>`:''}</label>`;}).join('')}</div></div>
     <div class="form-group"><label class="form-label">공지</label><textarea class="form-textarea" id="etNt" rows="3">${t.notice||''}</textarea></div>
     <div class="form-group"><label class="form-label">대회요강 (텍스트)</label>
@@ -1614,7 +1619,7 @@ async function saveET(){
   const newD=['금','은','동','테린이'].filter(d=>document.getElementById('etD_'+d)?.checked);if(!newD.length){toast('부서 1개 이상','error');return;}
   sl(true);
   try{
-    const ds={...(t.divSettings||{})};newD.forEach(d=>{if(!ds[d])ds[d]={format:'group_knockout',grpSize:4,advance:2};});
+    const ds={...(t.divSettings||{})}; const dbl=parseInt(ge('etDoubles')?.value||String(t.doublesCount||3)); newD.forEach(d=>{if(!ds[d])ds[d]={format:'group_knockout',grpSize:4,advance:2}; ds[d].doublesCount=dbl;});
     // Storage 업로드 flush 먼저
     await flushGuideUploads(CE_tid, 'edit');
     const assets=GUIDE_FILES_EDIT||[];
@@ -1623,7 +1628,7 @@ async function saveET(){
     const hasGuideAssets=assets.length>0;
     const notice=ge('etNt').value.trim();
     const venue=ge('etVn').value.trim();
-    const updFields={name:nm,date:ge('etDt').value,venue,deadline:ge('etDl').value,status:ge('etSt').value,divisions:newD,divSettings:ds,notice,guideText,guideUrl,hasGuideAssets};
+    const updFields={name:nm,date:ge('etDt').value,venue,deadline:ge('etDl').value,status:ge('etSt').value,divisions:newD,doublesCount:dbl,divSettings:ds,notice,guideText,guideUrl,hasGuideAssets};
     await updateDoc(doc(db,'tournaments',CE_tid),updFields);
     if(hasGuideAssets) await setDoc(doc(db,'tourGuides',CE_tid),{assets,updatedAt:serverTimestamp()});
     // ✅ 메모리 캐시 즉시 갱신 (onSnapshot 대기 없이 바로 반영)
@@ -1698,12 +1703,35 @@ function onRegTC(){
   ds.innerHTML='<option value="">-- 부서 선택 --</option>'+t.divisions.map(d=>`<option value="${d}">${dl(d)}</option>`).join('');
   if(t.divisions.length===1){ds.value=t.divisions[0];renderRL();}
 }
-// 현재 부서가 테린이인지 확인하고 복식 수 반환
-// 장유연합회: 3복식 고정
-function getRegDoublesCount(){ return 3; }
+// 현재 선택 대회 기준 복식 수 반환 (기본 3복식)
+function getRegDoublesCount(){
+  const tid=ge('regTS')?.value||'';
+  const t=G.tournaments.find(t=>t.id===tid);
+  return parseInt((t&&t.doublesCount)|| (t?.divSettings?.[ge('regDS')?.value]?.doublesCount) || 3);
+}
 function updateRegisterSlots(){
   const div=ge('regDS')?.value||'';
+  const dbl=getRegDoublesCount();
+  const mainCount=dbl*2;
   ge('regNo').value=(G.teams[ge('regTS').value+'_'+div]||[]).length+1;
+  const slot4=ge('slot4'), slot5=ge('slot5');
+  if(slot4) slot4.style.display = dbl>=4 ? 'block' : 'none';
+  if(slot5) slot5.style.display = dbl>=5 ? 'block' : 'none';
+  const sn1=ge('subNum1'), sn2=ge('subNum2');
+  if(sn1) sn1.textContent=mainCount+1;
+  if(sn2) sn2.textContent=mainCount+2;
+  const lbl=ge('regModeLabel');
+  if(lbl) lbl.textContent=`— ${dbl}복식 | 주전 ${mainCount}명 필수 + 후보 최대 2명`;
+  const pl=ge('regPlayerLabel');
+  if(pl){
+    const parts=['1·2번=1복식','3·4번=2복식','5·6번=3복식'];
+    if(dbl>=4) parts.push('7·8번=4복식');
+    if(dbl>=5) parts.push('9·10번=5복식');
+    pl.innerHTML=`주전 선수 <span style="color:var(--text3);font-size:.72rem;font-weight:400">${parts.join(' / ')}</span>`;
+  }
+  const h4=ge('reg4Hdr'), h5=ge('reg5Hdr');
+  if(h4) h4.style.display = dbl>=4 ? '' : 'none';
+  if(h5) h5.style.display = dbl>=5 ? '' : 'none';
 }
 
 function renderRL(){
@@ -1745,15 +1773,15 @@ function renderRL(){
   const key=tid+'_'+div,teams=G.teams[key]||[];
   ge('regTCnt').textContent=teams.length+'팀';ge('regNo').value=teams.length+1;
   const tb=ge('regTBody');
-  if(!teams.length){tb.innerHTML='<tr><td colspan="7"><div class="empty-state" style="padding:14px"><p>등록된 팀 없음</p></div></td></tr>';return;}
+  if(!teams.length){tb.innerHTML='<tr><td colspan="9"><div class="empty-state" style="padding:14px"><p>등록된 팀 없음</p></div></td></tr>';return;}
   tb.innerHTML=teams.map((t2,i)=>{
     const p=t2.players||[];
-    const dbl=3;
-    const mainCount=6;
+    const dbl=t2.doublesCount||parseInt((t?.doublesCount)||3);
+    const mainCount=dbl*2;
     const tc=esc(t2.club||'');
     const mk=(a,b)=>p[a]&&p[b]?`<span onclick="openPD('${esc(p[a])}','${tc}')" style="cursor:pointer;color:var(--primary)">${p[a]}</span>/<span onclick="openPD('${esc(p[b])}','${tc}')" style="cursor:pointer;color:var(--primary)">${p[b]}</span>`:p[a]?`<span onclick="openPD('${esc(p[a])}','${tc}')" style="cursor:pointer;color:var(--primary)">${p[a]}</span>`:'—';
     const sub=p.slice(mainCount).filter(Boolean).map(n=>`<span onclick="openPD('${esc(n)}','${tc}')" style="cursor:pointer;font-size:.73rem;color:var(--text3)">${n}</span>`).join(', ');
-    return`<tr><td><div class="team-num">${i+1}</div></td><td><b>${tdn(t2,key,i)}</b></td><td style="font-size:.8rem">${mk(0,1)}</td><td style="font-size:.8rem">${mk(2,3)}</td><td style="font-size:.8rem">${mk(4,5)}</td><td>${sub||'-'}</td><td style="white-space:nowrap">${AD?`<button class="btn btn-outline" style="padding:3px 6px;font-size:.67rem;margin-right:2px" onclick="openETeam('${key}',${i})">수정</button><button class="btn btn-danger" style="padding:3px 6px;font-size:.67rem" onclick="delTeam('${key}',${i})">삭제</button>`:''}</td></tr>`;
+    return`<tr><td><div class="team-num">${i+1}</div></td><td><b>${tdn(t2,key,i)}</b></td><td style="font-size:.8rem">${mk(0,1)}</td><td style="font-size:.8rem">${mk(2,3)}</td><td style="font-size:.8rem">${mk(4,5)}</td><td style="font-size:.8rem;display:${dbl>=4?'table-cell':'none'}">${dbl>=4?mk(6,7):''}</td><td style="font-size:.8rem;display:${dbl>=5?'table-cell':'none'}">${dbl>=5?mk(8,9):''}</td><td>${sub||'-'}</td><td style="white-space:nowrap">${AD?`<button class="btn btn-outline" style="padding:3px 6px;font-size:.67rem;margin-right:2px" onclick="openETeam('${key}',${i})">수정</button><button class="btn btn-danger" style="padding:3px 6px;font-size:.67rem" onclick="delTeam('${key}',${i})">삭제</button>`:''}</td></tr>`;
   }).join('');
 }
 async function registerTeam(){
@@ -1761,9 +1789,11 @@ async function registerTeam(){
   if(!tid||!div){toast('대회/부서 선택','error');return;}
   const t=G.tournaments.find(t=>t.id===tid);if(t?.status&&t.status!=='open'){toast('접수중인 대회만 등록 가능','error');return;}
   if(!club){toast('클럽 선택','error');return;}
-  const names=[];for(let i=1;i<=8;i++){const v=ge('p'+i)?.value.trim();if(v)names.push(v);}
-  if(names.length<6){toast('주전 6명(3복식) 필수 입력','error');return;}
-  if(names.length>8){toast('최대 8명(후보 2명 포함)','error');return;}
+  const dbl=getRegDoublesCount();
+  const mainCount=dbl*2;
+  const names=[];for(let i=1;i<=mainCount+2;i++){const v=ge('p'+i)?.value.trim();if(v)names.push(v);}
+  if(names.length<mainCount){toast(`주전 ${mainCount}명(${dbl}복식) 필수 입력`,'error');return;}
+  if(names.length>mainCount+2){toast(`최대 ${mainCount+2}명(후보 2명 포함)`,'error');return;}
   const uniq=new Set(names);if(uniq.size!==names.length){toast('이름 중복 있음','error');return;}
   const key=tid+'_'+div,ex=G.teams[key]||[];
   const newKeys=new Set(names.map(n=>pKey(n,club)));
@@ -1772,11 +1802,11 @@ async function registerTeam(){
   sl(true);
   try{
     if(!G.teams[key])G.teams[key]=[];
-    G.teams[key].push({club,players:names,doublesCount:3,registeredAt:new Date().toISOString()});
+    G.teams[key].push({club,players:names,doublesCount:dbl,registeredAt:new Date().toISOString()});
     await stT(key);
     await Promise.all(names.map(n=>regP(n,club,tid,div)));
-    await fbLog(`팀 등록: ${tdn({club},key,G.teams[key].length-1)} ${dl(div)} (3복식)`,'📋');
-    for(let i=1;i<=8;i++){const el=ge('p'+i);if(el){el.value='';const h=ge('h'+i);if(h)h.innerHTML='';}}
+    await fbLog(`팀 등록: ${tdn({club},key,G.teams[key].length-1)} ${dl(div)} (${dbl}복식)`,'📋');
+    for(let i=1;i<=mainCount+2;i++){const el=ge('p'+i);if(el){el.value='';const h=ge('h'+i);if(h)h.innerHTML='';}}
     sl(false);toast('팀 등록 완료 ✅','success');renderRL();
   }catch(e){sl(false);toast('등록 실패: '+e.message,'error');}
 }
@@ -1784,59 +1814,41 @@ async function delTeam(key,idx){if(!confirm('팀 삭제?'))return;G.teams[key].s
 function openETeam(key,idx){
   const team=(G.teams[key]||[])[idx];if(!team)return;CE_key=key;CE_idx=idx;
   const[,div]=key.split('_');const p=team.players||[];
-  const isT=div==='terinee';
-  // 팀에 저장된 복식 수 또는 선수 수로 추정
-  const dbl=3; const mainCount=6;
-  ge('mETeamB').innerHTML=`<div style="margin-bottom:12px;padding:8px 14px;background:var(--primary);color:white;border-radius:var(--radius);font-weight:700">${tdn(team,key,idx)} — ${dl(div)}</div>
-    <div class="form-group"><label class="form-label">클럽</label><select class="form-select" id="etTC">${G.clubs.map(c=>`<option ${c===team.club?'selected':''}>${c}</option>`).join('')}</select></div>
-    <div class="form-group"><label class="form-label">선수 (주전 6명 필수)</label>
-    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:6px">
-      ${[0,1,2].map(r=>`<div><div style="font-size:.65rem;font-weight:700;color:var(--primary);margin-bottom:4px">${r+1}복식</div>${[0,1].map(j=>`<input type="text" id="ep${r*2+j+1}" class="form-input" style="margin-bottom:4px" value="${p[r*2+j]||''}" placeholder="${r*2+j+1}번">`).join('')}</div>`).join('')}
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px"><input type="text" id="ep7" class="form-input" value="${p[6]||''}" placeholder="후보1(선택)"><input type="text" id="ep8" class="form-input" value="${p[7]||''}" placeholder="후보2(선택)"></div>
-    </div>`;
-  om('mETeam');
-}
-function etUpdateSlots(newDbl,origIdx){
-  // 장유연합회: 3복식 고정, 이 함수는 사용하지 않음
-  return;
-  const team=(G.teams[CE_key]||[])[CE_idx];if(!team)return;
-  const[,div]=CE_key.split('_');const p=team.players||[];
-  const dbl=parseInt(newDbl);const mainCount=dbl*2;
-  const dbls=['①1복식','②2복식','③3복식','④4복식','⑤5복식'].slice(0,dbl);
-  // 기존 입력값 보존
-  const curVals=[];for(let i=1;i<=12;i++){const el=ge('ep'+i);if(el)curVals.push(el.value.trim());}
-  let slotsHtml='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:6px">';
+  const dbl=team.doublesCount||3; const mainCount=dbl*2;
+  const dbls=['① 1복식','② 2복식','③ 3복식','④ 4복식','⑤ 5복식'].slice(0,dbl);
+  let slotsHtml='<div id="etSlots" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:6px">';
   dbls.forEach((label,r)=>{
-    slotsHtml+=`<div><div style="font-size:.65rem;font-weight:700;color:var(--primary);margin-bottom:4px">${label}</div>`;
-    [0,1].forEach(j=>{
-      const idx2=r*2+j;
-      slotsHtml+=`<input type="text" id="ep${idx2+1}" class="form-input" style="margin-bottom:4px" value="${curVals[idx2]||p[idx2]||''}" placeholder="${idx2+1}번">`;
-    });
-    slotsHtml+='</div>';
+    slotsHtml+=`<div><div style="font-size:.65rem;font-weight:700;color:var(--primary);margin-bottom:4px">${label}</div>${[0,1].map(j=>`<input type="text" id="ep${r*2+j+1}" class="form-input" style="margin-bottom:4px" value="${p[r*2+j]||''}" placeholder="${r*2+j+1}번">`).join('')}</div>`;
   });
   slotsHtml+='</div>';
-  ge('etSlots').innerHTML=slotsHtml;
-  // 후보 업데이트
-  const sub1=ge(`ep${mainCount+1}`),sub2=ge(`ep${mainCount+2}`);
-  // 기존 후보 입력 요소 교체
-  const subContainer=ge('etSlots').nextElementSibling;
-  if(subContainer){
-    subContainer.innerHTML=`<input type="text" id="ep${mainCount+1}" class="form-input" value="${curVals[mainCount]||p[mainCount]||''}" placeholder="후보1(선택)"><input type="text" id="ep${mainCount+2}" class="form-input" value="${curVals[mainCount+1]||p[mainCount+1]||''}" placeholder="후보2(선택)">`;
-  }
-  // 레이블 업데이트
-  const lbl=ge('etSlots').previousElementSibling?.querySelector('label.form-label');
-  if(lbl) lbl.textContent=`선수 (주전 ${mainCount}명 필수)`;
+  const modeSel=`<div style="margin-bottom:8px"><label class="form-label" style="font-size:.8rem">복식 수</label><div style="display:flex;gap:10px;margin-top:4px">${[3,5].map(n=>`<label style="font-size:.82rem;cursor:pointer"><input type="radio" name="etDbl" value="${n}" ${n===dbl?'checked':''} onchange="etUpdateSlots(this.value,${idx})"> ${n}복식</label>`).join('')}</div></div>`;
+  ge('mETeamB').innerHTML=`<div style="margin-bottom:12px;padding:8px 14px;background:var(--primary);color:white;border-radius:var(--radius);font-weight:700">${tdn(team,key,idx)} — ${dl(div)}</div>${modeSel}<div class="form-group"><label class="form-label">클럽</label><select class="form-select" id="etTC">${G.clubs.map(c=>`<option ${c===team.club?'selected':''}>${c}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">선수 (주전 ${mainCount}명 필수)</label>${slotsHtml}<div id="etSubs" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px"><input type="text" id="ep${mainCount+1}" class="form-input" value="${p[mainCount]||''}" placeholder="후보1(선택)"><input type="text" id="ep${mainCount+2}" class="form-input" value="${p[mainCount+1]||''}" placeholder="후보2(선택)"></div></div>`;
+  om('mETeam');
 }
+
+function etUpdateSlots(newDbl,origIdx){
+  const team=(G.teams[CE_key]||[])[CE_idx];if(!team)return;
+  const p=team.players||[];
+  const dbl=parseInt(newDbl);const mainCount=dbl*2;
+  const dbls=['① 1복식','② 2복식','③ 3복식','④ 4복식','⑤ 5복식'].slice(0,dbl);
+  const curVals=[];for(let i=1;i<=12;i++){const el=ge('ep'+i);if(el)curVals[i]=el.value.trim();}
+  let slotsHtml='';
+  dbls.forEach((label,r)=>{
+    slotsHtml+=`<div><div style="font-size:.65rem;font-weight:700;color:var(--primary);margin-bottom:4px">${label}</div>${[0,1].map(j=>{const idx=r*2+j+1; return `<input type="text" id="ep${idx}" class="form-input" style="margin-bottom:4px" value="${curVals[idx]||p[idx-1]||''}" placeholder="${idx}번">`;}).join('')}</div>`;
+  });
+  const slots=ge('etSlots'); if(slots) slots.innerHTML=slotsHtml;
+  const subs=ge('etSubs'); if(subs) subs.innerHTML=`<input type="text" id="ep${mainCount+1}" class="form-input" value="${curVals[mainCount+1]||p[mainCount]||''}" placeholder="후보1(선택)"><input type="text" id="ep${mainCount+2}" class="form-input" value="${curVals[mainCount+2]||p[mainCount+1]||''}" placeholder="후보2(선택)">`;
+  const lbl=ge('mETeamB')?.querySelector('.form-group label.form-label:last-of-type');
+}
+
 async function saveETeam(){
   const teams=G.teams[CE_key]||[];const team=teams[CE_idx];if(!team)return;
-  const[,div]=CE_key.split('_');
-  const isT=div==='terinee';
-  const dbl=3; const mainCount=6;
-  const np=[];for(let i=1;i<=8;i++){const el=ge('ep'+i);if(el){const v=el.value.trim();if(v)np.push(v);}}
-  if(np.length<6){toast('주전 6명 필요','error');return;}
+  const dblEl=document.querySelector('input[name="etDbl"]:checked');
+  const dbl=dblEl?parseInt(dblEl.value):3; const mainCount=dbl*2;
+  const np=[];for(let i=1;i<=mainCount+2;i++){const el=ge('ep'+i);if(el){const v=el.value.trim();if(v)np.push(v);}}
+  if(np.length<mainCount){toast(`주전 ${mainCount}명 필요`,'error');return;}
   const uniq=new Set(np);if(uniq.size!==np.length){toast('이름 중복','error');return;}
-  team.club=ge('etTC').value;team.players=np;team.doublesCount=3;
+  team.club=ge('etTC').value;team.players=np;team.doublesCount=dbl;
   sl(true);try{await stT(CE_key);sl(false);cm('mETeam');renderRL();toast('수정 완료 ✅','success');}catch(e){sl(false);toast('저장 실패','error');}
 }
 
@@ -1962,7 +1974,7 @@ function renderBracketHTMLForDiv(tid,div,isAll){
         const rowCls=isAdv&&r===0?'adv-1st':isAdv&&r===1?'adv-2nd':isAdv?'adv':'';
         const chipStyle=r===0?'background:#1565c0;color:white;':r===1?'background:#e67e22;color:white;':'background:#7f8c8d;color:white;';
         html+=`<div class="gs-row ${rowCls}">
-          <div class="gs-rk">${r===0?'🥇':r===1?'🥈':r===2?'🥉':r+1}</div>
+          <div class="gs-rk">${r+1}</div>
           <div class="gs-nm">${s.nm}${isAdv?`<span class="adv-chip" style="${chipStyle}">${r===0?'1위 진출':'2위 진출'}</span>`:''}</div>
           <div class="gs-stats"><span>${s.w}승 ${s.l}패</span><span style="color:${s.diff>0?'#1565c0':s.diff<0?'#c62828':'var(--text2)'}">득실 ${s.diff>0?'+':''}${s.diff}</span></div>
         </div>`;
@@ -2213,7 +2225,7 @@ function renderCombinedBracketSection(tid, div){
             const isAdv = grpDone && r<adv;
             return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:${r<stats.length-1?'1px solid #f1f5f9':'none'}">
               <div style="display:flex;align-items:center;gap:8px;min-width:0">
-                <span style="font-size:.9rem">${r===0?'🥇':r===1?'🥈':r===2?'🥉':(r+1)}</span>
+                <span style="font-size:.9rem">${r+1}</span>
                 <span style="font-weight:${isAdv?'800':'500'};color:${isAdv?'#1565c0':'#1f2937'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.nm}</span>
               </div>
               <div style="display:flex;gap:5px;align-items:center;white-space:nowrap">
@@ -3030,29 +3042,59 @@ function buildSnakeOrder(grps,opt){
 
 function smartShuffle(indices,teams){
   const grpSizes=DW.cfg?.grpSizes||[];
-  for(let attempt=0;attempt<200;attempt++){
-    const arr=[...indices];
-    for(let i=arr.length-1;i>0;i--){const j=randInt(i+1);[arr[i],arr[j]]=[arr[j],arr[i]];}
-    if(!grpSizes.length) return arr;
-    const grps=grpSizes.map(()=>[]);
-    const snakeOrder=buildSnakeOrder(grpSizes.map((size,i)=>({i,size})),{startRandom:true,shuffle:true,rotate:true});
-    snakeOrder.forEach((gi,pos)=>{if(pos<arr.length)grps[gi].push(arr[pos]);});
-    let conflict=false;
-    for(const grp of grps){const clubs=grp.map(ti=>teams[ti]?.club);if(clubs.length!==new Set(clubs).size){conflict=true;break;}}
-    if(!conflict) return arr;
+  if(!grpSizes.length) return [...indices];
+
+  // 목표 배치 순서: A조 1번 → B조 1번 → ... → A조 2번 → B조 2번 ...
+  const assignOrder=[];
+  const maxSize=Math.max(...grpSizes);
+  for(let slot=0; slot<maxSize; slot++){
+    for(let gi=0; gi<grpSizes.length; gi++){
+      if(slot<grpSizes[gi]) assignOrder.push(gi);
+    }
   }
-  const arr=[...indices];
-  for(let i=arr.length-1;i>0;i--){const j=randInt(i+1);[arr[i],arr[j]]=[arr[j],arr[i]];}
-  const byClub={};arr.forEach(ti=>{const c=teams[ti].club;if(!byClub[c])byClub[c]=[];byClub[c].push(ti);});
-  const clubs=Object.values(byClub).sort((a,b)=>b.length-a.length);
-  const result=[];const maxLen=clubs[0]?.length||0;
-  for(let i=0;i<maxLen;i++){for(const club of clubs){if(i<club.length)result.push(club[i]);}}
-  const __n=result.length||arr.length;
-  if(maxLen>Math.ceil(__n/2)) toast('⚠️ 같은 클럽이 너무 많아 완전 분리가 어렵습니다','info');
+
+  // 같은 클럽(A/B/C 포함)은 baseClub 기준으로 묶어서 다른 조로 최대한 분산
+  const buckets={};
+  [...indices].forEach(ti=>{
+    const c=baseClub(teams[ti]?.club||'') || (teams[ti]?.club||'');
+    if(!buckets[c]) buckets[c]=[];
+    buckets[c].push(ti);
+  });
+  Object.values(buckets).forEach(arr=>{
+    for(let i=arr.length-1;i>0;i--){const j=randInt(i+1);[arr[i],arr[j]]=[arr[j],arr[i]];}
+  });
+
+  const groups=grpSizes.map(()=>[]);
+  const result=[];
+  let unavoidable=0;
+
+  for(const gi of assignOrder){
+    const candidates=Object.entries(buckets).filter(([,arr])=>arr.length>0);
+    if(!candidates.length) break;
+
+    const used=new Set(groups[gi].map(ti=>baseClub(teams[ti]?.club||'') || (teams[ti]?.club||'')));
+    const noConflict=candidates.filter(([club])=>!used.has(club));
+    const pool=(noConflict.length?noConflict:candidates)
+      .sort((a,b)=>b[1].length-a[1].length || a[0].localeCompare(b[0], 'ko'));
+
+    if(!noConflict.length) unavoidable++;
+
+    const topLen=pool[0][1].length;
+    const top=pool.filter(([,arr])=>arr.length===topLen);
+    const pick=top[randInt(top.length)];
+    const club=pick[0];
+    const ti=buckets[club].shift();
+    result.push(ti);
+    groups[gi].push(ti);
+  }
+
+  if(unavoidable>0){
+    toast('⚠️ 팀 수 / 조 수상 같은 클럽 완전 분리는 불가능하여 최소화해서 배치했습니다','info');
+  } else {
+    toast('✅ 같은 클럽은 최대한 다른 조로 분산 배치했습니다','success');
+  }
   return result;
 }
-
-
 
 // 🎰 슬롯(릴) 스핀 UI (외부 라이브러리 없이)
 async function spinSlotIn(containerEl, nameList, durationMs, caption='', opts={}){
@@ -4246,7 +4288,7 @@ function renderLiveRanking(tid,div,cont){
       const done=gms.length>0&&gms.every(m=>m.winner!==null);
       html+=`<div style="margin-bottom:10px"><div style="font-size:.75rem;font-weight:700;color:var(--primary-dark);margin-bottom:4px;padding:3px 8px;background:var(--panel2);border-radius:4px">${grpLabel(gi)} ${done?'<span class="badge bg-green" style="font-size:.62rem">완료</span>':''}</div>
         <div class="table-wrap"><table><thead><tr><th>순위</th><th>팀</th><th>승</th><th>패</th><th>득실</th></tr></thead><tbody>
-        ${stats.map((s,r)=>`<tr style="background:${r===0?'#fef3cd':r===1?'#f0f4fa':''}"><td>${r===0?'🥇':r===1?'🥈':r===2?'🥉':r+1}</td><td style="font-weight:700">${s.nm}</td><td style="color:var(--success);font-weight:700">${s.w}</td><td style="color:var(--danger)">${s.l}</td><td style="font-weight:700;color:${s.diff>0?'var(--success)':s.diff<0?'var(--danger)':'inherit'}">${s.diff>0?'+':''}${s.diff}</td></tr>`).join('')}
+        ${stats.map((s,r)=>`<tr style="background:${r===0?'#fef3cd':r===1?'#f0f4fa':''}"><td>${r+1}</td><td style="font-weight:700">${s.nm}</td><td style="color:var(--success);font-weight:700">${s.w}</td><td style="color:var(--danger)">${s.l}</td><td style="font-weight:700;color:${s.diff>0?'var(--success)':s.diff<0?'var(--danger)':'inherit'}">${s.diff>0?'+':''}${s.diff}</td></tr>`).join('')}
         </tbody></table></div></div>`;
     });
     html+=`</div>`;
