@@ -6975,9 +6975,9 @@ initFB();
   function hyBuildPlan(entries, bracketSize){
     const matchCount = bracketSize/2;
     const slots = Array.from({length:matchCount}, (_,i)=>({id:i,t1:null,t2:null,bye:false}));
-    const byeCount = bracketSize - entries.length;
-    const rank1 = hySorted(entries.filter(e => (e.rk||0)===1));
-    const others = hySorted(entries.filter(e => (e.rk||0)!==1));
+    const byeCount = Math.max(0, bracketSize - (entries||[]).length);
+    const rank1 = hySorted((entries||[]).filter(e => (e.rk||0)===1));
+    const others = hySorted((entries||[]).filter(e => (e.rk||0)!==1));
 
     const byeIdxs = hySpreadIndices(matchCount, byeCount);
     const normalIdxs = Array.from({length:matchCount}, (_,i)=>i).filter(i=>!byeIdxs.includes(i));
@@ -6987,6 +6987,7 @@ initFB();
     const rank1Remain = [...rank1];
     const othersRemain = [...others];
 
+    // 부전승은 1위 우선 배정
     while(byeEntries.length < byeCount && rank1Remain.length) byeEntries.push(rank1Remain.shift());
     while(byeEntries.length < byeCount && othersRemain.length) byeEntries.push(othersRemain.shift());
 
@@ -6997,6 +6998,7 @@ initFB();
       slots[mi].bye = true;
     });
 
+    // 남은 1위팀을 먼저 시드 자리 배치
     const rank1TargetIdxs = normalSpread.slice(0, rank1Remain.length);
     rank1Remain.forEach((e, idx)=>{
       const mi = rank1TargetIdxs[idx];
@@ -7004,32 +7006,83 @@ initFB();
       slots[mi].t1 = {...e};
     });
 
-    // 1위가 들어간 경기에 2위/기타를 우선 붙이기
-    let pool = [...othersRemain];
+    // 2팀 진출 기본 원칙: 같은 조 재대결 금지 → 크로스 우선 배치
+    // 예: A1-B2, B1-A2 / C1-D2, D1-C2
+    const groupOrder = [...new Set(rank1Remain.map(e=>parseInt(e.gn||0)).filter(Boolean))].sort((a,b)=>a-b);
+    const poolByGroup = {};
+    othersRemain.forEach(e=>{
+      const g = parseInt(e.gn||0) || 0;
+      if(!poolByGroup[g]) poolByGroup[g] = [];
+      poolByGroup[g].push({...e});
+    });
+    const anyPool = ()=>Object.values(poolByGroup).some(arr=>arr && arr.length);
+    const takeFromGroup = (g)=> (poolByGroup[g] && poolByGroup[g].length) ? poolByGroup[g].shift() : null;
+    const takeAnyDifferent = (selfG)=>{
+      const keys = Object.keys(poolByGroup).map(Number).filter(g=>g!==selfG && poolByGroup[g]?.length).sort((a,b)=>a-b);
+      return keys.length ? takeFromGroup(keys[0]) : null;
+    };
+    const prefGroups = (selfG)=>{
+      if(groupOrder.length<=1) return [];
+      const idx = groupOrder.indexOf(selfG);
+      if(idx<0) return groupOrder.filter(g=>g!==selfG);
+      const out = [];
+      for(let step=1; step<groupOrder.length; step++){
+        const a = groupOrder[(idx + step) % groupOrder.length];
+        const b = groupOrder[(idx - step + groupOrder.length) % groupOrder.length];
+        if(a!==selfG && !out.includes(a)) out.push(a);
+        if(b!==selfG && !out.includes(b)) out.push(b);
+      }
+      return out;
+    };
+
+    // 1위가 들어간 경기에는 같은 조가 아닌 상대를 우선 붙인다.
     for(const mi of normalSpread){
-      if(!pool.length) break;
-      if(slots[mi].t1 && !slots[mi].bye && !slots[mi].t2){
-        slots[mi].t2 = {...pool.shift()};
+      if(!slots[mi].t1 || slots[mi].bye || slots[mi].t2) continue;
+      const selfG = parseInt(slots[mi].t1.gn||0) || 0;
+      let picked = null;
+      for(const g of prefGroups(selfG)){
+        picked = takeFromGroup(g);
+        if(picked) break;
+      }
+      if(!picked) picked = takeAnyDifferent(selfG);
+      // 정말 어쩔 수 없을 때만 같은 조 허용
+      if(!picked){
+        const same = takeFromGroup(selfG);
+        if(same) picked = same;
+      }
+      if(picked) slots[mi].t2 = picked;
+    }
+
+    // 완전히 빈 경기는 남은 팀들로 채우되, 가능하면 같은 조끼리 바로 만나지 않게 분산
+    const leftover = [];
+    Object.keys(poolByGroup).map(Number).sort((a,b)=>a-b).forEach(g=>{
+      (poolByGroup[g]||[]).forEach(e=>leftover.push({...e}));
+      poolByGroup[g] = [];
+    });
+
+    function pullDifferent(groupNo){
+      const idx = leftover.findIndex(e => (parseInt(e.gn||0)||0) !== groupNo);
+      if(idx>=0) return leftover.splice(idx,1)[0];
+      return leftover.length ? leftover.shift() : null;
+    }
+
+    for(const mi of normalSpread){
+      if(!slots[mi].t1 && leftover.length){
+        slots[mi].t1 = leftover.shift();
+      }
+      if(!slots[mi].t2 && leftover.length){
+        const g1 = parseInt(slots[mi].t1?.gn||0) || 0;
+        slots[mi].t2 = pullDifferent(g1);
       }
     }
 
-    // 완전히 빈 경기 채우기
+    // 혹시 남은 팀이 있으면 남은 빈 칸 채우기
     for(const mi of normalSpread){
-      if(!pool.length) break;
-      if(!slots[mi].t1){
-        slots[mi].t1 = {...pool.shift()};
-      }
-      if(pool.length && !slots[mi].t2){
-        slots[mi].t2 = {...pool.shift()};
-      }
+      if(!leftover.length) break;
+      if(!slots[mi].t1) slots[mi].t1 = leftover.shift();
+      if(leftover.length && !slots[mi].t2) slots[mi].t2 = leftover.shift();
     }
 
-    // 남는 팀이 있으면 남은 빈 칸 채우기
-    for(const mi of normalSpread){
-      if(!pool.length) break;
-      if(!slots[mi].t1){ slots[mi].t1 = {...pool.shift()}; }
-      if(pool.length && !slots[mi].t2){ slots[mi].t2 = {...pool.shift()}; }
-    }
     return slots;
   }
 
