@@ -490,23 +490,45 @@ body{overflow-x:hidden;}
       <div class="form-group"><label class="form-label">장소</label><input class="form-input" id="tVenue" placeholder="경기 장소"></div>
       <div class="form-group"><label class="form-label">접수 마감</label><input class="form-input" type="date" id="tDeadline"></div>
     </div>
-    <div class="form-group"><label class="form-label">운영 부서<span class="req">*</span></label>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:6px">
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="divG"><span class="dpill gold">🥇 금배부</span></label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="divS"><span class="dpill silver">🥈 은배부</span></label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="divB" checked><span class="dpill bronze">🥉 동배부</span></label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="divT"><span class="dpill blue">🌱 테린이부</span></label>
+    <div class="form-group"><label class="form-label">운영 부서 &amp; 복식 수<span class="req">*</span></label>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
+        <div class="div-rubber-row" id="divRowG">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;min-width:110px"><input type="checkbox" id="divG" onchange="toggleDivRubber('G')"><span class="dpill gold">🥇 금배부</span></label>
+          <div class="div-rubber-sel" id="rubSelG" style="display:none">
+            <span class="rub-opt" id="rubG_5" onclick="selRub('G',5)">5복식</span>
+            <span class="rub-opt active" id="rubG_3" onclick="selRub('G',3)">3복식</span>
+          </div>
+        </div>
+        <div class="div-rubber-row" id="divRowS">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;min-width:110px"><input type="checkbox" id="divS" onchange="toggleDivRubber('S')"><span class="dpill silver">🥈 은배부</span></label>
+          <div class="div-rubber-sel" id="rubSelS" style="display:none">
+            <span class="rub-opt" id="rubS_5" onclick="selRub('S',5)">5복식</span>
+            <span class="rub-opt active" id="rubS_3" onclick="selRub('S',3)">3복식</span>
+          </div>
+        </div>
+        <div class="div-rubber-row" id="divRowB">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;min-width:110px"><input type="checkbox" id="divB" checked onchange="toggleDivRubber('B')"><span class="dpill bronze">🥉 동배부</span></label>
+          <div class="div-rubber-sel" id="rubSelB" style="display:flex">
+            <span class="rub-opt" id="rubB_5" onclick="selRub('B',5)">5복식</span>
+            <span class="rub-opt active" id="rubB_3" onclick="selRub('B',3)">3복식</span>
+          </div>
+        </div>
+        <div class="div-rubber-row" id="divRowT">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;min-width:110px"><input type="checkbox" id="divT" onchange="toggleDivRubber('T')"><span class="dpill blue">🌱 테린이부</span></label>
+          <div class="div-rubber-sel" id="rubSelT" style="display:none">
+            <span class="rub-opt" id="rubT_5" onclick="selRub('T',5)">5복식</span>
+            <span class="rub-opt active" id="rubT_3" onclick="selRub('T',3)">3복식</span>
+          </div>
+        </div>
       </div>
+      <div style="font-size:.72rem;color:var(--text2);margin-top:6px">💡 장유연합회 기본 3복식 · 필요 시 5복식으로 변경 가능</div>
     </div>
     <div class="frow3">
       <div class="form-group"><label class="form-label">경기 방식</label><select class="form-select" id="tFormat"><option value="group_knockout">예선조별+본선토너먼트</option><option value="roundrobin">풀 리그전</option><option value="knockout">토너먼트 단판</option></select></div>
       <div class="form-group"><label class="form-label">조당 팀수</label><select class="form-select" id="tGrpSize"><option value="3">3팀</option><option value="4" selected>4팀</option><option value="5">5팀</option></select></div>
       <div class="form-group"><label class="form-label">본선 진출수</label><select class="form-select" id="tAdvance"><option value="1">조 1위만</option><option value="2" selected>상위 2팀</option><option value="3">상위 3팀</option></select></div>
     </div>
-    <div class="frow">
-      <div class="form-group"><label class="form-label">복식 수</label><select class="form-select" id="tDoubles"><option value="3" selected>3복식</option><option value="5">5복식</option></select></div>
-      <div></div>
-    </div>
+
     <div class="form-group"><label class="form-label">공지사항</label><textarea class="form-textarea" id="tNotice" placeholder="공지사항..."></textarea></div>
     <div class="form-group"><label class="form-label">대회요강 (텍스트)</label>
       <textarea class="form-textarea" id="tGuideText" placeholder="대회 요강 텍스트를 입력하세요 (선택)"></textarea>
@@ -1007,6 +1029,43 @@ body{overflow-x:hidden;}
 
 <script type="module">
 'use strict';
+// ── 부서별 복식 수 선택 헬퍼 (기본: 장유 전 부서 3복식) ──
+const DIV_RUB_DEFAULT={'G':3,'S':3,'B':3,'T':3};
+function toggleDivRubber(dk){
+  const chk=ge('div'+dk), sel=ge('rubSel'+dk);
+  if(!chk||!sel)return;
+  sel.style.display=chk.checked?'flex':'none';
+}
+function selRub(dk,n){
+  const b5=ge('rub'+dk+'_5'),b3=ge('rub'+dk+'_3');
+  if(!b5||!b3)return;
+  b5.classList.toggle('active',n===5);
+  b3.classList.toggle('active',n===3);
+}
+function getDivRubbers(dk){
+  const b3=ge('rub'+dk+'_3');
+  if(!b3)return DIV_RUB_DEFAULT[dk]||3;
+  return b3.classList.contains('active')?3:5;
+}
+// ── 대회 편집용 복식 헬퍼 ──
+function etToggleRub(dk){
+  const nameMap={'G':'금','S':'은','B':'동','T':'테린이'};
+  const chk=ge('etD_'+(nameMap[dk]||dk)), sel=ge('etRubSel'+dk);
+  if(!sel)return;
+  sel.style.display=(chk&&chk.checked)?'flex':'none';
+}
+function etSelRub(dk,n){
+  const b5=ge('etRub'+dk+'_5'),b3=ge('etRub'+dk+'_3');
+  if(!b5||!b3)return;
+  b5.classList.toggle('active',n===5);
+  b3.classList.toggle('active',n===3);
+}
+function etGetRubbers(dk){
+  const b3=ge('etRub'+dk+'_3');
+  if(!b3)return DIV_RUB_DEFAULT[dk]||3;
+  return b3.classList.contains('active')?3:5;
+}
+
 // 조 알파벳 레이블
 function grpLabel(gi){ return String.fromCharCode(65+gi)+'조'; }
 
@@ -1523,8 +1582,14 @@ async function createTournament(){
   if(!divs.length){toast('부서 최소 1개','error');return;}
   sl(true);
   try{
-    const fmt=ge('tFormat').value,gs=parseInt(ge('tGrpSize').value),adv=parseInt(ge('tAdvance').value),dbl=parseInt(ge('tDoubles').value||'3');
-    const ds={};divs.forEach(d=>ds[d]={format:fmt,grpSize:gs,advance:adv,doublesCount:dbl});
+    const fmt=ge('tFormat').value,gs=parseInt(ge('tGrpSize').value),adv=parseInt(ge('tAdvance').value);
+    const rubMap={'금':'G','은':'S','동':'B','테린이':'T'};
+    const ds={};divs.forEach(d=>{
+      const dk=rubMap[d]||'B';
+      const rub=getDivRubbers(dk);
+      ds[d]={format:fmt,grpSize:gs,advance:adv,doublesCount:rub};
+    });
+    const dbl=ds[divs[0]]?.doublesCount||3; // 대표값(하위호환)
     // guideAssets는 Firebase Storage에 업로드 → URL만 tourGuides에 저장
     const tRef=await addDoc(collection(db,'tournaments'),{name:nm,date:dt,venue:ge('tVenue').value.trim(),deadline:ge('tDeadline').value,divisions:divs,format:fmt,grpSize:gs,advance:adv,doublesCount:dbl,divSettings:ds,notice:ge('tNotice').value.trim(),guideText:ge('tGuideText')?.value.trim()||'',guideUrl:ge('tGuideUrl')?.value.trim()||'',hasGuideAssets:(GUIDE_FILES_CREATE||[]).length>0||(GUIDE_FILES_CREATE_PENDING||[]).length>0,status:'open',createdAt:serverTimestamp()});
     // 선택한 파일들을 Storage에 업로드
@@ -1534,7 +1599,7 @@ async function createTournament(){
       await setDoc(doc(db,'tourGuides',tRef.id),{assets,updatedAt:serverTimestamp()});
     }
     await fbLog('대회 생성: '+nm,'🏆');
-    ['tName','tDate','tVenue','tDeadline','tNotice','tGuideText','tGuideUrl'].forEach(id=>ge(id).value=''); ge('tDoubles')&&(ge('tDoubles').value='3'); GUIDE_FILES_CREATE=[]; GUIDE_FILES_CREATE_PENDING=[]; renderGuidePreview('create');
+    ['tName','tDate','tVenue','tDeadline','tNotice','tGuideText','tGuideUrl'].forEach(id=>ge(id).value=''); GUIDE_FILES_CREATE=[]; GUIDE_FILES_CREATE_PENDING=[]; renderGuidePreview('create');
     sl(false);toast('"'+nm+'" 생성됨','success');
   }catch(e){sl(false);toast('생성 실패: '+e.message,'error');}
 }
@@ -1586,8 +1651,23 @@ function openET(tid){
   ge('mETB').innerHTML=`<div class="form-group"><label class="form-label">대회명</label><input class="form-input" id="etN" value="${t.name||''}"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="form-group"><label class="form-label">일자</label><input class="form-input" type="date" id="etDt" value="${t.date||''}"></div><div class="form-group"><label class="form-label">장소</label><input class="form-input" id="etVn" value="${t.venue||''}"></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="form-group"><label class="form-label">마감</label><input class="form-input" type="date" id="etDl" value="${t.deadline||''}"></div><div class="form-group"><label class="form-label">상태</label><select class="form-select" id="etSt"><option value="open" ${t.status==='open'?'selected':''}>접수중</option><option value="closed" ${t.status==='closed'?'selected':''}>마감</option><option value="ongoing" ${t.status==='ongoing'?'selected':''}>진행중</option><option value="finished" ${t.status==='finished'?'selected':''}>종료</option></select></div></div>
-    <div class="frow"><div class="form-group"><label class="form-label">복식 수</label><select class="form-select" id="etDoubles"><option value="3" ${(t.doublesCount||3)===3?'selected':''}>3복식</option><option value="5" ${(t.doublesCount||3)===5?'selected':''}>5복식</option></select></div><div></div></div>
-    <div class="form-group"><label class="form-label">부서</label><div style="display:flex;gap:12px;flex-wrap:wrap;padding:10px;background:var(--panel2);border-radius:var(--radius);border:1px solid var(--border);margin-top:6px">${aD.map(d=>{const has=(t.divisions||[]).includes(d);const cnt=(G.teams[tid+'_'+d]||[]).length;return`<label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="etD_${d}" ${has?'checked':''} ${cnt>0&&has?'disabled':''}><span class="dpill ${dc(d)}">${dl(d)}</span>${cnt>0?`<small style="color:var(--text3)">${cnt}팀</small>`:''}</label>`;}).join('')}</div></div>
+    <div class="frow"></div>
+    <div class="form-group"><label class="form-label">부서</label><div style="display:flex;gap:12px;flex-wrap:wrap;padding:10px;background:var(--panel2);border-radius:var(--radius);border:1px solid var(--border);margin-top:6px">${aD.map(d=>{
+    const has=(t.divisions||[]).includes(d);
+    const cnt=(G.teams[tid+'_'+d]||[]).length;
+    const dbl=(t.divSettings?.[d]?.doublesCount)||(t.doublesCount)||3;
+    const dk={'금':'G','은':'S','동':'B','테린이':'T'}[d]||'B';
+    return`<div class="div-rubber-row" style="margin-bottom:4px">
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;min-width:115px">
+        <input type="checkbox" id="etD_${d}" ${has?'checked':''} ${cnt>0&&has?'disabled':''} onchange="etToggleRub('${dk}')">
+        <span class="dpill ${dc(d)}">${dl(d)}</span>${cnt>0?`<small style="color:var(--text3)">${cnt}팀</small>`:''}
+      </label>
+      <div class="div-rubber-sel" id="etRubSel${dk}" style="display:${has?'flex':'none'}">
+        <span class="rub-opt ${dbl!==3?'active':''}" id="etRub${dk}_5" onclick="etSelRub('${dk}',5)">5복식</span>
+        <span class="rub-opt ${dbl===3?'active':''}" id="etRub${dk}_3" onclick="etSelRub('${dk}',3)">3복식</span>
+      </div>
+    </div>`;
+  }).join('')}</div></div>
     <div class="form-group"><label class="form-label">공지</label><textarea class="form-textarea" id="etNt" rows="3">${t.notice||''}</textarea></div>
     <div class="form-group"><label class="form-label">대회요강 (텍스트)</label>
       <textarea class="form-textarea" id="etGuideText" rows="4" placeholder="대회 요강 텍스트(선택)">${t.guideText||''}</textarea>
@@ -1619,7 +1699,15 @@ async function saveET(){
   const newD=['금','은','동','테린이'].filter(d=>document.getElementById('etD_'+d)?.checked);if(!newD.length){toast('부서 1개 이상','error');return;}
   sl(true);
   try{
-    const ds={...(t.divSettings||{})}; const dbl=parseInt(ge('etDoubles')?.value||String(t.doublesCount||3)); newD.forEach(d=>{if(!ds[d])ds[d]={format:'group_knockout',grpSize:4,advance:2}; ds[d].doublesCount=dbl;});
+    const rubMap2={'금':'G','은':'S','동':'B','테린이':'T'};
+    const ds={...(t.divSettings||{})};
+    newD.forEach(d=>{
+      const dk=rubMap2[d]||'B';
+      const rub=etGetRubbers(dk);
+      if(!ds[d])ds[d]={format:'group_knockout',grpSize:4,advance:2};
+      ds[d].doublesCount=rub;
+    });
+    const dbl=ds[newD[0]]?.doublesCount||3;
     // Storage 업로드 flush 먼저
     await flushGuideUploads(CE_tid, 'edit');
     const assets=GUIDE_FILES_EDIT||[];
@@ -2027,7 +2115,7 @@ function renderBracketHTMLForDiv(tid,div,isAll){
     html+=`<div class="sec-title" style="margin-top:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
       <span>🏆 본선 토너먼트 대진표</span>
       ${AD?`<div style="display:flex;gap:6px">
-        <button class="btn btn-outline" style="font-size:.72rem;padding:4px 10px" onclick="openMainDraw('${tid}','${div}')">🔄 재추첨</button>
+        <button class="btn btn-outline" style="font-size:.72rem;padding:4px 10px" onclick="buildMain('${tid}','${div}')">🔄 재생성</button>
         <button class="btn btn-outline" style="font-size:.72rem;padding:4px 10px" onclick="openManualEdit('${tid}','${div}')">✏️ 수동수정</button>
       </div>`:''}
     </div>`;
@@ -3452,7 +3540,30 @@ async function confirmDraw(){startDraw();}
 // ═══════════════════════════════════════════════════════
 let MD = {key:null,tid:null,div:null,advT:[],bracketSize:0,byeCount:0,isRunning:false};
 
-function buildMain(tid,div){ openMainDraw(tid,div); }
+async function buildMain(tid,div){
+  const key=tid+'_'+div, t=G.tournaments.find(t=>t.id===tid),
+        draw=G.draws[key], teams=G.teams[key]||[], cfg=gDS(t,div);
+  const advT=getAdvT(key,draw,teams,cfg);
+  if(advT.length<2){toast('진출팀 2팀 이상 필요','error');return;}
+  const existMain=(G.matches[key]||[]).filter(m=>m.phase==='main');
+  if(existMain.length){
+    if(!confirm('이미 본선 대진표가 있습니다.\n새로 생성하면 기존 기록이 삭제됩니다. 계속하시겠습니까?'))return;
+  }
+  sl(true);
+  try{
+    const n=np2(advT.length);
+    const plan=buildHybridMainSlots([...(advT.filter(a=>a.rk===1)||[]),...(advT.filter(a=>a.rk!==1)||[])],n);
+    const matchSlots=plan.matchSlots||[];
+    const mainMs=buildMainMatches(matchSlots,n,teams,key);
+    const otherMs=(G.matches[key]||[]).filter(m=>m.phase!=='main');
+    G.matches[key]=[...otherMs,...mainMs];
+    await stM(key);
+    await fbLog('본선 대진 자동생성: '+(t?.name||'')+' '+dl(div),'🏆');
+    sl(false);
+    toast('본선 대진표 생성 완료 🏆','success');
+    renderBracket();
+  }catch(e){sl(false);toast('저장 실패: '+e.message,'error');}
+}
 
 function openMainDraw(tid,div){
   const key=tid+'_'+div, t=G.tournaments.find(t=>t.id===tid),
@@ -3875,9 +3986,11 @@ function openM3(key,mid){
   const dn1=tdn(t1,key,m.t1),dn2=tdn(t2,key,m.t2);
   ge('mM3T').textContent=`⚡ ${dn1} vs ${dn2}`;
   const p1=t1.players||[],p2=t2.players||[];
-  // 복식 수: 팀 저장값 우선, 없으면 선수 수로 추산
-  const[,div]=key.split('_');const isT=div==='terinee';
-  const dbl=t1.doublesCount||(isT?(p1.length<=6?3:p1.length<=8?4:5):3);
+  // 복식 수: divSettings 우선 → 팀 저장값 → 기본 3복
+  const[tid2,div]=key.split('_');
+  const tObj=G.tournaments.find(t=>t.id===tid2);
+  const cfg=gDS(tObj,div);
+  const dbl=cfg.doublesCount||(t1.doublesCount)||3;
   const defSlotLabels=['1·2번','3·4번','5·6번','7·8번','9·10번'];
   const exRb=m.rubbers||[];
   let html=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--primary);color:white;border-radius:var(--radius-lg)"><div style="font-weight:700;font-size:.9rem">${dn1}</div><div style="font-weight:700;font-size:.9rem;text-align:right">${dn2}</div></div>
@@ -4937,7 +5050,11 @@ function openClubMgr(){renderCL();om('mClubs');}
 function renderCL(){ge('clubList').innerHTML=G.clubs.map((c,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)"><span style="flex:1;font-weight:500">${c}</span><button class="btn btn-danger" style="padding:3px 8px;font-size:.7rem" onclick="delClub(${i})">삭제</button></div>`).join('');}
 async function addClub(){const v=ge('newClubInput').value.trim();if(!v){toast('클럽명 입력','error');return;}if(G.clubs.includes(v)){toast('이미 있는 클럽','error');return;}G.clubs.push(v);await saveMeta();renderCL();popSel();popCF();ge('newClubInput').value='';toast(v+' 추가됨','success');}
 async function delClub(i){if(!confirm('삭제?'))return;G.clubs.splice(i,1);await saveMeta();renderCL();popSel();}
-function gDS(t,div){const ds=t?.divSettings?.[div];return{format:ds?.format||t?.format||'group_knockout',grpSize:parseInt(ds?.grpSize||t?.grpSize||4),advance:parseInt(ds?.advance||t?.advance||2)};}
+function gDS(t,div){
+  const ds=t?.divSettings?.[div];
+  const dbl=parseInt(ds?.doublesCount||t?.doublesCount||3); // 장유 기본 3복
+  return{format:ds?.format||t?.format||'group_knockout',grpSize:parseInt(ds?.grpSize||t?.grpSize||4),advance:parseInt(ds?.advance||t?.advance||2),doublesCount:dbl};
+}
 function recTemplate(cnt){
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
   if(cnt<=0) return {fmt:'group_knockout',gs:3,adv:2,note:'팀 수 입력 필요'};
@@ -6373,7 +6490,8 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   mdSelectAll,
   mdUpdateCount,
   switchToRunScreen,runRoulette,leafLandReveal,initDrawStage,fillSlotWithLeaf,activateSlot,celebrateGroupComplete,refreshRunPreview,buildRouletteStrip,grpLabel,
-  updateDrawMainPreview});
+  updateDrawMainPreview,
+  toggleDivRubber,selRub,getDivRubbers,etToggleRub,etSelRub,etGetRubbers});
 
 initFB();
 </script>
@@ -6754,6 +6872,13 @@ initFB();
 
 @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(60px) rotate(720deg);opacity:0}}
 
+
+/* ── 부서별 복식 수 선택 ── */
+.div-rubber-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--radius);background:var(--panel2);border:1px solid var(--border);}
+.div-rubber-sel{display:flex;gap:5px;}
+.rub-opt{display:inline-block;padding:4px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);color:var(--text2);font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s;user-select:none;}
+.rub-opt:hover{border-color:var(--primary);color:var(--primary);}
+.rub-opt.active{background:var(--primary);color:#fff;border-color:var(--primary);}
 </style>
 
 <script>
