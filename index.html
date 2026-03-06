@@ -1631,17 +1631,84 @@ function renderTL(){
 
 async function chgTS(tid,s){try{await updateDoc(doc(db,'tournaments',tid),{status:s});}catch(e){toast('실패','error');}}
 async function delT(tid){
-  if(!confirm('대회를 삭제하시겠습니까?\n⚠️ 관련 경기기록 및 선수 승패도 함께 초기화됩니다.'))return;
+  if(!confirm('대회를 삭제하시겠습니까?\n⚠️ 관련 경기기록, 참가 목록, 선수 개인기록(승패·참가이력)이 모두 삭제됩니다.'))return;
   sl(true);
   try{
     const keys=['금','은','동','테린이'].map(d=>tid+'_'+d);
-    for(const key of keys) await resetMatchRecords(key);
-    const batch=writeBatch(db);
-    batch.delete(doc(db,'tournaments',tid));
-    keys.forEach(k=>{batch.delete(doc(db,'teams',k));batch.delete(doc(db,'draws',k));batch.delete(doc(db,'matches',k));});
-    await batch.commit();
-    sl(false);toast('대회 삭제 완료','info');
-  }catch(e){sl(false);toast('삭제 실패: '+e.message,'error');}
+
+    // ① 선수 승패 복원 + history 제거
+    const affectedPlayers=new Set();
+    for(const key of keys){
+      const matches=G.matches[key]||[];
+      const teams=G.teams[key]||[];
+      // 승패 차감
+      for(const m of matches){
+        if(m.winner==null||m.bye) continue;
+        const wt=teams[m.winner], lt=teams[m.winner===m.t1?m.t2:m.t1];
+        (wt?.players||[]).forEach(n=>{const k=getPlayerKey(n,baseClub(wt?.club||''));if(G.players[k]){G.players[k].wins=Math.max(0,(G.players[k].wins||0)-1);affectedPlayers.add(k);}});
+        (lt?.players||[]).forEach(n=>{const k=getPlayerKey(n,baseClub(lt?.club||''));if(G.players[k]){G.players[k].losses=Math.max(0,(G.players[k].losses||0)-1);affectedPlayers.add(k);}});
+      }
+      // history 제거 (이 대회 tid에 해당하는 항목 삭제)
+      for(const team of teams){
+        (team.players||[]).forEach(n=>{
+          const k=getPlayerKey(n,baseClub(team.club||''));
+          if(G.players[k]){
+            G.players[k].history=(G.players[k].history||[]).filter(h=>h.tid!==tid);
+            affectedPlayers.add(k);
+          }
+        });
+      }
+    }
+    // 선수 Firebase 저장 or 삭제
+    // → history 비고 wins/losses 모두 0이면 이 대회에만 있던 선수 → 완전 삭제
+    if(affectedPlayers.size>0){
+      const toDelete=[], toSave=[];
+      for(const k of affectedPlayers){
+        const p=G.players[k];
+        if(!p) continue;
+        const hist=(p.history||[]).filter(h=>h.tid!==tid); // 이미 위에서 제거됨
+        const w=p.wins||0, l=p.losses||0;
+        if(hist.length===0 && w===0 && l===0){
+          // 이 대회에만 참가한 신규 선수 → players 문서 삭제
+          toDelete.push(k);
+        } else {
+          toSave.push(k);
+        }
+      }
+      if(toSave.length>0) await Promise.all(toSave.map(k=>stP(k)));
+      if(toDelete.length>0){
+        await Promise.all(toDelete.map(k=>
+          deleteDoc(doc(db,'players',k.replace(/[\/\.#\$\[\]]/g,'_'))).catch(()=>{})
+        ));
+        toDelete.forEach(k=>delete G.players[k]);
+      }
+    }
+
+    // ② registrations 삭제 (G._regIdsByKey 활용)
+    const regBatch=writeBatch(db);
+    for(const key of keys){
+      const regIds=G._regIdsByKey?.[key]||[];
+      regIds.forEach(id=>regBatch.delete(doc(db,'registrations',id)));
+    }
+
+    // ③ tournaments / draws / matches 삭제
+    regBatch.delete(doc(db,'tournaments',tid));
+    keys.forEach(k=>{
+      regBatch.delete(doc(db,'draws',k));
+      regBatch.delete(doc(db,'matches',k));
+    });
+    await regBatch.commit();
+
+    // ④ 로컬 상태 정리
+    for(const key of keys){
+      delete G.teams[key]; delete G.draws[key]; delete G.matches[key];
+      if(G._regIdsByKey) delete G._regIdsByKey[key];
+    }
+    G.tournaments=G.tournaments.filter(t=>t.id!==tid);
+
+    sl(false);toast('대회 및 관련 기록 삭제 완료','info');
+    renderTL(); renderBracket();
+  }catch(e){sl(false);toast('삭제 실패: '+e.message,'error');console.error(e);}
 }
 
 function openET(tid){
@@ -2155,11 +2222,12 @@ function renderBracketHTMLForDiv(tid,div,isAll){
 function mCard(m,key,dn1,dn2,done,sc1,sc2,label){
   const wn1=done&&m.winner===m.t1,wn2=done&&m.winner===m.t2;
   const rbs=m.rubbers||[];
-  // 복식 수 결정
-  const[,div]=key.split('_');const isT=div==='terinee';
+  // 복식 수 결정: divSettings 우선 → 팀 저장값 → 기본값
+  const[tid_mc,div]=key.split('_');const isT=div==='terinee';
   const teams=G.teams[key]||[];const t1=teams[m.t1];
-  const p1=t1?.players||[];
-  const dbl=t1?.doublesCount||(isT?(p1.length<=6?3:p1.length<=8?4:5):5);
+  const tObj_mc=G.tournaments.find(t=>t.id===tid_mc);
+  const cfg_mc=gDS(tObj_mc,div);
+  const dbl=cfg_mc.doublesCount||(t1?.doublesCount)||3;
   const rbLabels=['1복식','2복식','3복식','4복식','5복식'];
   const rbH=rbs.length?rbs.map((rb,r)=>{
     if(!rb||rb.score1==null)return`<div class="rb-row pend"><span class="rb-p1">${rb.players1?.join('/')||dn1+' '+(r+1)+'복식'}</span><span class="rb-sc">- : -</span><span class="rb-p2">${rb.players2?.join('/')||dn2+' '+(r+1)+'복식'}</span></div>`;
