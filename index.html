@@ -87,6 +87,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.home-stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:0;}
+.home-stat-card{background:linear-gradient(180deg,#ffffff,#f7f9fd);border-radius:14px;padding:12px 10px;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:86px;text-align:center;}
+.home-stat-card .stat-label{font-size:.68rem;letter-spacing:.02em;}
+.home-stat-card .stat-val{font-size:1.65rem;}
 .stat-card{background:var(--panel);border-radius:var(--radius-lg);padding:16px 18px;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:4px;}
 .stat-icon{font-size:1.6rem;margin-bottom:4px;}
 .stat-val{font-family:'Oswald',sans-serif;font-size:1.8rem;font-weight:600;color:var(--primary);line-height:1;}
@@ -296,6 +300,9 @@ body{overflow-x:hidden;}
 .same-club-warn.show{display:block;}
 @media(max-width:680px){
   .g2,.g3,.g4{grid-template-columns:1fr;}
+  .home-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .home-stat-card{min-height:78px;padding:10px 8px;}
+  .home-stat-card .stat-val{font-size:1.45rem;}
   .frow,.frow3{grid-template-columns:1fr;}
   .ps-row{grid-template-columns:1fr 1fr;}
   .match-teams{flex-direction:column;}
@@ -443,11 +450,15 @@ body{overflow-x:hidden;}
 
 <div class="page active" id="page-home">
   <div class="hero fade-in"><h2 class="hero-title" id="heroTitle">장유테니스연합회</h2><p class="hero-sub" id="heroStatus">대회 준비중</p><div class="hero-chips" style="margin-top:10px"><span class="hero-chip" id="heroClubs">🏟 -</span><span class="hero-chip" id="heroTeams">👥 -</span></div></div>
-  <div class="g4" style="margin-bottom:16px">
-    <div class="stat-card"><div class="stat-label">참가 클럽</div><div class="stat-val" id="sClubs">0</div></div>
-    <div class="stat-card"><div class="stat-label">등록 팀</div><div class="stat-val" id="sTeams">0</div></div>
-    <div class="stat-card"><div class="stat-label">완료 경기</div><div class="stat-val" id="sMatches">0</div></div>
-    <div class="stat-card"><div class="stat-label">등록 선수</div><div class="stat-val" id="sPlayers">0</div></div>
+  <div class="card fade-in" style="margin-bottom:16px;padding:14px 14px 12px">
+    <div class="card-title">📊 장유연합회 현황</div>
+    <div class="home-stats-grid">
+      <div class="home-stat-card"><div class="stat-label">참가 클럽</div><div class="stat-val" id="sClubs">0</div></div>
+      <div class="home-stat-card"><div class="stat-label">등록 팀</div><div class="stat-val" id="sTeams">0</div></div>
+      <div class="home-stat-card"><div class="stat-label">완료 경기</div><div class="stat-val" id="sMatches">0</div></div>
+      <div class="home-stat-card"><div class="stat-label">등록 선수</div><div class="stat-val" id="sPlayers">0</div></div>
+    </div>
+    <div style="margin-top:8px;font-size:.74rem;color:var(--text2)">과거 대회 기록을 포함한 누적 현황입니다.</div>
   </div>
   <div class="g2">
     <div class="card fade-in"><div class="card-title">📌 현재 대회</div><div id="homeTournInfo"><p class="muted">등록된 대회가 없습니다</p></div></div>
@@ -4251,13 +4262,73 @@ function renderLiveRanking(tid,div,cont){
 }
 
 
+function normPlayerName(v){ return String(v||'').trim(); }
+function collectTeamPlayerNames(team){
+  const names=[];
+  const add=(v)=>{ if(Array.isArray(v)) v.forEach(add); else if(typeof v==='string'&&normPlayerName(v)) names.push(normPlayerName(v)); };
+  if(!team) return names;
+  add(team.players);
+  ['player1','player2','player3','player4','member1','member2','member3','member4','captain','viceCaptain'].forEach(k=>add(team[k]));
+  if(Array.isArray(team.members)) add(team.members);
+  return names;
+}
+function buildCumulativeHomeStats(){
+  const clubSet=new Set();
+  const playerSet=new Set();
+  let teamCount=0;
+  let matchCount=Object.values(G.matches||{}).reduce((s,a)=>s+(a||[]).filter(m=>m&&m.winner!==null).length,0);
+
+  Object.entries(G.teams||{}).forEach(([key,arr])=>{
+    (arr||[]).forEach(team=>{
+      if(!team) return;
+      teamCount++;
+      const club=String(team.club||'').trim();
+      if(club) clubSet.add(club);
+      collectTeamPlayerNames(team).forEach(name=> playerSet.add(`${club}::${name}`));
+    });
+  });
+  Object.entries(G.players||{}).forEach(([k,p])=>{
+    const name=normPlayerName(p?.name||k.split('_')[0]);
+    const club=String(p?.club||'').trim();
+    if(name) playerSet.add(`${club}::${name}`);
+    if(club) clubSet.add(club);
+  });
+
+  (HIST_DATA||[]).forEach(t=>{
+    (t.teams||[]).forEach(team=>{
+      if(!team) return;
+      teamCount++;
+      const club=String(team.club||'').trim();
+      if(club) clubSet.add(club);
+      collectTeamPlayerNames(team).forEach(name=> playerSet.add(`${club}::${name}`));
+    });
+    if(Array.isArray(t.matches)) matchCount += t.matches.filter(m=>m&&m.winner!==null).length;
+  });
+
+  return { clubs:clubSet.size, teams:teamCount, matches:matchCount, players:playerSet.size };
+}
+function buildCurrentTournamentStats(at){
+  if(!at) return { clubs:0, teams:0 };
+  const currentTeams=[];
+  (at.divisions||[]).forEach(d=> currentTeams.push(...(G.teams[`${at.id}_${d}`]||[])) );
+  const currentClubs=new Set(currentTeams.map(t=>String(t?.club||'').trim()).filter(Boolean));
+  return { clubs:currentClubs.size, teams:currentTeams.length };
+}
+
+
 function upDash(){
-  const tt=Object.values(G.teams).reduce((s,a)=>s+(a||[]).length,0);
-  const tp=Object.keys(G.players).length;
-  const tm=Object.values(G.matches).reduce((s,a)=>s+(a||[]).filter(m=>m.winner!==null).length,0);
-  const clubs=new Set();Object.values(G.teams).forEach(a=>a.forEach(t=>clubs.add(t.club)));
-  ge('sClubs').textContent=clubs.size;ge('sTeams').textContent=tt;ge('sMatches').textContent=tm;ge('sPlayers').textContent=tp;ge('regBadge').textContent=tt;ge('heroClubs').textContent=`🏟 ${clubs.size}개 클럽`;ge('heroTeams').textContent=`👥 ${tt}팀`;
+  const totals=buildCumulativeHomeStats();
+  ge('sClubs').textContent=totals.clubs;
+  ge('sTeams').textContent=totals.teams;
+  ge('sMatches').textContent=totals.matches;
+  ge('sPlayers').textContent=totals.players;
+  ge('regBadge').textContent=Object.values(G.teams||{}).reduce((s,a)=>s+(a||[]).length,0);
   const at=G.tournaments.find(t=>t.status==='ongoing')||G.tournaments.find(t=>t.status==='open')||G.tournaments[0];
+  const currentStats=buildCurrentTournamentStats(at);
+  const heroClubCount=currentStats.clubs;
+  const heroTeamCount=currentStats.teams;
+  ge('heroClubs').textContent=`🏟 ${heroClubCount}개 클럽`;
+  ge('heroTeams').textContent=`👥 ${heroTeamCount}팀`;
   if(at){const slbl={open:'접수중',closed:'접수마감',ongoing:'진행중',finished:'종료'};ge('heroTitle').textContent=at.name;ge('heroStatus').textContent='📌 '+slbl[at.status];ge('homeTournInfo').innerHTML=`<div style="display:flex;flex-direction:column;gap:8px"><div style="font-weight:700;font-size:1rem">${at.name}</div><div style="font-size:.82rem;color:var(--text2)">📅 ${at.date}${at.venue?' | 📍 '+at.venue:''}</div><div style="display:flex;gap:6px;flex-wrap:wrap">${at.divisions.map(d=>`<span class="dpill ${dc(d)}" style="cursor:pointer" onclick="openRoster('${at.id}','${d}')">${dl(d)} <small>${(G.teams[at.id+'_'+d]||[]).length}팀</small></span>`).join('')}</div>${(at.guideText||at.guideUrl||at.hasGuideAssets||((at.guideAssets||[]).length))?`<div style="display:flex;justify-content:flex-end"><button class=\"btn btn-outline\" style=\"font-size:.75rem;padding:6px 12px\" onclick=\"openGuide('${at.id}')\">📌 요강 보기</button></div>`:''}${at.notice?`<div style="font-size:.78rem;background:var(--panel2);padding:8px;border-radius:var(--radius);border:1px solid var(--border);white-space:pre-line">${at.notice}</div>`:''}</div>`;ge('homeDivStatus').innerHTML=at.divisions.map(d=>{
     const k=`${at.id}_${d}`;
     const tc=(G.teams[k]||[]).length;
@@ -6615,6 +6686,9 @@ initFB();
 .same-club-warn.show{display:block;}
 @media(max-width:680px){
   .g2,.g3,.g4{grid-template-columns:1fr;}
+  .home-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .home-stat-card{min-height:78px;padding:10px 8px;}
+  .home-stat-card .stat-val{font-size:1.45rem;}
   .frow,.frow3{grid-template-columns:1fr;}
   .ps-row{grid-template-columns:1fr 1fr;}
   .match-teams{flex-direction:column;}
