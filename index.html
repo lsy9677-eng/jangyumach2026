@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "2026-03-04-jangyu-slot-v2-sfx-slotspin-slow";
+  const APP_VERSION = "2026-03-06-v11-tennis-ball-actual-spin";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -260,14 +260,31 @@ body{overflow-x:hidden;}
 .fade-in{animation:fadeIn .3s ease;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-@keyframes drawSpin{0%{transform:rotateY(0deg);background:var(--primary)}25%{transform:rotateY(180deg);background:var(--accent)}50%{transform:rotateY(360deg);background:var(--primary-dark)}75%{transform:rotateY(540deg);background:var(--success)}100%{transform:rotateY(720deg);background:var(--primary)}}
-@keyframes drawPop{0%{transform:scale(0) rotate(-10deg);opacity:0}60%{transform:scale(1.15) rotate(3deg);opacity:1}100%{transform:scale(1) rotate(0deg);opacity:1}}
-@keyframes drawSlot{0%,100%{color:var(--primary);background:var(--panel2)}50%{color:white;background:var(--accent)}}
-@keyframes confetti{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(80px) rotate(720deg);opacity:0}}
-.draw-stage{text-align:center;padding:16px;}
-.draw-ball{width:64px;height:64px;border-radius:50%;background:var(--primary);color:white;font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin:8px;box-shadow:0 4px 12px rgba(0,0,0,.3);transition:all .3s;}
-.draw-ball.spinning{animation:drawSpin .6s linear infinite;}
-.draw-ball.popped{animation:drawPop .5s cubic-bezier(.17,.67,.4,1.3) forwards;}
+@keyframes tennisBallSpin{0%{transform:rotate(0deg) scale(1)}100%{transform:rotate(360deg) scale(1)}}
+@keyframes tennisBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes drawPop{0%{transform:scale(.78);opacity:.2}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes drawSlotFlash{0%,100%{filter:brightness(1)}50%{filter:brightness(1.16)}}
+@keyframes vsPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.tennis-roulette{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:6px 0;}
+.tennis-roulette-ball,.draw-ball{position:relative;width:120px;height:120px;border-radius:999px;overflow:hidden;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 12px 24px rgba(0,0,0,.18));}
+.tennis-roulette-core{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 30% 28%,#fffde2 0 11%,#fff6a8 12%,#ece24e 54%,#bccd25 100%);border:3px solid rgba(104,124,0,.28);box-shadow:inset 0 4px 16px rgba(255,255,255,.62), inset 0 -8px 18px rgba(90,103,0,.16);overflow:hidden;}
+.tennis-roulette-core::before,.tennis-roulette-core::after{content:'';position:absolute;top:50%;width:62px;height:158px;border:6px solid rgba(255,255,255,.98);border-top-color:transparent;border-bottom-color:transparent;border-radius:50%;transform:translateY(-50%);pointer-events:none;}
+.tennis-roulette-core::before{left:-18px;transform:translateY(-50%) rotate(10deg);}
+.tennis-roulette-core::after{right:-18px;transform:translateY(-50%) rotate(-10deg);}
+.tennis-roulette-core.spinning{animation:tennisBallSpin .52s linear infinite, tennisBounce .8s ease-in-out infinite;}
+.tennis-roulette-ball.popped,.draw-ball.popped{animation:drawPop .42s cubic-bezier(.17,.67,.4,1.3) both;}
+.tennis-ball-label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:64px;max-width:80px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.9);backdrop-filter:blur(3px);border:1px solid rgba(16,36,77,.08);box-shadow:0 4px 14px rgba(0,0,0,.12);color:#17320e;font-size:.84rem;font-weight:900;line-height:1.1;text-align:center;word-break:keep-all;z-index:2;}
+.tennis-ball-label.spinning{animation:drawSlotFlash .24s linear infinite;}
+.tennis-roulette-name{font-size:.82rem;font-weight:800;line-height:1.2;color:var(--text2);text-align:center;word-break:keep-all;}
+.tennis-roulette-sub{font-size:.74rem;color:var(--text3);text-align:center;}
+.tennis-reveal{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+.tennis-reveal .tennis-roulette-ball{width:96px;height:96px;}
+.tennis-reveal .tennis-ball-label{min-width:54px;max-width:70px;font-size:.76rem;padding:6px 8px;}
+.tennis-reveal .tennis-roulette-name{font-size:.82rem;max-width:min(84vw,280px);}
+.tennis-vs{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;}
+.tennis-vs .tennis-reveal .tennis-roulette-ball{width:82px;height:82px;}
+.tennis-vs .tennis-reveal .tennis-ball-label{min-width:48px;max-width:62px;font-size:.68rem;padding:5px 7px;}
+.tennis-vs .tennis-reveal .tennis-roulette-name{max-width:140px;font-size:.74rem;}
 .draw-group-row{display:flex;align-items:center;gap:8px;padding:10px;border-radius:var(--radius);background:var(--panel2);border:1px solid var(--border);margin-bottom:6px;}
 .draw-group-label{font-family:'Oswald',sans-serif;font-weight:700;font-size:1rem;color:var(--primary);width:36px;text-align:center;}
 .draw-team-slot{display:inline-flex;align-items:center;padding:4px 12px;border-radius:12px;font-size:.8rem;font-weight:600;background:var(--panel);border:1.5px dashed var(--border);min-width:80px;justify-content:center;transition:all .4s;}
@@ -277,9 +294,6 @@ body{overflow-x:hidden;}
 .draw-cfg-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
 .draw-cfg-row:last-child{margin-bottom:0;}
 .draw-cfg-label{font-size:.78rem;font-weight:700;color:var(--text2);min-width:100px;}
-.grp-preset{display:inline-flex;align-items:center;padding:5px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:.75rem;font-weight:600;cursor:pointer;background:var(--panel);transition:all .15s;margin:2px;}
-.grp-preset:hover{border-color:var(--primary);color:var(--primary);}
-.grp-preset.active{background:var(--primary);color:white;border-color:var(--primary);}
 .draw-progress{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:10px 0;}
 .draw-progress-bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:2px;transition:width .4s ease;}
 .same-club-warn{font-size:.72rem;color:#b45309;background:#fef3cd;padding:5px 10px;border-radius:var(--radius);margin-top:6px;display:none;}
@@ -2477,14 +2491,14 @@ function updateMainSizeDisplay(){
 function nextPow2(n){let p=1;while(p<n)p*=2;return p;}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
-// 🎰 추첨 속도 (1=기본, 1.4=더 천천히)
-const DRAW_SPEED = 1.4;
+// 🎰 추첨 속도 (1=기본, 1.75=더 천천히 / 긴장감 강화)
+const DRAW_SPEED = 1.75;
 function dSleep(ms){ return sleep(ms * DRAW_SPEED); }
 
-// 🔊 WebAudio 효과음 (외부 파일 없이)
 // 🔊 WebAudio 효과음 (룰렛/슬롯 느낌, 외부 파일 없이)
 let __SFX_CTX = null;
 let __NOISE_BUF = null;
+let __ROLL_TIMER = null;
 
 function __sfxCtx(){
   if(__SFX_CTX) return __SFX_CTX;
@@ -2562,36 +2576,61 @@ function __noiseClick({gain=0.13, ms=22, freq=2400, q=10}={}){
   o.stop(t + 0.015);
 }
 
+function stopRollLoop(){
+  if(__ROLL_TIMER){
+    clearInterval(__ROLL_TIMER);
+    __ROLL_TIMER = null;
+  }
+}
+
+function startRollLoop(duration=1400){
+  stopRollLoop();
+  const started = Date.now();
+  let clickGap = 44;
+  __ROLL_TIMER = setInterval(()=>{
+    const p = Math.min(1, (Date.now()-started) / Math.max(500, duration));
+    if(Math.random() < 0.82) __noiseClick({gain:0.075 + (1-p)*0.04, ms:15 + Math.random()*10, freq:1800 + Math.random()*900, q:8});
+    clickGap = 42 + p*26;
+  }, clickGap);
+  setTimeout(stopRollLoop, duration + 120);
+}
+
 function playSound(kind){
-  // kind: 'spin' | 'reveal' | 'final'
+  // kind: 'spin' | 'slotStop' | 'reveal' | 'final'
   if(kind==='spin'){
     __noiseClick({gain:0.11, ms:18 + Math.random()*10, freq:2200 + Math.random()*700, q:9});
     return;
   }
+  if(kind==='slotStop'){
+    __noiseClick({gain:0.14, ms:26, freq:1600 + Math.random()*500, q:6});
+    setTimeout(()=>__beep(720, 70, 'triangle', 0.04), 18);
+    return;
+  }
   if(kind==='reveal'){
+    stopRollLoop();
     const ctx = __sfxCtx(); if(!ctx) return;
     if(ctx.state === 'suspended') ctx.resume().catch(()=>{});
     const t = ctx.currentTime;
 
-    // whoosh (노이즈 + 로우패스 스윕)
     const buf = __ensureNoise();
     const src = ctx.createBufferSource(); src.buffer = buf;
-    const lp = ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.setValueAtTime(400, t);
-    lp.frequency.exponentialRampToValueAtTime(2800, t + 0.12);
+    const lp = ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.setValueAtTime(380, t);
+    lp.frequency.exponentialRampToValueAtTime(3200, t + 0.14);
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.10, t + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+    g.gain.exponentialRampToValueAtTime(0.12, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
     src.connect(lp); lp.connect(g); g.connect(ctx.destination);
     src.start(t, Math.random()*0.03);
-    src.stop(t + 0.18);
+    src.stop(t + 0.2);
 
-    // ding
     __beep(988, 90, 'sine', 0.08);
-    __beep(1319, 110, 'sine', 0.06);
+    setTimeout(()=>__beep(1319, 115, 'sine', 0.06), 38);
+    setTimeout(()=>__beep(1568, 90, 'triangle', 0.045), 92);
     return;
   }
   if(kind==='final'){
+    stopRollLoop();
     __beep(392, 140, 'sine', 0.09);
     setTimeout(()=>__beep(494, 140, 'sine', 0.09), 120);
     setTimeout(()=>__beep(587, 160, 'sine', 0.09), 240);
@@ -2603,41 +2642,59 @@ function playSound(kind){
   }
 }
 
-// 🎰 슬롯 릴(팀 이름이 굴러가다 멈추는 버전)
-async function spinTeamSlot(teamList, duration=1200, labelHtml='🎰 추첨 중...'){
-  const stage = ge('mainStageContent');
-  if(!stage || !Array.isArray(teamList) || teamList.length===0) return;
 
-  const start = Date.now();
-  return new Promise(resolve=>{
-    const timer = setInterval(()=>{
-      const rand = teamList[Math.floor(Math.random()*teamList.length)];
-      stage.innerHTML = `
-        <div style="font-size:.9rem;font-weight:800;color:var(--text2);margin-bottom:10px">${labelHtml}</div>
-        <div style="
-          font-size:1.05rem;
-          font-weight:900;
-          background:linear-gradient(135deg,#0a2a6e,#1565c0,#1976d2);
-          color:white;
-          padding:14px 20px;
-          border-radius:16px;
-          box-shadow:0 10px 26px rgba(0,0,0,.28);
-          min-width:220px;
-          text-align:center;
-        ">${rand}</div>
-        <div style="margin-top:10px;font-size:.72rem;color:var(--text3);letter-spacing:.06em">🏟 STADIUM DRAW</div>
-      `;
-      playSound('spin');
-      if(Date.now()-start>duration){
-        clearInterval(timer);
-        resolve();
-      }
-    }, 90);
-  });
+function uniquePoolNames(items){
+  const seen = new Set();
+  return (items||[]).map(v=>typeof v==='string'?v:(v?.nm||'')).filter(Boolean).filter(name=>{ if(seen.has(name)) return false; seen.add(name); return true; });
+}
+function tennisBallOnlyHTML(text='', cls=''){
+  return `<div class="tennis-roulette-ball ${cls}"><div class="tennis-roulette-core"></div><div class="tennis-ball-label">${text || '?'}</div></div>`;
+}
+function tennisRevealHTML(text='', tone='primary', note=''){
+  return `<div class="tennis-reveal">
+    ${tennisBallOnlyHTML(text, 'popped')}
+    ${note ? `<div class="tennis-roulette-sub">${note}</div>` : `<div class="tennis-roulette-name">${text || '?'}</div>`}
+  </div>`;
+}
+function tennisVsHTML(leftText='', rightText='', leftTone='primary', rightTone='success'){
+  return `<div class="tennis-vs">
+    <div class="tennis-reveal">
+      ${tennisBallOnlyHTML(leftText, 'popped')}
+      <div class="tennis-roulette-name">${leftText || '?'}</div>
+    </div>
+    <div style="font-size:1.35rem;font-weight:900;color:var(--text2)">VS</div>
+    <div class="tennis-reveal">
+      ${tennisBallOnlyHTML(rightText, 'popped')}
+      <div class="tennis-roulette-name">${rightText || '?'}</div>
+    </div>
+  </div>`;
 }
 
+function buildStageSlotShell(labelHtml='🎰 추첨 중...', footer='둥근 테니스공이 돌면서 공 위 팀명이 바뀝니다 🎾'){
+  return `
+    <div style="font-size:.92rem;font-weight:800;color:var(--text2);margin-bottom:10px">${labelHtml}</div>
+    <div class="tennis-roulette">
+      <div class="tennis-roulette-ball"><div class="tennis-roulette-core spinning"></div><div class="tennis-ball-label spinning">?</div></div>
+      <div class="tennis-roulette-sub">${footer}</div>
+    </div>
+  `;
+}
+
+// 🎰 슬롯 릴(팀 이름이 굴러가다 천천히 멈추는 버전)
+async function spinTeamSlot(teamList, duration=1600, labelHtml='🎰 추첨 중...'){
+  const stage = ge('mainStageContent');
+  if(!stage || !Array.isArray(teamList) || teamList.length===0) return;
+  stage.innerHTML = buildStageSlotShell(labelHtml, '🏟 STADIUM DRAW · 둥근 테니스공 위에서 팀명이 바로 바뀝니다');
+  const ball = stage.querySelector('.tennis-roulette-core');
+  const nameEl = stage.querySelector('.tennis-ball-label');
+  await spinSlotIn(stage, teamList, duration, labelHtml, {nameSelector:'.tennis-ball-label', footer:'🏟 STADIUM DRAW · 둥근 테니스공 위에서 팀명이 바로 바뀝니다'});
+  if(ball) ball.classList.remove('spinning');
+  if(nameEl) nameEl.classList.remove('spinning');
+  return nameEl?.textContent || '';
+}
 
 function buildSnakeOrder(grps,opt){
+
   opt = opt || {};
   const order=[];
   let rem=grps.map((g,idx)=>({
@@ -2687,42 +2744,38 @@ function smartShuffle(indices,teams){
 
 
 // 🎰 슬롯(릴) 스핀 UI (외부 라이브러리 없이)
-async function spinSlotIn(containerEl, nameList, durationMs, caption=''){
+async function spinSlotIn(containerEl, nameList, durationMs, caption='', opts={}){
   return new Promise((resolve)=>{
     try{
       if(!containerEl){ resolve(); return; }
-      const list = (Array.isArray(nameList)&&nameList.length)? nameList : ['?'];
-      // UI
-      containerEl.innerHTML = `
-        <div style="font-size:.85rem;font-weight:700;color:var(--text3);margin-bottom:6px">${caption||'추첨 중...'}</div>
-        <div style="display:flex;align-items:center;justify-content:center">
-          <div class="draw-ball" style="font-size:.9rem;min-width:220px;max-width:92%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">?</div>
-        </div>
-        <div style="height:10px"></div>
-        <div style="font-size:.78rem;color:var(--text3);text-align:center;opacity:.9">🎰 팀명이 돌아갑니다…</div>
-      `;
-      const ball = containerEl.querySelector('.draw-ball');
+      const list = (Array.isArray(nameList)&&nameList.length)? uniquePoolNames(nameList) : ['?'];
+      const nameSelector = opts.nameSelector || '.tennis-ball-label';
+      if(!containerEl.querySelector(nameSelector)){
+        containerEl.innerHTML = buildStageSlotShell(caption || '추첨 중...', opts.footer || '🎾 팀명이 돌아갑니다…');
+      }
+      const ball = containerEl.querySelector('.tennis-roulette-core');
+      const nameEl = containerEl.querySelector(nameSelector);
+      const label = containerEl.querySelector('div');
+      if(label && caption) label.innerHTML = caption;
+
       let idx = randInt(list.length);
-      let start = performance.now();
+      const start = performance.now();
       let lastTick = 0;
       let lastSfx = 0;
-
-      // 이징: 끝날수록 느려지게
-      const easeOutCubic = (x)=> 1 - Math.pow(1-x, 3);
+      const duration = Math.max(900, durationMs || 1600);
+      const easeOutQuint = (x)=> 1 - Math.pow(1-x, 5);
+      startRollLoop(duration);
 
       const tick = (now)=>{
         const elapsed = now - start;
-        const p = Math.min(1, elapsed / Math.max(200, durationMs||1200));
-        // 초반 빠르게, 후반 느리게
-        const eased = easeOutCubic(p);
-        const interval = 35 + eased * 140; // ms (35 → 175)
+        const p = Math.min(1, elapsed / duration);
+        const eased = easeOutQuint(p);
+        const interval = 34 + eased * 182;
         if(now - lastTick >= interval){
           idx = (idx + 1 + randInt(3)) % list.length;
-          const txt = list[idx];
-          if(ball) ball.textContent = txt;
-
-          // 스핀 사운드(과도한 연타 방지)
-          if(now - lastSfx >= 65){
+          if(nameEl) nameEl.textContent = list[idx];
+          if(ball && p > 0.72) ball.style.animationDuration = `${0.62 + (p-0.72)*1.6}s, 0.8s`;
+          if(now - lastSfx >= 60){
             playSound('spin');
             lastSfx = now;
           }
@@ -2731,22 +2784,27 @@ async function spinSlotIn(containerEl, nameList, durationMs, caption=''){
         if(p < 1){
           requestAnimationFrame(tick);
         }else{
-          // 마지막 2~3번 '딸깍' 느낌으로 더 느리게
-          let extra = 3;
+          stopRollLoop();
+          let extra = 4;
           const slowClicks = ()=>{
-            if(extra<=0){ resolve(); return; }
+            if(extra<=0){
+              if(nameEl) nameEl.textContent = list[idx];
+              playSound('slotStop');
+              resolve(nameEl?.textContent || '');
+              return;
+            }
             idx = (idx + 1) % list.length;
-            if(ball) ball.textContent = list[idx];
+            if(nameEl) nameEl.textContent = list[idx];
             playSound('spin');
             extra--;
-            setTimeout(slowClicks, 130 + randInt(90));
+            setTimeout(slowClicks, 150 + randInt(95));
           };
-          setTimeout(slowClicks, 80);
+          setTimeout(slowClicks, 95);
         }
       };
       requestAnimationFrame(tick);
     }catch(e){
-      // 혹시 오류 나도 추첨 자체가 멈추지 않게
+      stopRollLoop();
       resolve();
     }
   });
@@ -2761,7 +2819,6 @@ async function startDraw(){
   ge('drawCfgBox').style.display='none';ge('drawStage').style.display='block';
 
   const key=DW.key,teams=DW.teams,{groups:ng,grpSizes,advance}=DW.cfg;
-  // 재추첨 전 기존 기록 초기화
   await resetMatchRecords(key);
   const shuffled=smartShuffle(teams.map((_,i)=>i),teams);
   const grps=grpSizes.map(size=>({teams:[],size}));
@@ -2769,37 +2826,54 @@ async function startDraw(){
 
   ge('drawGroupRows').innerHTML=grps.map((_,gi)=>`<div class="draw-group-row" id="dg_${gi}"><div class="draw-group-label">${gi+1}조</div><div id="dg_slots_${gi}" style="display:flex;flex-wrap:wrap;gap:4px">${Array(grps[gi].size).fill(0).map(()=>`<span class="draw-team-slot">?</span>`).join('')}</div></div>`).join('');
 
+  ge('drawStageContent').innerHTML = `
+    <div style="font-size:1rem;font-weight:800;color:var(--primary-dark);margin-bottom:8px">🎰 예선 추첨 준비</div>
+    <div style="font-size:.8rem;color:var(--text2);line-height:1.6">한 팀씩 천천히 공개됩니다.<br>같은 조 배정 결과를 눈으로 확인해 주세요.</div>
+  `;
+  await dSleep(700);
+
   for(let i=0;i<assignOrder.length;i++){
-    const gi=assignOrder[i];const ti=shuffled[i];const team=teams[ti];const dn=tdn(team,key,ti);
-
+    const gi=assignOrder[i];
+    const ti=shuffled[i];
+    const team=teams[ti];
+    const dn=tdn(team,key,ti);
     ge('drawProgressBar').style.width=`${(i/shuffled.length)*100}%`;
-    const stageEl = ge('drawStageContent');
 
-    // 🎰 슬롯 스핀(긴장감 ↑) + 효과음
-    const nameList = teams.map((t,idx)=>tdn(t,key,idx));
-    const spinDur = (900 + Math.random()*700) * DRAW_SPEED;
-    await spinSlotIn(stageEl, nameList, spinDur, `${i+1} / ${shuffled.length}번째 추첨`);
+    const nameList = shuffled.map(idx=>tdn(teams[idx],key,idx));
+    const spinDur = (1450 + Math.random()*850) * DRAW_SPEED;
+    await spinSlotIn(
+      ge('drawStageContent'),
+      nameList,
+      spinDur,
+      `${i+1} / ${shuffled.length}번째 추첨 · ${gi+1}조 후보 결정 중`,
+      { footer:'🎾 팀명이 빠르게 돌다가 마지막에 천천히 멈춥니다' }
+    );
 
-    // 팀명 공개(뽑힘!) + 효과음
     playSound('reveal');
-    stageEl.innerHTML=`<div style="font-size:.85rem;font-weight:700;color:var(--success);margin-bottom:6px">✨ ${gi+1}조 배정!</div><div class="draw-ball popped" style="background:var(--success);font-size:.8rem">${dn}</div>`;
-    await dSleep(520);
-    // 슬롯 채우기
+    ge('drawStageContent').innerHTML = `
+      <div style="font-size:.88rem;font-weight:800;color:var(--success);margin-bottom:8px">✨ ${gi+1}조 배정 완료!</div>
+      ${tennisRevealHTML(dn,'success',`${team.club||'클럽 미지정'} · 한 팀씩 천천히 결과를 보여줍니다`)}
+    `;
+    await dSleep(620);
+
     const slots=ge('dg_slots_'+gi);
     const emptySlot=slots.querySelector('.draw-team-slot:not(.filled)');
     if(emptySlot){
       const sameClub=grps[gi].teams.some(idx=>teams[idx].club===team.club);
-      emptySlot.textContent=dn;emptySlot.classList.add('filled');
-      if(sameClub)emptySlot.classList.add('same-club');
+      emptySlot.textContent=dn;
+      emptySlot.classList.add('filled');
+      if(sameClub) emptySlot.classList.add('same-club');
       grps[gi].teams.push(ti);
     }
-    await dSleep(180);
+
+    ge('drawStageContent').insertAdjacentHTML('beforeend', `<div style="margin-top:10px;font-size:.75rem;color:var(--primary-dark);font-weight:700">📍 ${gi+1}조 슬롯에 반영되었습니다</div>`);
+    await dSleep(260);
   }
 
   ge('drawProgressBar').style.width='100%';
   playSound('final');
-  ge('drawStageContent').innerHTML=`<div style="font-size:1.1rem;font-weight:700;color:var(--success);margin:10px 0">🎉 추첨 완료!</div>`;
-  await dSleep(900);
+  ge('drawStageContent').innerHTML=`<div style="font-size:1.12rem;font-weight:800;color:var(--success);margin:10px 0">🎉 예선 추첨 완료!</div><div style="font-size:.8rem;color:var(--text2)">조 편성을 확인해 주세요</div>`;
+  await dSleep(980);
 
   const groupData=grps.map(g=>({teams:g.teams,courts:[]}));
   G.draws[key]={groups:groupData,shuffled,advance};
@@ -2903,188 +2977,134 @@ async function startMainDraw(){
   const {key,tid,div,advT,bracketSize:n,byeCount,rank1,rank2}=MD;
   const teams=G.teams[key]||[];
   const matchCount=n/2;
-
-  // 매치슬롯 초기화
   const matchSlots=Array.from({length:matchCount},(_,i)=>({id:i,t1:null,t2:null,bye:false}));
-
-  // 매치 인덱스 풀 (섞기)
   const allIdxs=shuffle([...Array(matchCount).keys()]);
-
-  // 부전승 매치 인덱스
   const byeIdxs=allIdxs.slice(0,byeCount);
-  // 일반 매치 인덱스
   const normalIdxs=allIdxs.slice(byeCount);
-
-  // 1위팀 셔플
   const rank1Pool=shuffle([...rank1]);
-  // 2위팀 셔플
   const rank2Pool=shuffle([...rank2]);
 
-  // 부전승 받을 1위팀 수
   const byeRank1Count=Math.min(byeCount, rank1Pool.length);
-  // 부전승을 1위로 다 못 채우면 2위팀도 포함
   const byeRank1=rank1Pool.slice(0,byeRank1Count);
   const byeRank2=rank2Pool.slice(0,byeCount-byeRank1Count);
   const rank2Remaining=rank2Pool.slice(byeCount-byeRank1Count);
-
-  // 일반매치에 들어갈 1위팀 (부전승 못 받은)
   const normalRank1=rank1Pool.slice(byeRank1Count);
 
-  // 진행바 총 단계
   let stepTotal=byeCount + normalRank1.length + rank2Remaining.length;
   let stepDone=0;
+  const allNames = advT.map(t=>`${t.rk===1?'👑':'🥈'} ${t.nm}`);
 
-  // ═══ 단계 1: 부전승 매치에 팀 배정 ═══
+  showMainStageMsg(`<div style="font-size:1rem;font-weight:800;color:var(--primary-dark)">🏆 본선 추첨 준비</div><div style="font-size:.8rem;color:var(--text2);margin-top:6px;line-height:1.6">예선과 같은 슬롯 방식으로<br>한 자리씩 천천히 대진을 완성합니다.</div>`);
+  await dSleep(760);
+
   if(byeCount>0){
-    showMainStageMsg(`<div style="font-size:1rem;font-weight:700;color:var(--accent)">🎫 부전승 추첨</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">1위팀이 부전승 자리를 받습니다</div>`);
-    await dSleep(900);
+    showMainStageMsg(`<div style="font-size:1rem;font-weight:800;color:var(--accent)">🎫 부전승 추첨</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">부전승 자리도 한 팀씩 공개됩니다</div>`);
+    await dSleep(700);
 
     const byeAllTeams=[...byeRank1,...byeRank2];
     for(let i=0;i<byeCount;i++){
       const team=byeAllTeams[i];
       const isR1=i<byeRank1Count;
-
-      // 스피닝
-      showMainStageMsg(`<div style="font-size:.9rem;font-weight:700;color:var(--text2);margin-bottom:8px">🎫 부전승 ${i+1}번 자리</div>
-        <div style="display:flex;gap:8px;justify-content:center">
-          <div class="draw-ball spinning" style="font-size:.75rem;width:70px;height:70px">${isR1?'👑':'🥈'}</div>
-        </div>`);
-      await dSleep(700);
-
-      // 팀 공개 - 슬롯마다 텀 다르게
-      showMainStageMsg(`<div style="font-size:.9rem;font-weight:700;color:${isR1?'var(--accent)':'var(--success)'};margin-bottom:8px">🎫 부전승 확정!</div>
-        <div class="draw-ball popped" style="background:${isR1?'var(--accent)':'var(--success)'};font-size:.8rem;width:80px;height:80px">${isR1?'👑':'🥈'} ${team.nm}</div>`);
-      await dSleep(600);
+      await spinTeamSlot(allNames, (1320 + Math.random()*720) * DRAW_SPEED, `🎫 부전승 ${i+1}번 자리 추첨 중`);
+      playSound('reveal');
+      showMainStageMsg(`<div style="font-size:.92rem;font-weight:800;color:${isR1?'var(--accent)':'var(--success)'};margin-bottom:8px">🎫 부전승 확정!</div>${tennisRevealHTML(`${isR1?'👑':'🥈'} ${team.nm}`, isR1?'accent':'success', `${team.gn}조 ${team.rk}위 팀이 다음 라운드 직행`)}`);
+      await dSleep(680);
 
       matchSlots[byeIdxs[i]].t1={...team};
       matchSlots[byeIdxs[i]].bye=true;
       renderMainPreview(matchSlots,n,teams,key);
       stepDone++;
       ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-      await dSleep(400);
+      await dSleep(320);
     }
   }
 
-  // ═══ 단계 2: 일반매치에 1위팀 배정 ═══
   if(normalRank1.length>0){
-    showMainStageMsg(`<div style="font-size:1rem;font-weight:700;color:var(--primary)">👑 1위팀 자리 배정</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">일반 대진에서 1위팀 자리를 배정합니다</div>`);
-    await dSleep(900);
+    showMainStageMsg(`<div style="font-size:1rem;font-weight:800;color:var(--primary)">👑 1위팀 자리 배정</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">1위팀은 서로 빨리 만나지 않도록 배치합니다</div>`);
+    await dSleep(720);
 
-    // 1위팀 배정할 일반 매치 인덱스 (normalIdxs에서 앞 n개)
     const r1MatchIdxs=shuffle([...normalIdxs]).slice(0,normalRank1.length);
-
     for(let i=0;i<normalRank1.length;i++){
       const team=normalRank1[i];
       const mIdx=r1MatchIdxs[i];
-
-      showMainStageMsg(`<div style="font-size:.85rem;font-weight:700;color:var(--text2);margin-bottom:8px">👑 ${i+1}번째 1위팀 추첨</div>
-        <div class="draw-ball spinning" style="font-size:.85rem;width:72px;height:72px">👑</div>`);
-      await dSleep(680);
-
-      showMainStageMsg(`<div style="font-size:.85rem;font-weight:700;color:var(--primary);margin-bottom:8px">✨ ${i+1}번 자리 배정!</div>
-        <div class="draw-ball popped" style="font-size:.8rem;width:78px;height:78px">👑 ${team.nm}</div>`);
-      await dSleep(520);
+      await spinTeamSlot(allNames, (1380 + Math.random()*700) * DRAW_SPEED, `👑 ${i+1}번째 1위팀 자리 추첨`);
+      playSound('reveal');
+      showMainStageMsg(`<div style="font-size:.9rem;font-weight:800;color:var(--primary);margin-bottom:8px">✨ ${i+1}번 자리 배정 완료!</div>${tennisRevealHTML(`👑 ${team.nm}`, 'primary', `${team.gn}조 1위가 상단 시드 자리에 들어갑니다`)}`);
+      await dSleep(620);
 
       matchSlots[mIdx].t1={...team};
       renderMainPreview(matchSlots,n,teams,key);
       stepDone++;
       ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-      await dSleep(350);
+      await dSleep(300);
     }
   }
 
-  // ═══ 단계 3: 2위팀 상대 배정 추첨 ═══
-  // 2위팀이 들어갈 슬롯:
-  //   a) 1위팀이 t1에 있는 일반매치 → t2 자리
-  //   b) 아직 비어있는 일반매치 → t1, t2 자리 (2위팀끼리 대결)
   if(rank2Remaining.length>0){
-    showMainStageMsg(`<div style="font-size:1rem;font-weight:700;color:var(--success)">🥈 2위팀 대진 추첨</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">상대팀을 추첨으로 결정합니다</div>`);
-    await dSleep(900);
+    showMainStageMsg(`<div style="font-size:1rem;font-weight:800;color:var(--success)">🥈 상대팀 추첨</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">남은 팀들을 한 자리씩 채워 대진을 완성합니다</div>`);
+    await dSleep(720);
 
-    // t1이 있고 bye아닌 일반매치 (1위팀 상대 배정)
     const vsRank1Idxs=shuffle(normalIdxs.filter(i=>matchSlots[i].t1&&!matchSlots[i].bye));
-    // 아직 비어있는 일반매치 (2위팀끼리)
     const emptyNormalIdxs=shuffle(normalIdxs.filter(i=>!matchSlots[i].t1));
-
     let r2done=0;
     const r2pool=[...rank2Remaining];
 
-    // 먼저 1위팀 상대 채우기
     for(const mIdx of vsRank1Idxs){
-      if(r2done>=r2pool.length)break;
+      if(r2done>=r2pool.length) break;
       const team=r2pool[r2done];
       const opp=matchSlots[mIdx].t1;
-
-      showMainStageMsg(`<div style="font-size:.85rem;font-weight:700;color:var(--text2);margin-bottom:8px">🥈 ${team.nm} 상대 추첨 중...</div>
-        <div class="draw-ball spinning" style="background:#1a8a4a;font-size:.85rem;width:72px;height:72px">🥈</div>`);
-      await dSleep(680);
-
-      showMainStageMsg(`<div style="font-size:.9rem;font-weight:700;color:var(--success);margin-bottom:10px">⚡ 대진 확정!</div>
-        <div style="display:flex;gap:10px;justify-content:center;align-items:center">
-          <div class="draw-ball popped" style="font-size:.72rem;width:72px;height:72px;background:var(--primary)">👑 ${opp?.nm||'?'}</div>
-          <div style="font-size:1.4rem;font-weight:900;color:var(--text2)">VS</div>
-          <div class="draw-ball popped" style="font-size:.72rem;width:72px;height:72px;background:#1a8a4a;animation-delay:.12s">🥈 ${team.nm}</div>
-        </div>`);
-      await dSleep(700);
+      await spinTeamSlot(allNames, (1360 + Math.random()*680) * DRAW_SPEED, `🥈 ${team.nm} 상대팀 추첨 중...`);
+      playSound('reveal');
+      showMainStageMsg(`<div style="font-size:.92rem;font-weight:800;color:var(--success);margin-bottom:10px">⚡ 대진 확정!</div>${tennisVsHTML(`👑 ${opp?.nm||'?'}`, `🥈 ${team.nm}`, 'primary', 'success')}<div style="margin-top:10px;font-size:.76rem;color:var(--text2)">한 경기씩 맞대결이 완성됩니다</div>`);
+      await dSleep(760);
 
       matchSlots[mIdx].t2={...team};
       renderMainPreview(matchSlots,n,teams,key);
-      stepDone++;r2done++;
+      stepDone++; r2done++;
       ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-      await dSleep(380);
+      await dSleep(320);
     }
 
-    // 남은 2위팀끼리 빈 매치에 배정
     let eIdx=0;
     while(r2done<r2pool.length){
       const mIdx=emptyNormalIdxs[eIdx++];
-      if(mIdx===undefined)break;
+      if(mIdx===undefined) break;
       const teamA=r2pool[r2done];
       const teamB=r2pool[r2done+1];
 
-      showMainStageMsg(`<div style="font-size:.85rem;font-weight:700;color:var(--text2);margin-bottom:8px">🥈 2위팀 간 대진 추첨</div>
-        <div class="draw-ball spinning" style="background:#1a8a4a;font-size:.85rem;width:72px;height:72px">🥈</div>`);
-      await dSleep(680);
-
       if(teamA){
+        await spinTeamSlot(allNames, (1280 + Math.random()*620) * DRAW_SPEED, `🥈 ${teamA.nm} 자리 추첨 중`);
+        playSound('reveal');
         matchSlots[mIdx].t1={...teamA};
-        showMainStageMsg(`<div style="font-size:.85rem;font-weight:700;color:var(--success);margin-bottom:8px">✨ ${teamA.nm} 자리 배정</div>
-          <div class="draw-ball popped" style="background:#1a8a4a;font-size:.78rem;width:76px;height:76px">🥈 ${teamA.nm}</div>`);
-        await dSleep(500);
+        showMainStageMsg(`<div style="font-size:.9rem;font-weight:800;color:var(--success);margin-bottom:8px">✨ 첫 번째 자리 배정</div>${tennisRevealHTML(`🥈 ${teamA.nm}`, 'success')}`);
+        await dSleep(520);
         r2done++;
         renderMainPreview(matchSlots,n,teams,key);
         stepDone++;
         ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-        await dSleep(300);
+        await dSleep(240);
       }
-      if(teamB){
-        showMainStageMsg(`<div style="font-size:.85rem;font-weight:700;color:var(--text2);margin-bottom:8px">🥈 상대 추첨...</div>
-          <div class="draw-ball spinning" style="background:#1a8a4a;font-size:.85rem;width:72px;height:72px">?</div>`);
-        await dSleep(600);
 
+      if(teamB){
+        await spinTeamSlot(allNames, (1280 + Math.random()*620) * DRAW_SPEED, `🥈 상대팀 추첨 중`);
+        playSound('reveal');
         matchSlots[mIdx].t2={...teamB};
-        showMainStageMsg(`<div style="font-size:.9rem;font-weight:700;color:var(--success);margin-bottom:10px">⚡ 대진 확정!</div>
-          <div style="display:flex;gap:10px;justify-content:center;align-items:center">
-            <div class="draw-ball popped" style="font-size:.72rem;width:72px;height:72px;background:#1a8a4a">🥈 ${teamA?.nm||'?'}</div>
-            <div style="font-size:1.4rem;font-weight:900;color:var(--text2)">VS</div>
-            <div class="draw-ball popped" style="font-size:.72rem;width:72px;height:72px;background:#1a8a4a;animation-delay:.12s">🥈 ${teamB.nm}</div>
-          </div>`);
-        await dSleep(700);
+        showMainStageMsg(`<div style="font-size:.92rem;font-weight:800;color:var(--success);margin-bottom:10px">⚡ 대진 확정!</div>${tennisVsHTML(`🥈 ${teamA?.nm||'?'}`, `🥈 ${teamB.nm}`, 'success', 'success')}`);
+        await dSleep(760);
         r2done++;
         renderMainPreview(matchSlots,n,teams,key);
         stepDone++;
         ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-        await dSleep(380);
+        await dSleep(320);
       }
     }
   }
 
-  // ═══ 완료 ═══
   ge('mainProgressBar').style.width='100%';
-  showMainStageMsg(`<div style="font-size:1.3rem;font-weight:700;color:var(--success);margin:10px 0">🎉 본선 추첨 완료!</div>
-    <div style="font-size:.8rem;color:var(--text2)">대진표를 확인하세요</div>`);
+  playSound('final');
+  showMainStageMsg(`<div style="font-size:1.3rem;font-weight:800;color:var(--success);margin:10px 0">🎉 본선 추첨 완료!</div><div style="font-size:.8rem;color:var(--text2)">대진표를 확인하세요</div>`);
   renderMainPreview(matchSlots,n,teams,key,true);
-  await dSleep(800);
+  await dSleep(920);
 
   const mainMs=buildMainMatches(matchSlots,n);
   await saveMainDraw(mainMs,n);
