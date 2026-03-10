@@ -1296,7 +1296,7 @@ function clubTeamSuffix(club){
   return '';
 }
 function pKeyParse(key){ const i=(key||'').lastIndexOf('__'); return i>0?{name:key.slice(0,i),club:key.slice(i+2)}:{name:key,club:''}; }
-async function stP(k){try{const pk=pKeyParse(k);await setDoc(doc(db,'players',k.replace(/[\/\.#\$\[\]]/g,'_')),{...G.players[k],key:k,name:pk.name,club:pk.club||''});}catch(e){}}
+async function stP(k){try{const pk=pKeyParse(k);const pureName=cleanName(pk.name||k);await setDoc(doc(db,'players',k.replace(/[\/\.#\$\[\]]/g,'_')),{...G.players[k],key:k,name:pureName,club:pk.club||''});}catch(e){}}
 async function fbLog(t,i='📌'){try{await addDoc(collection(db,'activityLog'),{text:t,icon:i,time:new Date().toISOString()});}catch(e){}}
 function onDU(){
   // 새로고침 후 관리자 세션 복원
@@ -2070,7 +2070,7 @@ async function registerTeam(){
   if(!club){toast('클럽 선택','error');return;}
   const dbl=getRegDoublesCount();
   const mainCount=dbl*2;
-  const names=[];for(let i=1;i<=mainCount+2;i++){const v=ge('p'+i)?.value.trim();if(v)names.push(v);}
+  const names=[];for(let i=1;i<=mainCount+2;i++){const raw=ge('p'+i)?.value.trim();if(raw){const _pk=pKeyParse(raw);names.push(cleanName(_pk.name||raw));}}
   if(names.length<mainCount){toast(`주전 ${mainCount}명(${dbl}복식) 필수 입력`,'error');return;}
   if(names.length>mainCount+2){toast(`최대 ${mainCount+2}명(후보 2명 포함)`,'error');return;}
   const uniq=new Set(names);if(uniq.size!==names.length){toast('이름 중복 있음','error');return;}
@@ -4874,11 +4874,17 @@ function getLastClubFromHist(name){
   return bestClub;
 }
 function allPlayerNames(){
-  const set = new Set(Object.keys(G.players||{}));
+  const set = new Set();
+  // G.players 키에서 순수 이름만 추출 (이름__클럽 → 이름)
+  Object.keys(G.players||{}).forEach(k=>{
+    const pk=pKeyParse(k);
+    const n=cleanName(pk.name||k);
+    if(n) set.add(n);
+  });
   HIST_DATA.forEach(t=>{
     t.teams.forEach(tm=>{
       (tm.players||[]).forEach(pn=>{
-        const x = (pn||'').trim();
+        const x=cleanName((pn||'').trim());
         if(x) set.add(x);
       });
     });
@@ -5133,7 +5139,9 @@ let EP_name=null;
 function openEditPlayer(name){
   EP_name=name;
   const p=G.players[name]||{clubs:[],history:[]};
-  ge('epOldName').value=name;
+  const _epPk=pKeyParse(name);
+  const _epPureName=cleanName(_epPk.name||name); // 이름__클럽 → 이름만
+  ge('epOldName').value=_epPureName; // 표시는 순수 이름만
   ge('epNewName').value='';
   ge('epClubs').value=(p.clubs||[]).join(', ');
   ge('epPhone').value=p.phone||'';
@@ -5169,10 +5177,14 @@ function openEditPlayer(name){
 }
 
 async function saveEditPlayer(){
-  const oldName=EP_name, newName=ge('epNewName').value.trim();
+  const _rawKey=EP_name;
+  const _pk=pKeyParse(_rawKey);
+  const _pureName=cleanName(_pk.name||_rawKey); // 이름__클럽 → 이름만
+  const oldName=_rawKey; // Firebase 키는 원본 유지 (조회용)
+  const newName=(ge('epNewName').value.trim())||_pureName; // 새 이름 없으면 정제된 이름 사용
   const clubsRaw=ge('epClubs').value.trim();
-  const clubs=clubsRaw?clubsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
-  const finalName=newName||oldName;
+  const clubs=clubsRaw?clubsRaw.split(',').map(c=>c.trim()).filter(Boolean):(_pk.club?[_pk.club]:[]);
+  const finalName=newName; // 항상 순수 이름
   const phone=(ge('epPhone')?.value||'').trim();
   const delIdxs=[...document.querySelectorAll('.ep-del-hist:checked')].map(el=>parseInt(el.dataset.idx));
 
