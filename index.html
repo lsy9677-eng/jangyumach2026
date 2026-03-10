@@ -412,6 +412,36 @@ body{overflow-x:hidden;}
 }
 #page-players .table-wrap table td:nth-child(1) small{margin-left:6px; color:var(--text3);}
 
+
+/* ── 첫출전 선수 표시 ── */
+.first-appearance-star{color:#f5a623;font-weight:900;text-shadow:0 1px 0 rgba(0,0,0,.08);}
+.first-appearance-name{text-decoration:underline;text-underline-offset:2px;font-weight:700;}
+
+/* ── 통합 등록 팀 현황 (모바일 대응) ── */
+.rr-team-card{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:12px;}
+.rr-team-header{background:var(--primary-dark);color:#fff;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+.rr-team-info{display:flex;align-items:center;gap:8px;}
+.rr-team-num{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;}
+.rr-team-name{font-weight:700;font-size:.92rem;}
+.rr-team-count{font-size:.72rem;opacity:.75;background:rgba(255,255,255,.15);padding:2px 7px;border-radius:20px;}
+.rr-admin-btns{display:flex;gap:6px;}
+.rr-btn-edit,.rr-btn-del{padding:3px 9px!important;font-size:.68rem!important;line-height:1.4;}
+.rr-rub-grid{display:grid;grid-template-columns:repeat(var(--rr-cols,3),1fr);gap:6px;padding:10px 12px;}
+.rr-rub-card{background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);padding:7px 8px;text-align:center;}
+.rr-rub-label{font-size:.6rem;color:var(--text3);margin-bottom:4px;font-weight:600;letter-spacing:.03em;}
+.rr-rub-names{font-size:.77rem;line-height:1.5;word-break:keep-all;}
+.rr-slash{color:var(--text3);font-size:.7rem;margin:0 1px;}
+.rr-sub{padding:0 12px 10px;font-size:.72rem;color:var(--text3);}
+@media(max-width:600px){
+  .rr-rub-grid{grid-template-columns:repeat(2,1fr)!important;gap:5px;padding:8px;}
+  .rr-rub-names{font-size:.72rem;}
+  .rr-team-name{font-size:.84rem;}
+  .rr-btn-edit,.rr-btn-del{padding:2px 7px!important;font-size:.64rem!important;}
+}
+@media(max-width:380px){
+  .rr-rub-grid{grid-template-columns:1fr 1fr!important;}
+  .rr-rub-card{padding:5px 4px;}
+}
 </style>
 
 <!-- PWA -->
@@ -591,9 +621,16 @@ body{overflow-x:hidden;}
       </div>
       <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn btn-primary" onclick="registerTeam()">✅ 팀 등록</button></div>
     </div>
-    <div class="card">
-      <div class="card-title">📋 등록 팀 현황 <span id="regTCnt" class="badge bg-green">0팀</span></div>
-      <div class="table-wrap"><table><thead><tr><th>#</th><th>클럽</th><th>1복식</th><th>2복식</th><th>3복식</th><th id="reg4Hdr" style="display:none">4복식</th><th id="reg5Hdr" style="display:none">5복식</th><th>후보</th><th id="regActHdr"></th></tr></thead><tbody id="regTBody"><tr><td colspan="9"><div class="empty-state" style="padding:14px"><p>등록된 팀이 없습니다</p></div></td></tr></tbody></table></div>
+    <div class="card" id="regRosterPreviewCard" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:2px">
+        <div class="card-title" style="margin-bottom:0">📋 등록 팀 현황</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="regTCnt" class="badge bg-green">0팀</span>
+          <span id="regRosterMiniCount" class="badge bg-blue">0명</span>
+        </div>
+      </div>
+      <div style="font-size:.72rem;color:var(--text3);margin-bottom:12px">참가기록조회→명단클릭 &nbsp;|&nbsp; 밑줄 + <span class="first-appearance-star">★</span> 표시는 첫 출전 선수입니다.</div>
+      <div id="regRosterPreviewBody"></div>
     </div>
   </div>
 </div>
@@ -648,7 +685,6 @@ body{overflow-x:hidden;}
     </div>
     <!-- 관리자 전용: 과거 대회 요강 업로드 -->
     <!-- historical guide upload removed; guide viewing remains -->
-  </div>
   </div>
   <div id="rankContent"><div class="empty-state card"><div class="empty-icon">📋</div><p>대회를 선택하세요</p></div></div>
 </div>
@@ -1070,7 +1106,7 @@ function etGetRubbers(dk){
 function grpLabel(gi){ return String.fromCharCode(65+gi)+'조'; }
 
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getFirestore,collection,doc,getDoc,getDocs,setDoc,addDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,limit,serverTimestamp,writeBatch}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import{getFirestore,collection,doc,getDoc,getDocs,setDoc,addDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,limit,serverTimestamp,writeBatch,where}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 // Firebase Storage 미사용 - 요강 파일은 Firestore에 base64로 직접 저장
 const FB={apiKey:"AIzaSyBCohLbcWMSBkkk_6rhcqxi2WSejtIaaCw",authDomain:"jangyumach2026.firebaseapp.com",projectId:"jangyumach2026",storageBucket:"jangyumach2026.firebasestorage.app",messagingSenderId:"594638304093",appId:"1:594638304093:web:c0c40d684d17a021d92eb4"};
 const _app=initializeApp(FB);
@@ -1318,7 +1354,7 @@ function toggleAdmin(){
     ge('adminToggleBtn').classList.remove('active');
     ge('adminToggleBtn').textContent='관리자 로그인';
     document.querySelectorAll('[id^="ao"]').forEach(e=>e.style.display='none');
-    ge('regActHdr').textContent='';
+    const rh2=ge('regActHdr'); if(rh2) rh2.textContent='';
     const bar=ge('histGuideUploadBar'); if(bar) bar.remove?.();
     cm('mAdminSettings');
     toast('로그아웃','info');
@@ -1331,7 +1367,7 @@ function applyAdminUI(){
   ge('adminToggleBtn').classList.add('active');
   ge('adminToggleBtn').textContent='로그아웃';
   document.querySelectorAll('[id^="ao"]').forEach(e=>e.style.display='block');
-  ge('regActHdr').textContent='관리';
+  const rh=ge('regActHdr'); if(rh) rh.textContent='관리';
   const bar=ge('histGuideUploadBar'); if(bar) bar.remove?.();
 }
 function doLogin(){
@@ -1889,6 +1925,100 @@ function updateRegisterSlots(){
   if(h5) h5.style.display = dbl>=5 ? '' : 'none';
 }
 
+
+function isFirstAppearancePlayer(name, club, currentTid){
+  const nn=normName(name);
+  const bc=baseClub(club)||club||'';
+  let found=false;
+  HIST_DATA.forEach(t=>t.teams.forEach(tm=>{ if((baseClub(tm.club)||tm.club||'')===bc && (tm.players||[]).some(pn=>normName(pn)===nn)) found=true; }));
+  for(const k of Object.keys(G.players||{})){
+    const p=G.players[k];
+    const playerName=normName(p.name||pKeyParse(k).name||'');
+    if(playerName!==nn) continue;
+    (p.history||[]).forEach(h=>{ if(h.tid!==currentTid && (baseClub(h.club)||h.baseClub||h.club||'')===bc) found=true; });
+  }
+  return !found;
+}
+function rosterPlayerHTML(name, club, tid){
+  const mark=isFirstAppearancePlayer(name, club, tid);
+  return `<span onclick="openPD('${esc(name)}','${esc(club||'')}')" style="cursor:pointer;color:var(--primary);display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap">${mark?'<span class="first-appearance-star">★</span>':''}<span class="${mark?'first-appearance-name':''}">${name}</span></span>`;
+}
+
+function missingMembers(names, club){ return []; } // 경고 없이 모두 허용
+function showMissingAlert(missing){
+  const uniq=[...new Set((missing||[]).map(x=>(x||'').trim()).filter(Boolean))];
+  if(!uniq.length) return;
+  // 미등록 선수는 무조건 차단 - 관리자가 먼저 선수 등록 후 시합 등록 가능
+  alert('❌ 시합 등록 불가\n\n아래 선수가 선수 DB에 등록되어 있지 않습니다:\n\n' + uniq.map(n=>'  • '+n).join('\n') + '\n\n👉 [선수 기록] 탭에서 먼저 선수를 추가한 후\n   시합 등록을 진행해 주세요.');
+  throw new Error('CANCEL_BY_USER');
+}
+
+function renderRegistrationRosterPreview(tid,div,teams,key){
+  const card=ge('regRosterPreviewCard');
+  const body=ge('regRosterPreviewBody');
+  const mini=ge('regRosterMiniCount');
+  const tcnt=ge('regTCnt');
+  if(!card||!body) return;
+  if(!tid||!div||!teams?.length){
+    card.style.display='none';
+    body.innerHTML='';
+    if(mini) mini.textContent='0명';
+    if(tcnt) tcnt.textContent='0팀';
+    return;
+  }
+  // tObj: 대회 객체 (doublesCount 기본값용) - team 변수와 이름 충돌 방지
+  const tObj=G.tournaments.find(x=>x.id===tid);
+  const total=teams.reduce((s,tm)=>s+((tm.players||[]).length),0);
+  if(mini) mini.textContent=total+'명';
+  if(tcnt) tcnt.textContent=teams.length+'팀';
+  card.style.display='block';
+
+  let html='';
+  teams.forEach((team,i)=>{
+    const dn=tdn(team,key,i);
+    const p=team.players||[];
+    // 장유 기본 3복식, 대회 설정 우선
+    const dbl=team.doublesCount||parseInt(tObj?.doublesCount||3);
+    const mainCount=dbl*2;
+    const subs=p.slice(mainCount).filter(Boolean);
+
+    const rubCards=Array.from({length:dbl},(_,r)=>{
+      const pa=p[r*2], pb=p[r*2+1];
+      const paH=pa?rosterPlayerHTML(pa,team.club||'',tid):'';
+      const pbH=pb?rosterPlayerHTML(pb,team.club||'',tid):'';
+      return `<div class="rr-rub-card">
+        <div class="rr-rub-label">${r+1}복식</div>
+        <div class="rr-rub-names">${[paH,pbH].filter(Boolean).join('<span class="rr-slash"> / </span>')}</div>
+      </div>`;
+    }).join('');
+
+    const subHtml=subs.length
+      ?`<div class="rr-sub">후보: ${subs.map(n=>rosterPlayerHTML(n,team.club||'',tid)).join(', ')}</div>`
+      :'';
+
+    const adminBtns=AD
+      ?`<div class="rr-admin-btns">
+          <button class="btn btn-outline rr-btn-edit" onclick="openETeam('${esc(key)}',${i})">✏️ 수정</button>
+          <button class="btn btn-danger rr-btn-del" onclick="delTeam('${esc(key)}',${i})">🗑 삭제</button>
+        </div>`
+      :'';
+
+    html+=`<div class="rr-team-card">
+      <div class="rr-team-header">
+        <div class="rr-team-info">
+          <span class="rr-team-num">${i+1}</span>
+          <span class="rr-team-name">${dn}</span>
+          <span class="rr-team-count">${p.length}명</span>
+        </div>
+        ${adminBtns}
+      </div>
+      <div class="rr-rub-grid" style="--rr-cols:${Math.min(dbl,3)}">${rubCards}</div>
+      ${subHtml}
+    </div>`;
+  });
+  body.innerHTML=html;
+}
+
 function renderRL(){
   const tid=ge('regTS').value,div=ge('regDS').value;if(!tid||!div)return;
 
@@ -1926,18 +2056,12 @@ function renderRL(){
   }
 
   const key=tid+'_'+div,teams=G.teams[key]||[];
-  ge('regTCnt').textContent=teams.length+'팀';ge('regNo').value=teams.length+1;
-  const tb=ge('regTBody');
-  if(!teams.length){tb.innerHTML='<tr><td colspan="9"><div class="empty-state" style="padding:14px"><p>등록된 팀 없음</p></div></td></tr>';return;}
-  tb.innerHTML=teams.map((t2,i)=>{
-    const p=t2.players||[];
-    const dbl=t2.doublesCount||parseInt((t?.doublesCount)||3);
-    const mainCount=dbl*2;
-    const tc=esc(t2.club||'');
-    const mk=(a,b)=>p[a]&&p[b]?`<span onclick="openPD('${esc(p[a])}','${tc}')" style="cursor:pointer;color:var(--primary)">${p[a]}</span>/<span onclick="openPD('${esc(p[b])}','${tc}')" style="cursor:pointer;color:var(--primary)">${p[b]}</span>`:p[a]?`<span onclick="openPD('${esc(p[a])}','${tc}')" style="cursor:pointer;color:var(--primary)">${p[a]}</span>`:'—';
-    const sub=p.slice(mainCount).filter(Boolean).map(n=>`<span onclick="openPD('${esc(n)}','${tc}')" style="cursor:pointer;font-size:.73rem;color:var(--text3)">${n}</span>`).join(', ');
-    return`<tr><td><div class="team-num">${i+1}</div></td><td><b>${tdn(t2,key,i)}</b></td><td style="font-size:.8rem">${mk(0,1)}</td><td style="font-size:.8rem">${mk(2,3)}</td><td style="font-size:.8rem">${mk(4,5)}</td><td style="font-size:.8rem;display:${dbl>=4?'table-cell':'none'}">${dbl>=4?mk(6,7):''}</td><td style="font-size:.8rem;display:${dbl>=5?'table-cell':'none'}">${dbl>=5?mk(8,9):''}</td><td>${sub||'-'}</td><td style="white-space:nowrap">${AD?`<button class="btn btn-outline" style="padding:3px 6px;font-size:.67rem;margin-right:2px" onclick="openETeam('${key}',${i})">수정</button><button class="btn btn-danger" style="padding:3px 6px;font-size:.67rem" onclick="delTeam('${key}',${i})">삭제</button>`:''}</td></tr>`;
-  }).join('');
+  ge('regNo').value=teams.length+1;
+  if(!teams.length){
+    renderRegistrationRosterPreview(tid,div,[],key);
+    return;
+  }
+  renderRegistrationRosterPreview(tid,div,teams,key);
 }
 async function registerTeam(){
   const tid=ge('regTS').value,div=ge('regDS').value,club=ge('regClub').value;
@@ -1950,6 +2074,12 @@ async function registerTeam(){
   if(names.length<mainCount){toast(`주전 ${mainCount}명(${dbl}복식) 필수 입력`,'error');return;}
   if(names.length>mainCount+2){toast(`최대 ${mainCount+2}명(후보 2명 포함)`,'error');return;}
   const uniq=new Set(names);if(uniq.size!==names.length){toast('이름 중복 있음','error');return;}
+  // ⚠️ 미등록 선수 차단 - 선수DB 미등록 시 시합등록 불가
+  const newPlayers = missingMembers(names, club);
+  if(newPlayers.length){
+    showMissingAlert(newPlayers); // 내부에서 throw → 아래 코드 실행 안됨
+    return; // 혹시 모를 안전장치
+  }
   const key=tid+'_'+div,ex=G.teams[key]||[];
   const newKeys=new Set(names.map(n=>pKey(n,club)));
   const dup=ex.find(t=>(t.players||[]).some(p=>newKeys.has(pKey(p,t.club||club))));
@@ -1965,7 +2095,45 @@ async function registerTeam(){
     sl(false);toast('팀 등록 완료 ✅','success');renderRL();
   }catch(e){sl(false);toast('등록 실패: '+e.message,'error');}
 }
-async function delTeam(key,idx){if(!confirm('팀 삭제?'))return;G.teams[key].splice(idx,1);await stT(key);renderRL();toast('삭제됨','info');}
+
+// ── 팀 삭제/수정 시 선수 참가이력 정리 헬퍼 ──
+async function _removePlayerHistory(names, club, tid, div){
+  const bc = baseClub(club||'');
+  for(const name of (names||[])){
+    const k = pKey(name, bc) || name;
+    // 레거시 키도 확인
+    const legacyK = G.players[name] ? name : null;
+    for(const pk of [k, legacyK].filter(Boolean)){
+      const p = G.players[pk];
+      if(!p) continue;
+      // 이 대회+부서 이력 제거
+      p.history = (p.history||[]).filter(h => !(h.tid===tid && h.div===div));
+      // 이력 없고 승패도 0이면 완전 삭제
+      if(!p.history.length && !p.wins && !p.losses){
+        try{ await deleteDoc(doc(db,'players', pk.replace(/[\/\.#\$\[\]]/g,'_'))); }catch(e){}
+        delete G.players[pk];
+      } else {
+        await stP(pk);
+      }
+    }
+  }
+}
+
+async function delTeam(key,idx){
+  if(!confirm('팀을 삭제하면 해당 선수들의 참가 기록도 함께 삭제됩니다.\n삭제하시겠습니까?'))return;
+  const {tid,div}=_k2td(key);
+  const team=G.teams[key]?.[idx];
+  const oldPlayers=[...(team?.players||[])];
+  const oldClub=team?.club||'';
+  sl(true);
+  try{
+    G.teams[key].splice(idx,1);
+    await stT(key);
+    // 선수 참가이력 제거
+    await _removePlayerHistory(oldPlayers, oldClub, tid, div);
+    sl(false);renderRL();toast('팀 및 참가기록 삭제 완료','info');
+  }catch(e){sl(false);toast('삭제 실패: '+e.message,'error');}
+}
 function openETeam(key,idx){
   const team=(G.teams[key]||[])[idx];if(!team)return;CE_key=key;CE_idx=idx;
   const[,div]=key.split('_');const p=team.players||[];
@@ -2003,8 +2171,23 @@ async function saveETeam(){
   const np=[];for(let i=1;i<=mainCount+2;i++){const el=ge('ep'+i);if(el){const v=el.value.trim();if(v)np.push(v);}}
   if(np.length<mainCount){toast(`주전 ${mainCount}명 필요`,'error');return;}
   const uniq=new Set(np);if(uniq.size!==np.length){toast('이름 중복','error');return;}
+  const {tid,div}=_k2td(CE_key);
+  const oldPlayers=[...(team.players||[])];
+  const oldClub=team.club||'';
+  const newSet=new Set(np);
+  // 수정으로 빠진 선수 목록
+  const removedPlayers=oldPlayers.filter(n=>!newSet.has(n));
   team.club=ge('etTC').value;team.players=np;team.doublesCount=dbl;
-  sl(true);try{await stT(CE_key);sl(false);cm('mETeam');renderRL();toast('수정 완료 ✅','success');}catch(e){sl(false);toast('저장 실패','error');}
+  sl(true);
+  try{
+    await stT(CE_key);
+    // 빠진 선수 참가이력 제거
+    if(removedPlayers.length) await _removePlayerHistory(removedPlayers, oldClub, tid, div);
+    // 새로 추가된 선수 참가이력 등록
+    const addedPlayers=np.filter(n=>!oldPlayers.includes(n));
+    await Promise.all(addedPlayers.map(n=>regP(n,team.club,tid,div)));
+    sl(false);cm('mETeam');renderRL();toast('수정 완료 ✅','success');
+  }catch(e){sl(false);toast('저장 실패','error');}
 }
 
 
@@ -4597,24 +4780,43 @@ function upDash(){
       ${summary}
       ${isOngoing?'<div style="margin-top:6px;font-size:.65rem;color:var(--primary);font-weight:600">👆 탭하면 대진표 실시간 보기</div>':''}
     </div>`;
-  }).join('');}
+  }).join('');
+  } else {
+    ge('heroTitle').textContent='장유테니스연합회';
+    ge('heroStatus').textContent='대회 준비중';
+    ge('heroClubs').textContent='🏟 현재 참가 -';
+    ge('heroTeams').textContent='👥 현재 참가 -';
+    ge('homeTournInfo').innerHTML='<p class="muted">등록된 대회가 없습니다</p>';
+    ge('homeDivStatus').innerHTML='';
+  }
   upLog();
 }
 function upLog(){if(G.log.length)ge('recentLog').innerHTML=G.log.slice(0,6).map(a=>`<li class="ri"><div class="ri-icon">${a.icon||'📌'}</div><div class="ri-text"><div>${a.text}</div></div><div class="ri-time">${ago(a.time)}</div></li>`).join('');}
 
 async function regP(name,club,tid,div){
-  const bc=baseClub(club); // 소속 클럽 (A/B 제거: 하모니A→하모니)
-  const k=pKey(name,bc);
-  if(!G.players[k])G.players[k]={clubs:[],history:[],wins:0,losses:0,name,club:bc};
-  const p=G.players[k];
-  if(!p.clubs)p.clubs=[];
-  if(!p.clubs.includes(bc))p.clubs.push(bc);
-  const t=G.tournaments.find(t=>t.id===tid);
-  if(!p.history)p.history=[];
-  // 이력에는 원본 팀명(하모니A) 보존, 기본 클럽도 저장
-  if(!p.history.find(h=>h.tid===tid&&h.div===div&&h.club===club))
+  const bc=baseClub(club);
+
+  // ── 기존 키 재사용 우선: 이름만/이름__다른클럽 모두 탐색 ──
+  // 동일 이름의 기존 키가 있으면 새 키 생성 않고 재사용
+  let useKey = null;
+  const n = normName(name);
+  for(const k of Object.keys(G.players)){
+    const pk = pKeyParse(k);
+    if(normName(pk.name||k) === n){ useKey = k; break; }
+  }
+  // 없으면 이름__클럽 신규 생성
+  if(!useKey) useKey = pKey(name, bc) || name;
+
+  // ── 선수 데이터 갱신 ──
+  if(!G.players[useKey]) G.players[useKey]={clubs:[],history:[],wins:0,losses:0,name,club:bc};
+  const p = G.players[useKey];
+  if(!p.clubs) p.clubs=[];
+  if(bc && !p.clubs.includes(bc)) p.clubs.push(bc);
+  const t = G.tournaments.find(t=>t.id===tid);
+  if(!p.history) p.history=[];
+  if(!p.history.find(h=>h.tid===tid&&h.div===div))
     p.history.push({tid,tname:t?.name||'',date:t?.date||'',club,baseClub:bc,div,result:'참가',rank:null});
-  await stP(k);
+  await stP(useKey);
 }
 
 // ── 선수명 정규화/조회 유틸 (Firebase + HIST_DATA 일관 처리) ──
@@ -4694,21 +4896,19 @@ function getPlayerForDisplay(name){
 
 function phint(inp,num){
   const v=inp.value.trim(),h=ge('h'+num); if(!v){h.innerHTML='';return;}
-  const nv = normName(v);
-  const names = allPlayerNames();
-  const m = names.filter(nm=> normName(nm).includes(nv));
-  if(!m.length){
-    h.innerHTML='<span style="color:var(--text3);font-size:.72rem">첫 참가 선수</span>';
-    return;
-  }
-  h.innerHTML = m.slice(0,4).map(nm=>{
-    const key = getPlayerKeyByName(nm);
-    const fb = key ? G.players[key] : null;
-    const club = (fb?.clubs?.slice(-1)[0]) || getLastClubFromHist(nm) || '';
-    return `<span onclick="ge('p${num}').value='${nm}';ge('h${num}').innerHTML=''"
-      style="cursor:pointer;color:var(--primary);font-size:.73rem;text-decoration:underline">
-      ${nm}(${club})
-    </span>`;
+  const nv=normName(v);
+  // DB + HIST_DATA 통합 검색
+  const allNames=allPlayerNames();
+  const m=allNames.filter(nm=>normName(nm).includes(nv));
+  if(!m.length){ h.innerHTML='<span style="color:var(--text3);font-size:.72rem">첫 참가 선수</span>'; return; }
+  h.innerHTML=m.slice(0,5).map(nm=>{
+    const key=getPlayerKeyByName(nm);
+    const fb=key?G.players[key]:null;
+    const club=(fb?.clubs?.slice(-1)[0])||getLastClubFromHist(nm)||'';
+    const lastDiv=(fb?.history||[]).slice(-1)[0]?.div||'';
+    const divLabel=lastDiv?` <span style="font-size:.6rem;background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:1px 4px">${dl(lastDiv)}</span>`:'';
+    return `<span onclick="ge('p${num}').value='${esc(nm)}';ge('h${num}').innerHTML=''"
+      style="cursor:pointer;color:var(--primary);font-size:.73rem;text-decoration:underline">${nm}(${club})${divLabel}</span>`;
   }).join(' ');
 }
 function openPHist(iid){
@@ -4829,8 +5029,21 @@ function renderAllP(){
   const fbNames=new Set(Object.keys(G.players));
   const histNames=new Set();
   HIST_DATA.forEach(t=>t.teams.forEach(tm=>(tm.players||[]).forEach(pn=>{if(pn&&pn.trim())histNames.add(pn.trim());})));
-  // 전체 선수 이름 목록 (중복 제거)
-  let allNames=[...new Set([...fbNames,...histNames])].sort();
+  // 전체 선수 이름 목록 (중복 제거) - Firebase 키는 pKeyParse로 이름 추출
+  // fbNames: "이름__클럽" 형식 키 → 그대로 유지 (rawKey로 사용)
+  // histNames: 이름 단독 → rawKey로 사용
+  // 동일 이름의 레거시(이름만) 키와 신규(이름__클럽) 키 중복 제거
+  const fbKeyMap = new Map(); // name → rawKey (이름__클럽 우선)
+  for(const k of fbNames){
+    const pk=pKeyParse(k);
+    const n=pk.name||k;
+    // 이름__클럽 형식이 우선, 기존 레거시는 이름__클럽이 있으면 제외
+    if(!fbKeyMap.has(n) || pk.club) fbKeyMap.set(n, k);
+  }
+  // histNames 중 fbKeyMap에 없는 것만 추가
+  const allNamesSet = new Set([...fbKeyMap.values()]);
+  for(const n of histNames){ if(!fbKeyMap.has(n)) allNamesSet.add(n); }
+  let allNames=[...allNamesSet].sort();
 
   // 필터 적용
   if(PF.club) allNames=allNames.filter(n=>{
@@ -4888,7 +5101,7 @@ function renderAllP(){
     let br=null;
     (p.history||[]).forEach(h=>{if(h.rank&&(!br||h.rank<br))br=h.rank;});
     histRecs.forEach(r=>{if(r.rank&&(!br||r.rank<br))br=r.rank;});
-    const dispName=keyClub?`${name}<small style="color:var(--text3);font-size:.72rem">(${keyClub})</small>`:name;
+    const dispName=name; // 클럽은 소속 열에 별도 표시
     const editArg=esc(rawKey);
     return`<tr>
       <td style="font-weight:700;cursor:pointer;color:var(--primary)" onclick="showP('${esc(name)}','${esc(keyClub)}')">${dispName}${AD?` <button class="btn btn-outline" style="font-size:.6rem;padding:1px 6px;margin-left:4px" onclick="event.stopPropagation();openEditPlayer('${editArg}')">✏️</button>`:''}</td>
@@ -5106,14 +5319,13 @@ function openRoster(tid,div){
   ge('mRosterT').textContent=`${t.name} — ${dl(div)} 선수명단`;
   if(!teams.length){ge('mRosterB').innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><p>등록된 팀 없음</p></div>';om('mRoster');return;}
   const total=teams.reduce((s,t)=>s+t.players.length,0);
-  let html=`<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;padding:8px 14px;background:var(--primary);color:white;border-radius:var(--radius-lg)"><b style="font-size:1.2rem">${teams.length}</b><span style="opacity:.8">팀</span><span style="opacity:.4">|</span><b style="font-size:1.2rem">${total}</b><span style="opacity:.8">명</span></div>`;
+  let html=`<div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;padding:8px 14px;background:var(--primary);color:white;border-radius:var(--radius-lg)"><b style="font-size:1.2rem">${teams.length}</b><span style="opacity:.8">팀</span><span style="opacity:.4">|</span><b style="font-size:1.2rem">${total}</b><span style="opacity:.8">명</span></div><div style="font-size:.72rem;color:var(--text3);margin-bottom:12px;padding:0 2px">참가기록조회→명단클릭 &nbsp;|&nbsp; 밑줄 + <span style="color:#f5a623;font-weight:900">★</span> 표시는 첫 출전 선수입니다.</div>`;
   teams.forEach((team,i)=>{const dn=tdn(team,key,i);const p=team.players||[];const tc=esc(team.club||'');
     html+=`<div style="margin-bottom:10px;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden"><div style="background:var(--primary-dark);color:white;padding:7px 14px;display:flex;align-items:center;justify-content:space-between"><span style="font-weight:700">${dn}</span><span style="font-size:.72rem;opacity:.75">${p.length}명</span></div>
-    <div style="padding:10px 14px">${(()=>{const dbl=team.doublesCount||(div==='terinee'?(p.length<=6?3:p.length<=8?4:5):3);const mainCount=dbl*2;const cols=Math.min(dbl,5);return`<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:6px;margin-bottom:6px">${Array.from({length:dbl},(_,r)=>`<div style="padding:6px;background:var(--panel2);border-radius:var(--radius);border:1px solid var(--border);text-align:center"><div style="font-size:.6rem;color:var(--text3);margin-bottom:3px">${r+1}복식</div><div style="font-size:.77rem">${[p[r*2],p[r*2+1]].filter(Boolean).map(n=>`<span onclick="openPD('${esc(n)}','${tc}')" style="cursor:pointer;color:var(--primary)">${n}</span>`).join(' / ')}</div></div>`).join('')}</div>${p.slice(mainCount).length?`<div style="font-size:.72rem;color:var(--text3)">후보: ${p.slice(mainCount).map(n=>`<span onclick="openPD('${esc(n)}','${tc}')" style="cursor:pointer">${n}</span>`).join(', ')}</div>`:''}`})()}</div></div>`;
+    <div style="padding:10px 14px">${(()=>{const dbl=team.doublesCount||(div==='terinee'?(p.length<=6?3:p.length<=8?4:5):3);const mainCount=dbl*2;const cols=Math.min(dbl,5);return`<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:6px;margin-bottom:${p.slice(mainCount).length?'6px':'0'}">${Array.from({length:dbl},(_,r)=>`<div style="background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;text-align:center"><div style="font-size:.6rem;color:var(--text3);margin-bottom:3px">${r+1}복식</div><div style="font-size:.77rem;line-height:1.5">${[p[r*2],p[r*2+1]].filter(Boolean).map(n=>rosterPlayerHTML(n,team.club||'',tid)).join(' / ')}</div></div>`).join('')}</div>${p.slice(mainCount).length?`<div style="font-size:.72rem;color:var(--text3)">후보: ${p.slice(mainCount).filter(Boolean).map(n=>rosterPlayerHTML(n,team.club||'',tid)).join(', ')}</div>`:''}`})()}</div></div>`;
   });
   ge('mRosterB').innerHTML=html;om('mRoster');
 }
-
 function openClubMgr(){renderCL();om('mClubs');}
 function renderCL(){ge('clubList').innerHTML=G.clubs.map((c,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)"><span style="flex:1;font-weight:500">${c}</span><button class="btn btn-danger" style="padding:3px 8px;font-size:.7rem" onclick="delClub(${i})">삭제</button></div>`).join('');}
 async function addClub(){const v=ge('newClubInput').value.trim();if(!v){toast('클럽명 입력','error');return;}if(G.clubs.includes(v)){toast('이미 있는 클럽','error');return;}G.clubs.push(v);await saveMeta();renderCL();popSel();popCF();ge('newClubInput').value='';toast(v+' 추가됨','success');}
@@ -6533,7 +6745,7 @@ async function deleteSelectedMatches(){
 Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, adminAddPlayer, 
   showPage,toggleAdmin,doLogin,openAdminSettings,saveAdminPassword,goBracket,onGuideFilesSelected,removeGuideFile,openGuide,loadHistFromDB,uploadHistFromExcel,renderGuidePreview,onHistGuideFilesSelected,uploadHistGuideFiles,manageHistGuide,deleteHistGuideFile,removeHistGuidePending,
   createTournament,renderTL,chgTS,delT,openET,saveET,openTD,applyRec,saveDivS,
-  onRegTC,renderRL,registerTeam,delTeam,phint,openPHist,openETeam,saveETeam,etUpdateSlots,updateRegisterSlots,
+  onRegTC,renderRL,registerTeam,delTeam,phint,openPHist,openETeam,saveETeam,etUpdateSlots,updateRegisterSlots,renderRegistrationRosterPreview,isFirstAppearancePlayer,rosterPlayerHTML,missingMembers,showMissingAlert,
   onBrTC,renderBracket,openDraw,confirmDraw,startDraw,buildMain,openMainDraw,startMainDraw,
   openManualEdit,saveManualEdit,toggleByeEdit,
   openM3,saveM3,tC,setCourt,toggleGroupCourtUI,onGroupCourtChange,openGroupCourtModal,saveGroupCourtModal,
