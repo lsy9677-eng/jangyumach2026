@@ -442,6 +442,14 @@ body{overflow-x:hidden;}
   .rr-rub-grid{grid-template-columns:1fr 1fr!important;}
   .rr-rub-card{padding:5px 4px;}
 }
+
+/* 선수기록 표 - 소속팀 가로 유지 */
+#page-players .table-wrap table td:nth-child(2),
+#page-players .table-wrap table th:nth-child(2){
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
 </style>
 
 <!-- PWA -->
@@ -2066,36 +2074,79 @@ function renderRL(){
 async function registerTeam(){
   const tid=ge('regTS').value,div=ge('regDS').value,club=ge('regClub').value;
   if(!tid||!div){toast('대회/부서 선택','error');return;}
-  const t=G.tournaments.find(t=>t.id===tid);if(t?.status&&t.status!=='open'){toast('접수중인 대회만 등록 가능','error');return;}
+  const t=G.tournaments.find(t=>t.id===tid);
+  if(t?.status&&t.status!=='open'){toast('접수중인 대회만 등록 가능','error');return;}
   if(!club){toast('클럽 선택','error');return;}
+
   const dbl=getRegDoublesCount();
   const mainCount=dbl*2;
-  const names=[];for(let i=1;i<=mainCount+2;i++){const raw=ge('p'+i)?.value.trim();if(raw){const _pk=pKeyParse(raw);names.push(cleanName(_pk.name||raw));}}
-  if(names.length<mainCount){toast(`주전 ${mainCount}명(${dbl}복식) 필수 입력`,'error');return;}
-  if(names.length>mainCount+2){toast(`최대 ${mainCount+2}명(후보 2명 포함)`,'error');return;}
-  const uniq=new Set(names);if(uniq.size!==names.length){toast('이름 중복 있음','error');return;}
-  // ⚠️ 미등록 선수 차단 - 선수DB 미등록 시 시합등록 불가
-  const newPlayers = missingMembers(names, club);
-  if(newPlayers.length){
-    showMissingAlert(newPlayers); // 내부에서 throw → 아래 코드 실행 안됨
-    return; // 혹시 모를 안전장치
+
+  const names=[];
+  for(let i=1;i<=mainCount+2;i++){
+    const raw=ge('p'+i)?.value.trim();
+    if(raw){
+      const _pk=pKeyParse(raw);
+      names.push(cleanName(_pk.name||raw));
+    }
   }
-  const key=tid+'_'+div,ex=G.teams[key]||[];
+
+  if(names.length<mainCount){
+    toast(`주전 ${mainCount}명(${dbl}복식) 필수 입력`,'error');
+    return;
+  }
+  if(names.length>mainCount+2){
+    toast(`최대 ${mainCount+2}명(후보 2명 포함)`,'error');
+    return;
+  }
+
+  const uniq=new Set(names);
+  if(uniq.size!==names.length){
+    toast('이름 중복 있음','error');
+    return;
+  }
+
+  const key=tid+'_'+div, ex=G.teams[key]||[];
   const newKeys=new Set(names.map(n=>pKey(n,club)));
   const dup=ex.find(t=>(t.players||[]).some(p=>newKeys.has(pKey(p,t.club||club))));
-  if(dup){toast('이미 등록된 선수 포함(같은 클럽 기준)','error');return;}
+  if(dup){
+    toast('이미 등록된 선수 포함(같은 클럽 기준)','error');
+    return;
+  }
+
   sl(true);
   try{
-    if(!G.teams[key])G.teams[key]=[];
-    G.teams[key].push({club,players:names,doublesCount:dbl,registeredAt:new Date().toISOString()});
-    await stT(key);
-    await Promise.all(names.map(n=>regP(n,club,tid,div)));
-    await fbLog(`팀 등록: ${tdn({club},key,G.teams[key].length-1)} ${dl(div)} (${dbl}복식)`,'📋');
-    for(let i=1;i<=mainCount+2;i++){const el=ge('p'+i);if(el){el.value='';const h=ge('h'+i);if(h)h.innerHTML='';}}
-    sl(false);toast('팀 등록 완료 ✅','success');renderRL();
-  }catch(e){sl(false);toast('등록 실패: '+e.message,'error');}
-}
+    if(!G.teams[key]) G.teams[key]=[];
+    G.teams[key].push({
+      club,
+      players:names,
+      doublesCount:dbl,
+      registeredAt:new Date().toISOString()
+    });
 
+    await stT(key);
+
+    // 장유는 시합 등록 시 자동 신규 등록
+    await Promise.all(names.map(n=>regP(n,club,tid,div)));
+
+    await fbLog(`팀 등록: ${tdn({club},key,G.teams[key].length-1)} ${dl(div)} (${dbl}복식)`,'📋');
+
+    for(let i=1;i<=mainCount+2;i++){
+      const el=ge('p'+i);
+      if(el){
+        el.value='';
+        const h=ge('h'+i);
+        if(h) h.innerHTML='';
+      }
+    }
+
+    sl(false);
+    toast('팀 등록 완료 ✅','success');
+    renderRL();
+  }catch(e){
+    sl(false);
+    toast('등록 실패: '+e.message,'error');
+  }
+}
 // ── 팀 삭제/수정 시 선수 참가이력 정리 헬퍼 ──
 async function _removePlayerHistory(names, club, tid, div){
   const bc = baseClub(club||'');
@@ -5110,8 +5161,7 @@ function renderAllP(){
     const dispName=name; // 클럽은 소속 열에 별도 표시
     const editArg=esc(rawKey);
     return`<tr>
-      <td style="font-weight:700;cursor:pointer;color:var(--primary)" onclick="showP('${esc(name)}','${esc(keyClub)}')">${dispName}${AD?` <button class="btn btn-outline" style="font-size:.6rem;padding:1px 6px;margin-left:4px" onclick="event.stopPropagation();openEditPlayer('${editArg}')">✏️</button>`:''}</td>
-      <td>${lc}</td><td>${cnt}</td>
+      <td style="font-weight:700;cursor:pointer;color:var(--primary)" onclick="showP('${esc(name)}','${esc(keyClub)}')">${dispName}${AD?` <button class="btn btn-outline" style="font-size:.6rem;padding:1px 6px;margin-left:4px" onclick="event.stopPropagation();openEditPlayer('${editArg}')">✏️</button>`:''}</td><td style="white-space:nowrap;word-break:keep-all">${lc}</td><td>${cnt}</td>
       <td>${dCnt['금']||'-'}</td><td>${dCnt['은']||'-'}</td>
       <td>${dCnt['동']||'-'}</td><td>${dCnt['테린이']||'-'}</td>
       <td>${br?`<span class="badge ${br===1?'bg-gold':br===2?'bg-silver':'bg-bronze'}">${br}위</span>`:'-'}</td>
@@ -5222,7 +5272,7 @@ async function saveEditPlayer(){
         await deleteDoc(doc(db,'players',finalName.replace(/[/.#$[\]]/g,'_')));
       }
 
-      const newP={...p,name:finalName,clubs:mergedClubs,history:mergedHist,wins:mergedWins,losses:mergedLosses,phone:phone||p.phone||''};
+const newP={...p,name:finalName,key:finalName,clubs:mergedClubs,history:mergedHist,wins:mergedWins,losses:mergedLosses,phone:phone||p.phone||''};
       await setDoc(doc(db,'players',finalName.replace(/[/.#$[\]]/g,'_')),newP);
       await deleteDoc(doc(db,'players',oldName.replace(/[/.#$[\]]/g,'_')));
       delete G.players[oldName];
