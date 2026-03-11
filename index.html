@@ -1813,31 +1813,61 @@ function _sendKakaoQueue(clubs,body,idx){
   const club=clubs[idx];
   const contacts=G.meta.clubContacts||{};
   const phone=contacts[club]||'';
-  const msgWithTag=clubs.length>1?`[${club} 경기이사님]
-${body}`:body;
-  navigator.clipboard.writeText(msgWithTag).then(()=>{
-    toast(`📋 ${club} 내용 복사됨 (${idx+1}/${clubs.length}) → 카카오톡에 붙여넣기`,'info');
-    const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if(isMobile)setTimeout(()=>{window.location.href='kakaotalk://';},500);
+  const msgWithTag=clubs.length>1?`[${club} 경기이사님]\n${body}`:body;
+
+  // ✅ 카카오톡 앱 열기 - 버튼 클릭 시점(사용자 제스처)에 직접 실행
+  const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if(isMobile){
+    // 카카오톡 앱 즉시 열기 (사용자 제스처 시점에 실행해야 차단 안 됨)
+    window.location.href='kakaotalk://';
+  }
+
+  // 내용 클립보드 복사 (비동기지만 카카오톡 열기는 이미 실행됨)
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(msgWithTag).then(()=>{
+      toast(`📋 [${club}] 내용 복사 완료 (${idx+1}/${clubs.length}) → 카카오톡에 붙여넣기`,'success');
+      if(clubs.length>1&&idx<clubs.length-1){
+        setTimeout(()=>_sendKakaoQueue(clubs,body,idx+1),3000);
+      }
+    }).catch(()=>{
+      // clipboard API 실패 시 fallback
+      _copyFallback(msgWithTag);
+      toast(`📋 [${club}] 복사됨 → 카카오톡에 붙여넣기`,'info');
+      if(clubs.length>1&&idx<clubs.length-1){
+        setTimeout(()=>_sendKakaoQueue(clubs,body,idx+1),3000);
+      }
+    });
+  } else {
+    _copyFallback(msgWithTag);
+    toast(`📋 [${club}] 복사됨 → 카카오톡에 붙여넣기`,'info');
     if(clubs.length>1&&idx<clubs.length-1){
-      setTimeout(()=>{toast(`다음: ${clubs[idx+1]} (${idx+2}/${clubs.length}) 준비 중...`,'info');setTimeout(()=>_sendKakaoQueue(clubs,body,idx+1),1500);},2000);
+      setTimeout(()=>_sendKakaoQueue(clubs,body,idx+1),3000);
     }
-  }).catch(()=>{
-    alert(`[${club}]
-번호: ${phone}
+  }
+}
 
-${msgWithTag}
-
-위 내용을 복사해서 카카오톡에 붙여넣으세요`);
-    if(clubs.length>1)setTimeout(()=>_sendKakaoQueue(clubs,body,idx+1),1000);
-  });
+function _copyFallback(text){
+  try{
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    ta.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.focus();ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }catch(_){}
 }
 
 function copyMsgOnly(){
   const body=_checkBodyAndGet();if(!body)return;
-  navigator.clipboard.writeText(body)
-    .then(()=>toast('📋 내용 복사됨! 카카오톡에 붙여넣으세요','success'))
-    .catch(()=>{const ta=ge('noticeMsg');if(ta){ta.select();document.execCommand('copy');}toast('내용을 선택 후 복사하세요','info');});
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(body)
+      .then(()=>toast('📋 내용 복사됨! 카카오톡에 붙여넣으세요','success'))
+      .catch(()=>{_copyFallback(body);toast('📋 내용 복사됨! 카카오톡에 붙여넣으세요','success');});
+  } else {
+    _copyFallback(body);
+    toast('📋 내용 복사됨! 카카오톡에 붙여넣으세요','success');
+  }
 }
 
 async function captureAndShareBracket(mode){
