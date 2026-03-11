@@ -1786,93 +1786,99 @@ ${body}`)
   if(clubs.length>1)setTimeout(()=>_sendSmsQueue(clubs,body,idx+1),3000);
 }
 
+
 function sendKakaoSelected(){
-  const body=_checkBodyAndGet();if(!body)return;
-  const contacts=G.meta.clubContacts||{};
-  const targets=[..._selClubs].filter(c=>contacts[c]);
-  if(!targets.length){toast('선택된 클럽이 없습니다','error');return;}
-  _sendKakaoQueue(targets,body,0);
+  const body = _checkBodyAndGet(); if(!body) return;
+  const contacts = G.meta.clubContacts||{};
+  const targets = [..._selClubs].filter(c=>contacts[c]);
+  if(!targets.length){ toast('선택된 클럽이 없습니다','error'); return; }
+  _sendKakaoQueue(targets, body, 0);
 }
 
 function sendKakaoAll(){
-  const body=_checkBodyAndGet();if(!body)return;
-  const contacts=G.meta.clubContacts||{};
-  const all=(G.clubs||[]).filter(c=>contacts[c]);
-  if(!all.length){toast('등록된 번호가 없습니다','error');return;}
-  if(!confirm(`전체 ${all.length}개 클럽에 카카오톡으로 발송합니다.
-${all.join(', ')}
-
-시작하시겠습니까?`))return;
-  _sendKakaoQueue(all,body,0);
+  const body = _checkBodyAndGet(); if(!body) return;
+  const contacts = G.meta.clubContacts||{};
+  const all = (G.clubs||[]).filter(c=>contacts[c]);
+  if(!all.length){ toast('등록된 번호가 없습니다','error'); return; }
+  if(!confirm(`전체 ${all.length}개 클럽에 카카오톡으로 발송합니다.\n\n${all.join(', ')}\n\n시작하시겠습니까?`)) return;
+  _sendKakaoQueue(all, body, 0);
 }
 
-function _sendKakaoQueue(clubs,body,idx){
-  if(idx>=clubs.length){toast(`✅ ${clubs.length}개 클럽 카톡 발송 준비 완료`,'success');return;}
-  const club=clubs[idx];
-  const contacts=G.meta.clubContacts||{};
-  const phone=contacts[club]||'';
-  const msgWithTag=clubs.length>1?`[${club} 경기이사님]\n${body}`:body;
-
-  // ✅ 카카오톡 앱 열기 - 버튼 클릭 시점(사용자 제스처)에 직접 실행
-  const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  if(isMobile){
-    // 카카오톡 앱 즉시 열기 (사용자 제스처 시점에 실행해야 차단 안 됨)
-    _openKakaoTalk();
+function _sendKakaoQueue(clubs, body, idx){
+  if(idx >= clubs.length){
+    toast(`✅ ${clubs.length}개 클럽 카톡 발송 완료`,'success');
+    return;
   }
+  const club = clubs[idx];
+  const msgWithTag = clubs.length > 1 ? `[${club} 경기이사님]\n${body}` : body;
+  const next = ()=>{ if(clubs.length > 1 && idx < clubs.length-1) setTimeout(()=>_sendKakaoQueue(clubs,body,idx+1),500); };
 
-  // 내용 클립보드 복사 (비동기지만 카카오톡 열기는 이미 실행됨)
-  if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(msgWithTag).then(()=>{
-      toast(`📋 [${club}] 내용 복사 완료 (${idx+1}/${clubs.length}) → 카카오톡에 붙여넣기`,'success');
-      if(clubs.length>1&&idx<clubs.length-1){
-        setTimeout(()=>_sendKakaoQueue(clubs,body,idx+1),3000);
-      }
-    }).catch(()=>{
-      // clipboard API 실패 시 fallback
-      _copyFallback(msgWithTag);
-      toast(`📋 [${club}] 복사됨 → 카카오톡에 붙여넣기`,'info');
-      if(clubs.length>1&&idx<clubs.length-1){
-        setTimeout(()=>_sendKakaoQueue(clubs,body,idx+1),3000);
-      }
-    });
+  // 내용 복사 후 카카오톡 열기 팝업 표시
+  const doAfterCopy = ()=>{
+    _showKakaoPopup(club, idx+1, clubs.length, next);
+  };
+
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(msgWithTag).then(doAfterCopy).catch(()=>{ _copyFallback(msgWithTag); doAfterCopy(); });
   } else {
-    _copyFallback(msgWithTag);
-    toast(`📋 [${club}] 복사됨 → 카카오톡에 붙여넣기`,'info');
-    if(clubs.length>1&&idx<clubs.length-1){
-      setTimeout(()=>_sendKakaoQueue(clubs,body,idx+1),3000);
-    }
+    _copyFallback(msgWithTag); doAfterCopy();
   }
 }
 
+// 복사 완료 후 팝업 - "카카오톡 열기" 버튼이 진짜 사용자 제스처
+function _showKakaoPopup(club, cur, total, nextFn){
+  // 기존 팝업 제거
+  const old = document.getElementById('_kakaoPopup');
+  if(old) old.remove();
+
+  const popup = document.createElement('div');
+  popup.id = '_kakaoPopup';
+  popup.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  popup.innerHTML = `
+    <div style="background:#fff;border-radius:18px;padding:24px 20px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+      <div style="font-size:2rem;margin-bottom:8px">📋</div>
+      <div style="font-weight:700;font-size:1rem;margin-bottom:6px;color:#111">${club} 내용 복사 완료!</div>
+      <div style="font-size:.82rem;color:#555;margin-bottom:18px;line-height:1.5">(${cur}/${total})<br>카카오톡을 열고 붙여넣기 하세요</div>
+      <button onclick="(function(){document.getElementById('_kakaoPopup').remove();try{window.open('kakaotalk://','_self');}catch(e){window.location.href='kakaotalk://';}  setTimeout(()=>{if(typeof arguments[0]==='function')arguments[0]();},800);})()" 
+        style="width:100%;padding:13px;background:#fee500;color:#3c1e1e;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;margin-bottom:10px">
+        💛 카카오톡 열기
+      </button>
+      <button onclick="document.getElementById('_kakaoPopup').remove();" 
+        style="width:100%;padding:11px;background:#f0f0f0;color:#555;border:none;border-radius:12px;font-size:.88rem;cursor:pointer">
+        닫기
+      </button>
+    </div>`;
+
+  // "카카오톡 열기" 버튼에 nextFn 연결
+  document.body.appendChild(popup);
+  const kakaoBtn = popup.querySelector('button');
+  kakaoBtn.onclick = ()=>{
+    popup.remove();
+    // 진짜 사용자 클릭 시점 - 딥링크 시도
+    try{ window.open('kakaotalk://','_self'); } catch(e){ window.location.href='kakaotalk://'; }
+    setTimeout(nextFn, 1000);
+  };
+}
 
 function _openKakaoTalk(){
-  // a태그 동적 생성 + click() - 모바일 브라우저 딥링크 차단 우회
-  try{
-    const a = document.createElement('a');
-    a.href = 'kakaotalk://';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(()=>document.body.removeChild(a), 300);
-  } catch(_){
-    window.location.href = 'kakaotalk://';
-  }
+  try{ window.open('kakaotalk://','_self'); } catch(e){ window.location.href='kakaotalk://'; }
 }
+
 function _copyFallback(text){
   try{
     const ta=document.createElement('textarea');
     ta.value=text;
     ta.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0';
     document.body.appendChild(ta);
-    ta.focus();ta.select();
+    ta.focus(); ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
   }catch(_){}
 }
 
 function copyMsgOnly(){
-  const body=_checkBodyAndGet();if(!body)return;
-  if(navigator.clipboard&&navigator.clipboard.writeText){
+  const body = _checkBodyAndGet(); if(!body) return;
+  if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(body)
       .then(()=>toast('📋 내용 복사됨! 카카오톡에 붙여넣으세요','success'))
       .catch(()=>{_copyFallback(body);toast('📋 내용 복사됨! 카카오톡에 붙여넣으세요','success');});
@@ -1881,6 +1887,7 @@ function copyMsgOnly(){
     toast('📋 내용 복사됨! 카카오톡에 붙여넣으세요','success');
   }
 }
+
 
 async function captureAndShareBracket(mode){
   const bracketEl=ge('bracketContent');
