@@ -1711,9 +1711,7 @@ function renderNoticeContactBtns(){
       </div>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-      <a href="kakaotalk://" style="text-decoration:none;flex:1;min-width:100px">
-        <button class="btn" style="width:100%;font-size:.78rem;padding:7px 10px;background:#fee500;color:#3c1e1e;border:1.5px solid #f9c400;border-radius:8px;font-weight:700">📲 카카오톡 앱 열기</button>
-      </a>
+      <button class="btn" onclick="_openKakaoTalk()" style="width:100%;font-size:.78rem;padding:7px 10px;background:#fee500;color:#3c1e1e;border:1.5px solid #f9c400;border-radius:8px;font-weight:700">📲 카카오톡 앱 열기</button>
       <button class="btn btn-gray" style="font-size:.78rem;padding:7px 14px;flex:1;min-width:100px" onclick="copyMsgOnly()">📋 내용만 복사</button>
     </div>
     <div style="font-size:.7rem;color:var(--text3);line-height:1.5;padding:6px 8px;background:var(--panel2);border-radius:6px">
@@ -1819,7 +1817,7 @@ function _sendKakaoQueue(clubs,body,idx){
   const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   if(isMobile){
     // 카카오톡 앱 즉시 열기 (사용자 제스처 시점에 실행해야 차단 안 됨)
-    window.location.href='kakaotalk://';
+    _openKakaoTalk();
   }
 
   // 내용 클립보드 복사 (비동기지만 카카오톡 열기는 이미 실행됨)
@@ -1846,6 +1844,20 @@ function _sendKakaoQueue(clubs,body,idx){
   }
 }
 
+
+function _openKakaoTalk(){
+  // a태그 동적 생성 + click() - 모바일 브라우저 딥링크 차단 우회
+  try{
+    const a = document.createElement('a');
+    a.href = 'kakaotalk://';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>document.body.removeChild(a), 300);
+  } catch(_){
+    window.location.href = 'kakaotalk://';
+  }
+}
 function _copyFallback(text){
   try{
     const ta=document.createElement('textarea');
@@ -7325,7 +7337,7 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   onRankTC,renderRanking,
   filterP,showP,renderAllP,openPD,openRoster,
   openClubMgr,addClub,delClub,renderCL,
-  toggleReg,doRegLogin,applyRegLoginUI,saveRegPw,toggleShowRegPw,
+  _openKakaoTalk,toggleReg,doRegLogin,applyRegLoginUI,saveRegPw,toggleShowRegPw,
   onRegClubChange,onRegContactInput,saveRegContact,
   renderAdminContactList,saveContactFromAdmin,renderAdminNoticeSection,
   prefillNoticeMsg,renderNoticeContactBtns,captureAndShareBracket,
