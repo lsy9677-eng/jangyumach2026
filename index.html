@@ -1663,14 +1663,15 @@ function prefillNoticeMsg(type){
 }
 
 let _selClubs=new Set();
-
 function renderNoticeContactBtns(){
   const el=ge('noticeContactBtns');
   if(!el)return;
   const contacts=G.meta.clubContacts||{};
   const withPhone=(G.clubs||[]).filter(c=>contacts[c]);
   if(!withPhone.length){el.innerHTML='<div style="font-size:.78rem;color:var(--text3);padding:6px 0">등록된 경기이사 번호가 없습니다.</div>';return;}
-  if(_selClubs.size===0)withPhone.forEach(c=>_selClubs.add(c));
+  
+  // ❌ 0개일 때 무조건 전체 선택해버리는 초기화 코드 삭제 완료
+  
   el.innerHTML=`
     <div style="background:var(--panel2);border-radius:10px;padding:10px 12px;margin-bottom:10px;border:1px solid var(--border)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap">
@@ -1682,14 +1683,14 @@ function renderNoticeContactBtns(){
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
         ${withPhone.map(club=>`
-          <label style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;
+          <div style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;
             border:1.5px solid ${_selClubs.has(club)?'var(--primary)':'var(--border)'};
             background:${_selClubs.has(club)?'rgba(37,99,235,.1)':'transparent'};
             cursor:pointer;font-size:.8rem;font-weight:${_selClubs.has(club)?'700':'400'};
             color:${_selClubs.has(club)?'var(--primary)':'var(--text2)'};user-select:none"
             onclick="toggleClubSel('${club}')">
             ${_selClubs.has(club)?'✅':'⬜'} ${club}
-          </label>
+          </div>
         `).join('')}
       </div>
       <div style="font-size:.72rem;color:var(--text3);margin-top:7px">선택: <b style="color:var(--primary)">${_selClubs.size}</b>/${withPhone.length}개</div>
@@ -1925,11 +1926,18 @@ function openAdminSettings(){
   if(ge('adminPhoneInput')) ge('adminPhoneInput').value = _adminPhone();
   ge('currentRegPwDisplay')&&(ge('currentRegPwDisplay').textContent='●●●●');
   ge('newRegPwInput')&&(ge('newRegPwInput').value='');
+
+  // ✅ 여기에 추가: 창을 열 때마다 클럽을 전체 선택 상태로 초기화
+  _selClubs.clear();
+  const contacts = G.meta.clubContacts || {};
+  (G.clubs || []).forEach(c => {
+    if (contacts[c]) _selClubs.add(c);
+  });
+
   renderAdminNoticeSection();
-  populateMatchDeleteSelectors();
+  if(typeof populateMatchDeleteSelectors === 'function') populateMatchDeleteSelectors();
   om('mAdminSettings');
 }
-
 async function saveAdminPassword(){
   if(!AD){toast('관리자 로그인 필요','info');return;}
   const cur=ge('aspCur')?.value||'';
