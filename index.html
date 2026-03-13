@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "2026-03-13-v12-bulk-sms";
+  const APP_VERSION = "2026-03-13-v14-bracket-export-fix";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -450,6 +450,68 @@ body{overflow-x:hidden;}
   word-break: keep-all;
   overflow-wrap: normal;
 }
+
+/* ── 추첨 애니메이션 (김해 동일) ── */
+@keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(60px) rotate(720deg);opacity:0}}
+@keyframes drumRollPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes leafFloat{
+  0%  {transform:translate(0,0) rotate(0deg) scale(1);}
+  20% {transform:translate(7px,-10px) rotate(7deg) scale(1.03);}
+  40% {transform:translate(-5px,-16px) rotate(-5deg) scale(.98);}
+  60% {transform:translate(8px,-8px) rotate(8deg) scale(1.02);}
+  80% {transform:translate(-6px,-12px) rotate(-4deg) scale(.99);}
+  100%{transform:translate(0,0) rotate(0deg) scale(1);}
+}
+@keyframes leafLand{
+  0%  {transform:translate(var(--lx,0px),var(--ly,-80px)) rotate(var(--lr,25deg)) scale(.6); opacity:0;}
+  45% {opacity:1;}
+  68% {transform:translate(calc(var(--lx,0px)*.03),6px) rotate(-2deg) scale(1.08);}
+  82% {transform:translate(0,-2px) rotate(1deg) scale(1.02);}
+  100%{transform:translate(0,0) rotate(0deg) scale(1); opacity:1;}
+}
+@keyframes rouletteScroll{0%{transform:translateY(0);}100%{transform:translateY(-50%);}}
+@keyframes slotBlink{
+  0%,100%{background:var(--panel);border-color:#93c5fd;box-shadow:none;color:var(--text2);}
+  50%    {background:#dbeafe;border-color:#1565c0;box-shadow:0 0 0 4px rgba(21,101,192,.22);color:#1565c0;}
+}
+@keyframes slotFill{
+  0%  {transform:scale(.65) translateY(-10px);opacity:0;}
+  60% {transform:scale(1.1) translateY(2px);opacity:1;}
+  80% {transform:scale(.97);}
+  100%{transform:scale(1) translateY(0);opacity:1;}
+}
+.leaf-card-stage{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:10px 20px;border-radius:14px;font-size:.92rem;font-weight:800;
+  background:linear-gradient(135deg,#1565c0,#1e88e5);color:white;
+  box-shadow:0 6px 24px rgba(21,101,192,.42);
+  border:2px solid rgba(255,255,255,.28);
+  min-width:110px;white-space:nowrap;
+}
+.leaf-card-stage.same-club-card{background:linear-gradient(135deg,#d97706,#f59e0b);}
+.leaf-card-stage.floating{animation:leafFloat 2.2s ease-in-out infinite;}
+.leaf-card-stage.landing{animation:leafLand .88s cubic-bezier(.22,.68,.35,1.25) forwards;}
+.draw-team-slot.slot-active{animation:slotBlink .52s ease-in-out infinite;}
+.draw-team-slot.slot-filled{background:linear-gradient(135deg,#0f1e3a,#1b2f5a)!important;color:white!important;border-style:solid!important;border-color:#0f1e3a!important;font-weight:800!important;animation:slotFill .42s cubic-bezier(.22,.68,.35,1.3) forwards;}
+.draw-team-slot.slot-filled.same-club{background:linear-gradient(135deg,#d97706,#f59e0b)!important;border-color:#d97706!important;}
+.roulette-strip-wrap{width:100%;height:180px;overflow:hidden;border-radius:12px;border:1.5px solid var(--border);background:var(--bg2);position:relative;}
+.roulette-strip-wrap::before,.roulette-strip-wrap::after{content:'';position:absolute;left:0;right:0;height:44px;z-index:2;pointer-events:none;}
+.roulette-strip-wrap::before{top:0;background:linear-gradient(to bottom,var(--bg2) 30%,transparent);}
+.roulette-strip-wrap::after{bottom:0;background:linear-gradient(to top,var(--bg2) 30%,transparent);}
+.roulette-highlight{position:absolute;left:4px;right:4px;top:50%;transform:translateY(-50%);height:42px;background:rgba(15,30,58,.08);border-top:2px solid rgba(15,30,58,.35);border-bottom:2px solid rgba(15,30,58,.35);z-index:1;pointer-events:none;border-radius:6px;}
+.roulette-strip{display:flex;flex-direction:column;will-change:transform;}
+.roulette-strip.spinning{animation:rouletteScroll var(--speed,.1s) linear infinite;}
+.roulette-item{height:42px;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:600;color:var(--text1);border-bottom:1px solid var(--border);flex-shrink:0;padding:0 14px;white-space:nowrap;}
+.roulette-item.winner-item{color:#fff;font-weight:900;font-size:.9rem;background:linear-gradient(135deg,#0f1e3a,#1b2f5a);border-radius:6px;}
+.draw-stage-card{background:linear-gradient(135deg,#fbfbfd,#f1f4fa);border:1.5px solid #d5dbea;border-radius:14px;padding:12px;}
+.confetti-piece{position:absolute;width:8px;height:8px;border-radius:2px;pointer-events:none;animation:confettiFall .7s ease-out forwards;}
+.grp-preset{display:inline-block;padding:5px 11px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text1);font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s;user-select:none;}
+.grp-preset:hover{border-color:var(--primary);color:var(--primary);background:#e8f0fe;}
+.grp-preset.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+@media(max-width:600px){
+  #drawCfgScreen > div[style*="grid-template-columns"],
+  #drawRunScreen > div[style*="grid-template-columns"]{grid-template-columns:1fr!important;}
+}
 </style>
 
 <!-- PWA -->
@@ -637,24 +699,24 @@ body{overflow-x:hidden;}
         <label class="form-label">주전 선수 <span style="color:var(--text3);font-size:.72rem;font-weight:400">1·2번=1복식 / 3·4번=2복식 / 5·6번=3복식</span></label>
         <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:6px">
           <div><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">① 1복식</div>
-            <div class="pslot"><div class="pslot-num">1</div><input type="text" id="p1" placeholder="1번" autocomplete="off" oninput="phint(this,1)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p1')">기록</button></div><div class="phint" id="h1"></div>
-            <div class="pslot"><div class="pslot-num">2</div><input type="text" id="p2" placeholder="2번" autocomplete="off" oninput="phint(this,2)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p2')">기록</button></div><div class="phint" id="h2"></div>
+            <div class="pslot"><div class="pslot-num">1</div><input type="text" id="p1" placeholder="1번" autocomplete="off" oninput="window.phint(this,1)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p1')">기록</button></div><div class="phint" id="h1"></div>
+            <div class="pslot"><div class="pslot-num">2</div><input type="text" id="p2" placeholder="2번" autocomplete="off" oninput="window.phint(this,2)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p2')">기록</button></div><div class="phint" id="h2"></div>
           </div>
           <div><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">② 2복식</div>
-            <div class="pslot"><div class="pslot-num">3</div><input type="text" id="p3" placeholder="3번" autocomplete="off" oninput="phint(this,3)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p3')">기록</button></div><div class="phint" id="h3"></div>
-            <div class="pslot"><div class="pslot-num">4</div><input type="text" id="p4" placeholder="4번" autocomplete="off" oninput="phint(this,4)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p4')">기록</button></div><div class="phint" id="h4"></div>
+            <div class="pslot"><div class="pslot-num">3</div><input type="text" id="p3" placeholder="3번" autocomplete="off" oninput="window.phint(this,3)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p3')">기록</button></div><div class="phint" id="h3"></div>
+            <div class="pslot"><div class="pslot-num">4</div><input type="text" id="p4" placeholder="4번" autocomplete="off" oninput="window.phint(this,4)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p4')">기록</button></div><div class="phint" id="h4"></div>
           </div>
           <div><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">③ 3복식</div>
-            <div class="pslot"><div class="pslot-num">5</div><input type="text" id="p5" placeholder="5번" autocomplete="off" oninput="phint(this,5)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p5')">기록</button></div><div class="phint" id="h5"></div>
-            <div class="pslot"><div class="pslot-num">6</div><input type="text" id="p6" placeholder="6번" autocomplete="off" oninput="phint(this,6)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p6')">기록</button></div><div class="phint" id="h6"></div>
+            <div class="pslot"><div class="pslot-num">5</div><input type="text" id="p5" placeholder="5번" autocomplete="off" oninput="window.phint(this,5)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p5')">기록</button></div><div class="phint" id="h5"></div>
+            <div class="pslot"><div class="pslot-num">6</div><input type="text" id="p6" placeholder="6번" autocomplete="off" oninput="window.phint(this,6)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p6')">기록</button></div><div class="phint" id="h6"></div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
           <div><div style="font-size:.68rem;font-weight:700;color:var(--text3);padding:3px 0 5px">후보1 (선택)</div>
-            <div class="pslot" style="border-style:dashed"><div class="pslot-num" style="background:var(--bg2);color:var(--text3)" id="subNum1">11</div><input type="text" id="p11" placeholder="후보..." autocomplete="off" oninput="phint(this,11)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p11')">기록</button></div><div class="phint" id="h11"></div>
+            <div class="pslot" style="border-style:dashed"><div class="pslot-num" style="background:var(--bg2);color:var(--text3)" id="subNum1">11</div><input type="text" id="p11" placeholder="후보..." autocomplete="off" oninput="window.phint(this,11)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p11')">기록</button></div><div class="phint" id="h11"></div>
           </div>
           <div><div style="font-size:.68rem;font-weight:700;color:var(--text3);padding:3px 0 5px">후보2 (선택)</div>
-            <div class="pslot" style="border-style:dashed"><div class="pslot-num" style="background:var(--bg2);color:var(--text3)" id="subNum2">12</div><input type="text" id="p12" placeholder="후보..." autocomplete="off" oninput="phint(this,12)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p12')">기록</button></div><div class="phint" id="h12"></div>
+            <div class="pslot" style="border-style:dashed"><div class="pslot-num" style="background:var(--bg2);color:var(--text3)" id="subNum2">12</div><input type="text" id="p12" placeholder="후보..." autocomplete="off" oninput="window.phint(this,12)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p12')">기록</button></div><div class="phint" id="h12"></div>
           </div>
         </div>
       </div>
@@ -675,7 +737,7 @@ body{overflow-x:hidden;}
 </div>
 
 <div class="page" id="page-bracket">
-  <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:6px;flex-wrap:wrap" id="bracketExportBar" style="display:none">
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:6px;flex-wrap:wrap" id="bracketExportBar">
     <button class="btn btn-outline" style="font-size:.75rem;padding:5px 12px" onclick="openBracketView()">📊 전체 대진표 보기</button>
     <button class="btn btn-outline" style="font-size:.75rem;padding:5px 12px" onclick="bracketToImage()">🖼️ 이미지 저장</button>
     <button class="btn btn-outline" style="font-size:.75rem;padding:5px 12px" onclick="bracketToPDF()">📄 PDF 저장</button>
@@ -729,7 +791,7 @@ body{overflow-x:hidden;}
 </div>
 
 </main>
-<div class="modal-overlay" id="mAdmin"><div class="modal-box"><div class="modal-header"><h3>🔐 관리자 로그인</h3><button class="modal-close" onclick="cm('mAdmin')">✕</button></div><div class="modal-body"><div class="form-group"><label class="form-label">비밀번호</label><input class="form-input" type="password" id="adminPw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()"></div></div><div class="modal-footer"><button class="btn btn-gray" onclick="cm('mAdmin')">취소</button><button class="btn btn-primary" onclick="doLogin()">로그인</button></div></div></div>
+<div class="modal-overlay" id="mAdmin"><div class="modal-box"><div class="modal-header"><h3>🔐 관리자 로그인</h3><button class="modal-close" onclick="cm('mAdmin')">✕</button></div><div class="modal-body"><div class="form-group"><label class="form-label">비밀번호</label><input class="form-input" type="password" id="adminPw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')window.doLogin()"></div></div><div class="modal-footer"><button class="btn btn-gray" onclick="cm('mAdmin')">취소</button><button class="btn btn-primary" onclick="doLogin()">로그인</button></div></div></div>
 <!-- 팀등록 로그인 모달 -->
 <div class="modal-overlay" id="mRegLogin"><div class="modal-box"><div class="modal-header"><h3>📋 팀등록 로그인</h3><button class="modal-close" onclick="cm('mRegLogin')">✕</button></div>
 <div class="modal-body">
@@ -737,7 +799,7 @@ body{overflow-x:hidden;}
     📌 경기이사만 사용하는 팀 등록 전용 로그인입니다.<br>관리자에게 비밀번호를 받아 입력하세요.<br><span style="font-size:.72rem;color:#388e3c">초기 비밀번호: <b>202601</b></span>
   </div>
   <div class="form-group"><label class="form-label">팀등록 비밀번호</label>
-    <input class="form-input" type="password" id="regPwInput" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doRegLogin()">
+    <input class="form-input" type="password" id="regPwInput" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')window.doRegLogin()">
   </div>
 </div>
 <div class="modal-footer"><button class="btn btn-gray" onclick="cm('mRegLogin')">취소</button><button class="btn btn-primary" style="background:var(--success)" onclick="doRegLogin()">로그인</button></div>
@@ -889,7 +951,7 @@ body{overflow-x:hidden;}
   <div class="form-group" style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:16px">
     <div style="font-weight:700;font-size:.88rem;margin-bottom:10px;color:var(--primary-dark)">👤 선수 직접 추가 (관리자)</div>
     <div class="frow">
-      <div class="form-group"><label class="form-label">이름</label><input class="form-input" id="apName" placeholder="예: 김정화"></div>
+      <div class="form-group"><label class="form-label">이름</label><input class="form-input" id="apName" placeholder="예: 이상영"></div>
       <div class="form-group"><label class="form-label">클럽</label><select class="form-select" id="apClub"></select></div>
     </div>
     <div class="form-group"><label class="form-label">📱 핸드폰 (선택)</label><input class="form-input" id="apPhone" placeholder="예: 010-1234-5678" inputmode="tel"></div>
@@ -898,7 +960,8 @@ body{overflow-x:hidden;}
       <button class="btn btn-primary" onclick="adminAddPlayer()">➕ 선수 추가</button>
     </div>
     <div style="margin-top:8px;font-size:.72rem;color:var(--text3);line-height:1.5">
-      • 동명이인/이적 관리를 위해 <b>이름+클럽</b> 조합으로 선수키를 생성합니다.<br>
+      • <b>이름+클럽</b> 조합으로 선수키를 생성합니다.<br>
+      • <b>동명이인</b>: 같은 이름+클럽이면 전화번호를 입력해야 별도 선수로 등록됩니다.<br>
       • 선수 추가는 팀등록 전에 미리 명단을 만들어두는 용도입니다.
     </div>
   </div>
@@ -1089,7 +1152,7 @@ body{overflow-x:hidden;}
 
 
 <!-- 빠른 선수 추가 모달 (선수기록 상단, 관리자) -->
-<div class="modal-overlay" id="mQuickAddPlayer">
+<div class="modal-overlay" id="mQuickAddPlayer" style="z-index:9200">
   <div class="modal-box" style="max-width:520px">
     <div class="modal-header">
       <h3>➕ 선수 추가 (관리자)</h3>
@@ -1097,13 +1160,15 @@ body{overflow-x:hidden;}
     </div>
     <div class="modal-body">
       <div style="font-size:.75rem;color:var(--text2);line-height:1.6;margin-bottom:10px;padding:8px 10px;background:var(--panel2);border:1px solid var(--border);border-radius:10px">
-        • 동명이인/이적 혼동 방지를 위해 <b>이름+클럽</b>으로 저장합니다 (이름__클럽).<br>
-        • 등록만 해두면 팀등록에서 바로 선택/확인할 수 있습니다.
+        • <b>이름+클럽</b> 조합으로 저장합니다.<br>
+        • <b>동명이인</b>은 전화번호를 입력하면 별도 선수로 등록됩니다.<br>
+        • 등록 후 팀등록에서 바로 선택/확인할 수 있습니다.
       </div>
+      <div id="qapDupWarn" style="display:none;font-size:.78rem;color:#c0392b;background:#fdecea;border:1px solid #f5c6cb;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>
       <div class="frow">
-        <div class="form-group"><label class="form-label">이름<span class="req">*</span></label><input class="form-input" id="qapName" placeholder="예: 김정화"></div>
+        <div class="form-group"><label class="form-label">이름<span class="req">*</span></label><input class="form-input" id="qapName" placeholder="예: 김장유" oninput="(function(){const w=ge('qapDupWarn');if(w)w.style.display='none'})()"></div>
         <div class="form-group"><label class="form-label">클럽<span class="req">*</span></label><select class="form-select" id="qapClub"></select></div>
-        <div class="form-group"><label class="form-label">📱 핸드폰 (선택)</label><input class="form-input" id="qapPhone" placeholder="예: 010-1234-5678" inputmode="tel"></div>
+        <div class="form-group"><label class="form-label">📱 전화번호 <span style="color:#e67e22;font-size:.72rem">(동명이인 구분에 사용)</span></label><input class="form-input" id="qapPhone" placeholder="예: 010-1234-5678" inputmode="tel"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1150,7 +1215,7 @@ body{overflow-x:hidden;}
 
 
 <div class="toast-container" id="TC"></div>
-<button class="scroll-top" id="stBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<button class="scroll-top" id="stBtn" onclick="scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <script type="module">
 'use strict';
@@ -1204,17 +1269,25 @@ const db=getFirestore(_app);
 let AD=false;
 let REG=false;
 // ── 과거 대회 내장 데이터 ─────────────────────────────────
-let HIST_DATA = [{"id":"t_hist_17","name":"제17회 장유연합회 클럽대항전","date":"2025-10-18","year":2025,"seq":17,"season":"추계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"하모니A","div":"금","players":["엄성환","박홍수","문성균","황동현","이지현","백정렬","권혁태","양우홍"],"rank":1},{"club":"하모니B","div":"금","players":["손범규","서종완","제해근","장재천","박철완","이명호","안응수"],"rank":null},{"club":"능동","div":"금","players":["이창민","박명환","강해근","신수빈","홍명철","김미영"],"rank":3},{"club":"모던A","div":"금","players":["김병모","박병국","이경우","이규용","정민기","최인규","황성록"],"rank":null},{"club":"모던B","div":"금","players":["강대영","박영복","백성우","안증호","여찬윤","유병준","천수연"],"rank":2},{"club":"능동","div":"은","players":["김윤목","이상구","정태백","권오준","이영기","정종철","박진득"],"rank":1},{"club":"모던","div":"은","players":["강병수","김경준","김성준","김윤환","원동빈","조광식","한두현"],"rank":2},{"club":"하모니A","div":"동","players":["장홍일","윤장호","황인범","윤수일","배병철","전진규","윤종윤","김홍희"],"rank":2},{"club":"하모니B","div":"동","players":["손덕상","하종식","홍종호","김홍식","김광수","이재아"],"rank":null},{"club":"하모니C","div":"동","players":["송화진","홍영주","남진애","진경희","남미경","도경식"],"rank":null},{"club":"하모니D","div":"동","players":["노경수","노상영","이국원","고경덕","김찬순","서준근"],"rank":1},{"club":"하모니E","div":"동","players":["이형원","최종렬","강인주","조성수","홍성환","김진우","양수석"],"rank":null},{"club":"능동A","div":"동","players":["최경환","허주철","이말수","허형선","이상곤","공대환"],"rank":3},{"club":"능동B","div":"동","players":["정교진","정종만","장현숙","박민수","여진호","백수영","김재금"],"rank":null},{"club":"능동C","div":"동","players":["김종일","강태옹","정해경","이재환","전윤영","김단우","이성희"],"rank":null},{"club":"모던","div":"동","players":["김경재","심재갑","이주찬","차한성","최승환","최진영"],"rank":null},{"club":"테사모","div":"동","players":["정금숙","김영렬","강덕호","정현주","정성한","송윤정","엄창언"],"rank":null},{"club":"불사조","div":"동","players":["강동현","김석용","박방구","이호철","최상철","박지동","김종호","조영태"],"rank":3},{"club":"하모니","div":"테린이","players":["이동헌","정순권","이종희","최유찬","서은혜","이은정"],"rank":2},{"club":"능동A","div":"테린이","players":["김지범","염철중","전수진","유미선","강동기","정지한"],"rank":1},{"club":"능동B","div":"테린이","players":["이서희","윤윤미","장혜경","박인자","이수민","한수정","신승환"],"rank":3},{"club":"테사모","div":"테린이","players":["박진규","강윤국","김진국","김다혜","황혜진","박선정"],"rank":null}]},{"id":"t_hist_16","name":"제16회 장유연합회장배 테니스대회","date":"2025-05-01","year":2025,"seq":16,"season":"춘계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"하모니A","div":"금","players":["엄성환","문성균","박흥수","안인출","이지현","김일중","박재우"],"rank":1},{"club":"하모니B","div":"금","players":["이외종","제해근","전용규","황동현","백정렬","이명호","이은호"],"rank":3},{"club":"하모니C","div":"금","players":["장재천","권혁태","손범규","박철완","조민철","양우홍","안웅수"],"rank":null},{"club":"능동","div":"금","players":["이창민","강해근","정현식","박명환","신수빈","홍명철","조덕현","배기효"],"rank":2},{"club":"모던A","div":"금","players":["강대영","김의용","박준열","백성우","여찬윤","이상영","천수연"],"rank":3},{"club":"모던B","div":"금","players":["김호진","박영복","안증호","이경우","이규용","최인규"],"rank":null},{"club":"모던C","div":"금","players":["강기홍","김병모","남철현","김성민","원동빈","장혜성"],"rank":null},{"club":"테사모","div":"금","players":["임성태","윤성구","김욱중","이순보","박종성","오태섭","배인공"],"rank":null},{"club":"능동","div":"은","players":["김윤묵","오창수","오정윤","이성희","하병호","김재금","박진특"],"rank":3},{"club":"모던A","div":"은","players":["나창만","박병국","서교수","유병준","임민택","정민기"],"rank":1},{"club":"모던B","div":"은","players":["강병수","김경준","조광식","김윤환","황성록"],"rank":2},{"club":"테사모","div":"은","players":["하태명","장일권","정연석","박재홍","엄창언","김영렬","김인석"],"rank":null},{"club":"하모니A","div":"동","players":["윤장호","장홍일","고경덕","조찬걸","전진규","노경수","양수석"],"rank":1},{"club":"하모니B","div":"동","players":["김치도","이완병","배병철","이형원","윤수일","김경수","홍성환"],"rank":3},{"club":"하모니C","div":"동","players":["홍종호","이재아","하종식","김광수","장순애","홍영주","도경식"],"rank":null},{"club":"능동A","div":"동","players":["이상구","박용오","허주철","정창수","권오준","최성호","이말수"],"rank":2},{"club":"능동B","div":"동","players":["최경환","오정석","오원근","여진호","허형선","박민수","차진숙"],"rank":null},{"club":"능동C","div":"동","players":["김종일","김지범","이재환","곽영란","백수영","최양호"],"rank":null},{"club":"모던","div":"동","players":["김경재","김성재","김경탁","이주찬","최승환","최진영"],"rank":3},{"club":"테사모","div":"동","players":["조성호","강윤국","정성한","김용찬","정현주","강재이","송윤정"],"rank":null},{"club":"불사조","div":"동","players":["김석용","서정호","구영록","오경실","이수연","김경화","김정화","양진석"],"rank":null},{"club":"하모니A","div":"테린이","players":["강준호","김진우","이진혁","정순권","이은정","임다정","강배진"],"rank":2},{"club":"하모니B","div":"테린이","players":["이동헌","신진기","여어진","이지아","황수진","이종희","유수완"],"rank":null},{"club":"능동A","div":"테린이","players":["정교진","구수한","강동기","임재훈","이건혁","전수진"],"rank":3},{"club":"능동B","div":"테린이","players":["정해경","강태옹","정지한","박인자","장혜경","이서희"],"rank":3},{"club":"모던","div":"테린이","players":["김도리","김택현","박철영","부신영","이종화","차한성"],"rank":null},{"club":"불사조","div":"테린이","players":["최상철","김종호","공우택","조영태","김헌경","허정은","옥성윤","김승태"],"rank":1}]},{"id":"t_hist_15","name":"제15회 장유연합회장배 테니스대회","date":"2024-11-10","year":2024,"seq":15,"season":"추계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"능동A","div":"금","players":["강해근","손봉룡","홍명철","신수빈","홍경산","정현식"],"rank":2},{"club":"등동B","div":"금","players":["조덕현","이상구","이창민","박명환","최진우","배기효"],"rank":null},{"club":"모던","div":"금","players":["이상영","강대영","여찬윤","안증호","이규용","박준열","김호진","최인규"],"rank":1},{"club":"하모니A","div":"금","players":["이지현","박재우","안인출","이외종","문성균","김일중"],"rank":3},{"club":"하모니B","div":"금","players":["황동현","제해근","박흥수","전용규","백정렬","서종완"],"rank":3},{"club":"하모니C","div":"금","players":["국동구","안응수","장재천","박철완","손범규","조민철","양우홍"],"rank":null},{"club":"테사모","div":"금","players":["배인공","신만생","박종성","차해윤","김선화","신석","임성태"],"rank":null},{"club":"모던A","div":"은","players":["유병준","원동빈","박병국","서교수","이종호","김성대"],"rank":3},{"club":"모던B","div":"은","players":["이경우","김성준","장혜성","강기홍","김성민","김병모"],"rank":1},{"club":"모던C","div":"은","players":["김정화","감해상","남철현","김윤환","임민택","김경준"],"rank":2},{"club":"능동A","div":"은","players":["오창수","박기영","정창수","정종철","김윤묵","이성희","차진숙"],"rank":null},{"club":"능동B","div":"은","players":["허주철","박진득","김성희","오정윤","이상곤","최성호","김재금"],"rank":3},{"club":"테사모A","div":"은","players":["정연석","하태명","오태섭","강호상","박유도","이정렬","윤성구"],"rank":null},{"club":"테사모B","div":"은","players":["장일권","조정민","노동진","김인석","엄창언","이순보","정금숙"],"rank":null},{"club":"모던","div":"동","players":["강병수","최현준","조광식","남덕현","정민기","이도"],"rank":1},{"club":"능동","div":"동","players":["정미경","장현숙","박민수","이성대","최경환","공대환","김규언"],"rank":null},{"club":"하모니A","div":"동","players":["이국원","이용수","조찬걸","민영규","배병철","윤수일"],"rank":2},{"club":"하모니B","div":"동","players":["김찬순","노경수","하종식","김경수","강인주","황인범"],"rank":3},{"club":"하모니C","div":"동","players":["강명옥","장순애","임다정","여어진","조용현","이은정","김상옥"],"rank":null},{"club":"테사모","div":"동","players":["김용찬","정성한","송윤정","박진규","정현주","강재이"],"rank":null},{"club":"불사조","div":"동","players":["김동현","손지훈","김석용","이호철","서정호","오경실","구영록","김경화"],"rank":3},{"club":"모던A","div":"테린이","players":["최승환","최진영","이주찬","김경재","부신영","김성재"],"rank":2},{"club":"모던B","div":"테린이","players":["이종화","황유진","차한성","안이타","김택현","이영옥"],"rank":null},{"club":"능동","div":"테린이","players":["여진호","박경주","김종일","정교진","고경빈","이재환","김지범","임정희"],"rank":3},{"club":"불사조","div":"테린이","players":["박지동","공우택","김종호","최상철","옥성윤","김현경","류병혁","양진석"],"rank":1}]},{"id":"t_hist_14","name":"제14회 장유연합회 클럽대항전","date":"2024-05-12","year":2024,"seq":14,"season":"춘계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"테사모","div":"금","players":["이두목","신만생","박종성","배인공","신석","임성태","곽현진","이상곤"],"rank":3},{"club":"테사모","div":"은","players":["하태명","이정렬","김인석","오태섭","정연석","엄창언","조정민","이준석"],"rank":3},{"club":"테사모","div":"동","players":["장일권","김영렬","박재홍","노동진","김용찬","정성한","정금숙","송윤정"],"rank":null},{"club":"테사모","div":"테린이","players":["조성호"],"rank":null},{"club":"테사모","div":"테린이","players":["정교진","이언주","윤혜진"],"rank":null},{"club":"하모니","div":"금","players":["제해근","문성균","박재우","이명호","이외종","이지현","김일중"],"rank":1},{"club":"하모니","div":"은","players":["국동구","손범규","신창륜","장재천","정남현","박철완"],"rank":1},{"club":"하모니","div":"동","players":["김찬순","노경수","서영완","양우홍","윤수일","조용현","황인범"],"rank":3},{"club":"하모니","div":"동","players":["강인주","김광수","김예","남미경","손덕상","이형원","조성수"],"rank":null},{"club":"하모니","div":"테린이","players":["민성규"],"rank":null},{"club":"하모니","div":"테린이","players":["서은혜","여어진","이은정","임다정","황수진"],"rank":null},{"club":"모던","div":"금","players":["강대영","박준열","이규용","이상영","박영복","여찬윤","안증호"],"rank":null},{"club":"모던","div":"은","players":["유병준","원동빈","김정화","나창만","박성진","남철현"],"rank":3},{"club":"모던","div":"은","players":["박병국","이경우","이종호","김경준","임민택","김윤환"],"rank":2},{"club":"모던","div":"동","players":["이도","박병철","최승환","이주찬","심재갑","강병수","최현준"],"rank":3},{"club":"모던","div":"동","players":["최현석","장혜성","강기홍","김병모","김성준","김성민","김성대","조광식","김현수","김도리"],"rank":1},{"club":"모던","div":"테린이","players":["김경재","이종화"],"rank":null},{"club":"불사조","div":"동","players":["이호철","구영록","오경실","김동현","서정호","김석용","김경화","김혁진"],"rank":null},{"club":"불사조","div":"테린이","players":["구수한","공우택","박지동"],"rank":null},{"club":"능동","div":"금","players":["이상구","조덕현","이창민","박명환","배기효","박기영"],"rank":null},{"club":"능동","div":"금","players":["손봉룡","강해근","최진우","홍명철","신수빈","홍경산"],"rank":2},{"club":"능동","div":"은","players":["이영기","오정윤","이성희","권오준","정보암","허주철"],"rank":null},{"club":"능동","div":"은","players":["김재금","박상록","하병호","김성희","김윤묵","이재석"],"rank":null},{"club":"능동","div":"동","players":["이상곤","정종철","김교중","박진득","허형선","이성대"],"rank":2},{"club":"능동","div":"동","players":["장현숙","최경환","최양호","박민수","정종연","오정석","백수영"],"rank":null},{"club":"능동","div":"테린이","players":["김종일","박동건","여진호"],"rank":null},{"club":"능동","div":"테린이","players":["임정희","황경미"],"rank":null}]}]; // 장유 과거 대회 데이터
+let HIST_DATA = [{"id":"t_hist_17","name":"2025년 제17회 장유연합회 클럽대항전","date":"2025-10-18","year":2025,"seq":17,"season":"추계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"하모니A","div":"금","players":["엄성환","박홍수","문성균","황동현","이지현","백정렬","권혁태","양우홍"],"rank":1},{"club":"하모니B","div":"금","players":["손범규","서종완","제해근","장재천","박철완","이명호","안응수"],"rank":null},{"club":"능동","div":"금","players":["이창민","박명환","강해근","신수빈","홍명철","김미영"],"rank":3},{"club":"모던A","div":"금","players":["김병모","박병국","이경우","이규용","정민기","최인규","황성록"],"rank":null},{"club":"모던B","div":"금","players":["강대영","박영복","백성우","안증호","여찬윤","유병준","천수연"],"rank":2},{"club":"능동","div":"은","players":["김윤목","이상구","정태백","권오준","이영기","정종철","박진득"],"rank":1},{"club":"모던","div":"은","players":["강병수","김경준","김성준","김윤환","원동빈","조광식","한두현"],"rank":2},{"club":"하모니A","div":"동","players":["장홍일","윤장호","황인범","윤수일","배병철","전진규","윤종윤","김홍희"],"rank":2},{"club":"하모니B","div":"동","players":["손덕상","하종식","홍종호","김홍식","김광수","이재아"],"rank":null},{"club":"하모니C","div":"동","players":["송화진","홍영주","남진애","진경희","남미경","도경식"],"rank":null},{"club":"하모니D","div":"동","players":["노경수","노상영","이국원","고경덕","김찬순","서준근"],"rank":1},{"club":"하모니E","div":"동","players":["이형원","최종렬","강인주","조성수","홍성환","김진우","양수석"],"rank":null},{"club":"능동A","div":"동","players":["최경환","허주철","이말수","허형선","이상곤","공대환"],"rank":3},{"club":"능동B","div":"동","players":["정교진","정종만","장현숙","박민수","여진호","백수영","김재금"],"rank":null},{"club":"능동C","div":"동","players":["김종일","강태옹","정해경","이재환","전윤영","김단우","이성희"],"rank":null},{"club":"모던","div":"동","players":["김경재","심재갑","이주찬","차한성","최승환","최진영"],"rank":null},{"club":"테사모","div":"동","players":["정금숙","김영렬","강덕호","정현주","정성한","송윤정","엄창언"],"rank":null},{"club":"불사조","div":"동","players":["강동현","김석용","박방구","이호철","최상철","박지동","김종호","조영태"],"rank":3},{"club":"하모니","div":"테린이","players":["이동헌","정순권","이종희","최유찬","서은혜","이은정"],"rank":2},{"club":"능동A","div":"테린이","players":["김지범","염철중","전수진","유미선","강동기","정지한"],"rank":1},{"club":"능동B","div":"테린이","players":["이서희","윤윤미","장혜경","박인자","이수민","한수정","신승환"],"rank":3},{"club":"테사모","div":"테린이","players":["박진규","강윤국","김진국","김다혜","황혜진","박선정"],"rank":null}]},{"id":"t_hist_16","name":"2025년 제16회 장유연합회장배 테니스대회","date":"2025-05-01","year":2025,"seq":16,"season":"춘계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"하모니A","div":"금","players":["엄성환","문성균","박흥수","안인출","이지현","김일중","박재우"],"rank":1},{"club":"하모니B","div":"금","players":["이외종","제해근","전용규","황동현","백정렬","이명호","이은호"],"rank":3},{"club":"하모니C","div":"금","players":["장재천","권혁태","손범규","박철완","조민철","양우홍","안웅수"],"rank":null},{"club":"능동","div":"금","players":["이창민","강해근","정현식","박명환","신수빈","홍명철","조덕현","배기효"],"rank":2},{"club":"모던A","div":"금","players":["강대영","김의용","박준열","백성우","여찬윤","이상영","천수연"],"rank":3},{"club":"모던B","div":"금","players":["김호진","박영복","안증호","이경우","이규용","최인규"],"rank":null},{"club":"모던C","div":"금","players":["강기홍","김병모","남철현","김성민","원동빈","장혜성"],"rank":null},{"club":"테사모","div":"금","players":["임성태","윤성구","김욱중","이순보","박종성","오태섭","배인공"],"rank":null},{"club":"능동","div":"은","players":["김윤묵","오창수","오정윤","이성희","하병호","김재금","박진특"],"rank":3},{"club":"모던A","div":"은","players":["나창만","박병국","서교수","유병준","임민택","정민기"],"rank":1},{"club":"모던B","div":"은","players":["강병수","김경준","조광식","김윤환","황성록"],"rank":2},{"club":"테사모","div":"은","players":["하태명","장일권","정연석","박재홍","엄창언","김영렬","김인석"],"rank":null},{"club":"하모니A","div":"동","players":["윤장호","장홍일","고경덕","조찬걸","전진규","노경수","양수석"],"rank":1},{"club":"하모니B","div":"동","players":["김치도","이완병","배병철","이형원","윤수일","김경수","홍성환"],"rank":3},{"club":"하모니C","div":"동","players":["홍종호","이재아","하종식","김광수","장순애","홍영주","도경식"],"rank":null},{"club":"능동A","div":"동","players":["이상구","박용오","허주철","정창수","권오준","최성호","이말수"],"rank":2},{"club":"능동B","div":"동","players":["최경환","오정석","오원근","여진호","허형선","박민수","차진숙"],"rank":null},{"club":"능동C","div":"동","players":["김종일","김지범","이재환","곽영란","백수영","최양호"],"rank":null},{"club":"모던","div":"동","players":["김경재","김성재","김경탁","이주찬","최승환","최진영"],"rank":3},{"club":"테사모","div":"동","players":["조성호","강윤국","정성한","김용찬","정현주","강재이","송윤정"],"rank":null},{"club":"불사조","div":"동","players":["김석용","서정호","구영록","오경실","이수연","김경화","김정화(불사조)","양진석"],"rank":null},{"club":"하모니A","div":"테린이","players":["강준호","김진우","이진혁","정순권","이은정","임다정","강배진"],"rank":2},{"club":"하모니B","div":"테린이","players":["이동헌","신진기","여어진","이지아","황수진","이종희","유수완"],"rank":null},{"club":"능동A","div":"테린이","players":["정교진","구수한","강동기","임재훈","이건혁","전수진"],"rank":3},{"club":"능동B","div":"테린이","players":["정해경","강태옹","정지한","박인자","장혜경","이서희"],"rank":3},{"club":"모던","div":"테린이","players":["김도리","김택현","박철영","부신영","이종화","차한성"],"rank":null},{"club":"불사조","div":"테린이","players":["최상철","김종호","공우택","조영태","김헌경","허정은","옥성윤","김승태"],"rank":1}]},{"id":"t_hist_15","name":"2025년 제15회 장유연합회장배 테니스대회","date":"2024-11-10","year":2024,"seq":15,"season":"추계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"능동A","div":"금","players":["강해근","손봉룡","홍명철","신수빈","홍경산","정현식"],"rank":2},{"club":"등동B","div":"금","players":["조덕현","이상구","이창민","박명환","최진우","배기효"],"rank":null},{"club":"모던","div":"금","players":["이상영","강대영","여찬윤","안증호","이규용","박준열","김호진","최인규"],"rank":1},{"club":"하모니A","div":"금","players":["이지현","박재우","안인출","이외종","문성균","김일중"],"rank":3},{"club":"하모니B","div":"금","players":["황동현","제해근","박흥수","전용규","백정렬","서종완"],"rank":3},{"club":"하모니C","div":"금","players":["국동구","안응수","장재천","박철완","손범규","조민철","양우홍"],"rank":null},{"club":"테사모","div":"금","players":["배인공","신만생","박종성","차해윤","김선화","신석","임성태"],"rank":null},{"club":"모던A","div":"은","players":["유병준","원동빈","박병국","서교수","이종호","김성대"],"rank":3},{"club":"모던B","div":"은","players":["이경우","김성준","장혜성","강기홍","김성민","김병모"],"rank":1},{"club":"모던C","div":"은","players":["김정화","감해상","남철현","김윤환","임민택","김경준"],"rank":2},{"club":"능동A","div":"은","players":["오창수","박기영","정창수","정종철","김윤묵","이성희","차진숙"],"rank":null},{"club":"능동B","div":"은","players":["허주철","박진득","김성희","오정윤","이상곤","최성호","김재금"],"rank":3},{"club":"테사모A","div":"은","players":["정연석","하태명","오태섭","강호상","박유도","이정렬","윤성구"],"rank":null},{"club":"테사모B","div":"은","players":["장일권","조정민","노동진","김인석","엄창언","이순보","정금숙"],"rank":null},{"club":"모던","div":"동","players":["강병수","최현준","조광식","남덕현","정민기","이도"],"rank":1},{"club":"능동","div":"동","players":["정미경","장현숙","박민수","이성대","최경환","공대환","김규언"],"rank":null},{"club":"하모니A","div":"동","players":["이국원","이용수","조찬걸","민영규","배병철","윤수일"],"rank":2},{"club":"하모니B","div":"동","players":["김찬순","노경수","하종식","김경수","강인주","황인범"],"rank":3},{"club":"하모니C","div":"동","players":["강명옥","장순애","임다정","여어진","조용현","이은정","김상옥"],"rank":null},{"club":"테사모","div":"동","players":["김용찬","정성한","송윤정","박진규","정현주","강재이"],"rank":null},{"club":"불사조","div":"동","players":["김동현","손지훈","김석용","이호철","서정호","오경실","구영록","김경화"],"rank":3},{"club":"모던A","div":"테린이","players":["최승환","최진영","이주찬","김경재","부신영","김성재"],"rank":2},{"club":"모던B","div":"테린이","players":["이종화","황유진","차한성","안이타","김택현","이영옥"],"rank":null},{"club":"능동","div":"테린이","players":["여진호","박경주","김종일","정교진","고경빈","이재환","김지범","임정희"],"rank":3},{"club":"불사조","div":"테린이","players":["박지동","공우택","김종호","최상철","옥성윤","김현경","류병혁","양진석"],"rank":1}]},{"id":"t_hist_14","name":"2024년 제14회 장유연합회 클럽대항전","date":"2024-05-12","year":2024,"seq":14,"season":"춘계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"테사모","div":"금","players":["이두목","신만생","박종성","배인공","신석","임성태","곽현진","이상곤"],"rank":3},{"club":"테사모","div":"은","players":["하태명","이정렬","김인석","오태섭","정연석","엄창언","조정민","이준석"],"rank":3},{"club":"테사모","div":"동","players":["장일권","김영렬","박재홍","노동진","김용찬","정성한","정금숙","송윤정"],"rank":null},{"club":"테사모","div":"테린이","players":["조성호"],"rank":null},{"club":"테사모","div":"테린이","players":["정교진","이언주","윤혜진"],"rank":null},{"club":"하모니","div":"금","players":["제해근","문성균","박재우","이명호","이외종","이지현","김일중"],"rank":1},{"club":"하모니","div":"은","players":["국동구","손범규","신창륜","장재천","정남현","박철완"],"rank":1},{"club":"하모니","div":"동","players":["김찬순","노경수","서영완","양우홍","윤수일","조용현","황인범"],"rank":3},{"club":"하모니","div":"동","players":["강인주","김광수","김예","남미경","손덕상","이형원","조성수"],"rank":null},{"club":"하모니","div":"테린이","players":["민성규"],"rank":null},{"club":"하모니","div":"테린이","players":["서은혜","여어진","이은정","임다정","황수진"],"rank":null},{"club":"모던","div":"금","players":["강대영","박준열","이규용","이상영","박영복","여찬윤","안증호"],"rank":null},{"club":"모던","div":"은","players":["유병준","원동빈","김정화","나창만","박성진","남철현"],"rank":3},{"club":"모던","div":"은","players":["박병국","이경우","이종호","김경준","임민택","김윤환"],"rank":2},{"club":"모던","div":"동","players":["이도","박병철","최승환","이주찬","심재갑","강병수","최현준"],"rank":3},{"club":"모던","div":"동","players":["최현석","장혜성","강기홍","김병모","김성준","김성민","김성대","조광식","김현수","김도리"],"rank":1},{"club":"모던","div":"테린이","players":["김경재","이종화"],"rank":null},{"club":"불사조","div":"동","players":["이호철","구영록","오경실","김동현","서정호","김석용","김경화","김혁진"],"rank":null},{"club":"불사조","div":"테린이","players":["구수한","공우택","박지동"],"rank":null},{"club":"능동","div":"금","players":["이상구","조덕현","이창민","박명환","배기효","박기영"],"rank":null},{"club":"능동","div":"금","players":["손봉룡","강해근","최진우","홍명철","신수빈","홍경산"],"rank":2},{"club":"능동","div":"은","players":["이영기","오정윤","이성희","권오준","정보암","허주철"],"rank":null},{"club":"능동","div":"은","players":["김재금","박상록","하병호","김성희","김윤묵","이재석"],"rank":null},{"club":"능동","div":"동","players":["이상곤","정종철","김교중","박진득","허형선","이성대"],"rank":2},{"club":"능동","div":"동","players":["장현숙","최경환","최양호","박민수","정종연","오정석","백수영"],"rank":null},{"club":"능동","div":"테린이","players":["김종일","박동건","여진호"],"rank":null},{"club":"능동","div":"테린이","players":["임정희","황경미"],"rank":null}]}]; // 장유 과거 대회 데이터
 
 let G={meta:{pw:'jangyu1234',regPw:'202601',clubContacts:{}},clubs:['하모니','능동','모던','테사모','불사조'],tournaments:[],teams:{},draws:{},matches:{},players:{},log:[]};
 let CE_tid=null,CE_key=null,CE_idx=null,CM_key=null,CM_id=null,CD_key=null;
 let PF={club:'',div:'',search:''};
 
 // ── 코트 목록 (예선 조별 코트 배정용, 복수 선택 가능) ─────────────────
-const COURT_LIST = [
-  ...Array.from({length:8},(_,i)=>`능동${i+1}`),
-  ...Array.from({length:8},(_,i)=>`국제하드${i+1}`)
+const COURT_GROUPS = [
+  {
+    title: '장유국제코트',
+    courts: Array.from({length:8},(_,i)=>`국제${i+1}`)
+  },
+  {
+    title: '장유능동코트',
+    courts: Array.from({length:8},(_,i)=>`능동${i+1}`)
+  }
 ];
+// 기존 로직 호환을 위해 펼친 목록도 유지
+const COURT_LIST = COURT_GROUPS.flatMap(g => g.courts);
 
 // ── 조 코트 배정 UI 열림 상태(렌더 후에도 유지) ─────────────────────
 let GC_OPEN = {}; // { [key:string]: Set<number> }
@@ -1386,7 +1459,7 @@ function clubTeamSuffix(club){
   return '';
 }
 function pKeyParse(key){ const i=(key||'').lastIndexOf('__'); return i>0?{name:key.slice(0,i),club:key.slice(i+2)}:{name:key,club:''}; }
-async function stP(k){try{const pk=pKeyParse(k);const pureName=cleanName(pk.name||k);await setDoc(doc(db,'players',k.replace(/[\/\.#\$\[\]]/g,'_')),{...G.players[k],key:k,name:pureName,club:pk.club||''});}catch(e){}}
+async function stP(k){const pk=pKeyParse(k);const pureName=cleanName(pk.name||k);const docId=k.replace(/[\/\.#\$\[\] ]/g,'_');await setDoc(doc(db,'players',docId),{...G.players[k],key:k,name:pureName,club:pk.club||'',phone:G.players[k]?.phone||''});}
 async function fbLog(t,i='📌'){try{await addDoc(collection(db,'activityLog'),{text:t,icon:i,time:new Date().toISOString()});}catch(e){}}
 function onDU(){
   // 새로고침 후 관리자 세션 복원
@@ -1927,6 +2000,7 @@ async function captureAndShareBracket(mode){
 
 function openAdminSettings(){
   if(!AD){toast('관리자 로그인 필요','info');return;}
+  closeAllModals('mAdminSettings');
   // 입력 초기화
   ['aspCur','aspNew','aspNew2'].forEach(id=>{const el=ge(id);if(el)el.value='';});
   fillAdminPlayerClub();
@@ -1944,6 +2018,8 @@ function openAdminSettings(){
 
   renderAdminNoticeSection();
   if(typeof populateMatchDeleteSelectors === 'function') populateMatchDeleteSelectors();
+  // 선수추가 모달 등 다른 모달이 열려있으면 닫기
+  cm('mQuickAddPlayer');
   om('mAdminSettings');
 }
 async function saveAdminPassword(){
@@ -2078,14 +2154,16 @@ function fillAdminPlayerClub(){
 
 function openQuickAddPlayer(){
   if(!AD){ toast('관리자 로그인 필요','info'); return; }
-  // 클럽 목록 채우기
+  closeAllModals('mQuickAddPlayer');
   const sel = ge('qapClub');
   if(sel){
-    const cur=sel.value;
+    const cur = sel.value;
     sel.innerHTML = '<option value="">-- 클럽 선택 --</option>' + (G.clubs||[]).map(c=>`<option value="${c}">${c}</option>`).join('');
-    if(cur && [...sel.options].some(o=>o.value===cur)) sel.value=cur;
+    if(cur && [...sel.options].some(o=>o.value===cur)) sel.value = cur;
   }
   ge('qapName') && (ge('qapName').value='');
+  ge('qapPhone') && (ge('qapPhone').value='');
+  ge('qapDupWarn') && (ge('qapDupWarn').style.display='none');
   om('mQuickAddPlayer');
 }
 
@@ -2093,15 +2171,30 @@ async function quickAddPlayer(){
   if(!AD){ toast('관리자 로그인 필요','info'); return; }
   const name=(ge('qapName')?.value||'').trim();
   const club=(ge('qapClub')?.value||'').trim();
+  const qPhone=(ge('qapPhone')?.value||'').trim();
   if(!name){ toast('이름을 입력하세요','error'); return; }
   if(!club){ toast('클럽을 선택하세요','error'); return; }
 
-  const key = pKey(name, club);
+  // 동명이인 처리: 이름+클럽이 같으면 전화번호로 구분
+  let key = pKey(name, club);
   if(G.players[key]){
-    toast('이미 등록된 선수입니다','info');
-    return;
+    const existing = G.players[key];
+    // 전화번호가 다르면 별도 선수로 등록 (동명이인)
+    if(qPhone && existing.phone && qPhone !== existing.phone){
+      key = name + '__' + club + '__' + qPhone.replace(/[^0-9]/g,'').slice(-4);
+      if(G.players[key]){
+        toast('이미 등록된 선수입니다 (동명이인 포함)','info');
+        return;
+      }
+    } else {
+      // 전화번호 없거나 같으면 동일인
+      const warn = ge('qapDupWarn');
+      if(warn){ warn.textContent = `⚠️ "${name}(${club})" 선수가 이미 등록되어 있습니다. 동명이인이라면 전화번호를 입력하세요.`; warn.style.display='block'; }
+      toast(`"${name}(${club})" 이미 등록된 선수입니다. 동명이인은 전화번호를 입력하세요.`,'error');
+      return;
+    }
   }
-  const qPhone=(ge('qapPhone')?.value||'').trim();
+
   G.players[key] = { key, name, club, clubs:[club], history:[], wins:0, losses:0, phone:qPhone||'' };
 
   sl(true);
@@ -2111,11 +2204,13 @@ async function quickAddPlayer(){
     sl(false);
     toast(`선수 추가 완료: ${name}(${club})`,'success');
     if(ge('qapPhone')) ge('qapPhone').value='';
+    if(ge('qapDupWarn')) ge('qapDupWarn').style.display='none';
     cm('mQuickAddPlayer');
     renderAllP();
     popCF();
   }catch(e){
     sl(false);
+    delete G.players[key]; // 저장 실패 시 메모리에서도 제거
     toast('선수 추가 실패: '+e.message,'error');
   }
 }
@@ -2124,16 +2219,27 @@ async function adminAddPlayer(){
   if(!AD){ toast('관리자 로그인 필요','info'); return; }
   const name = (ge('apName')?.value || '').trim();
   const club = (ge('apClub')?.value || '').trim();
+  const apPhone = (ge('apPhone')?.value || '').trim();
   if(!name){ toast('이름을 입력하세요','error'); return; }
   if(!club){ toast('클럽을 선택하세요','error'); return; }
 
-  const key = pKey(name, club); // 이름__클럽
+  // 동명이인 처리: 이름+클럽이 같으면 전화번호로 구분
+  let key = pKey(name, club);
   if(G.players[key]){
-    toast('이미 등록된 선수입니다','info');
-    return;
+    const existing = G.players[key];
+    if(apPhone && existing.phone && apPhone !== existing.phone){
+      // 전화번호 다름 → 동명이인으로 별도 등록
+      key = name + '__' + club + '__' + apPhone.replace(/[^0-9]/g,'').slice(-4);
+      if(G.players[key]){
+        toast('이미 등록된 선수입니다 (동명이인 포함)','info');
+        return;
+      }
+    } else {
+      toast(`"${name}(${club})" 이미 등록된 선수입니다. 동명이인은 전화번호를 입력하세요.`,'error');
+      return;
+    }
   }
-  // 레거시(name-only) 플레이어가 있어도 합치지 않음 (동명이인 보호)
-  const apPhone=(ge('apPhone')?.value||'').trim();
+
   G.players[key] = { key, name, club, clubs:[club], history:[], wins:0, losses:0, phone:apPhone||'' };
 
   sl(true);
@@ -2149,6 +2255,7 @@ async function adminAddPlayer(){
     popCF();
   }catch(e){
     sl(false);
+    delete G.players[key]; // 저장 실패 시 메모리에서도 제거
     toast('선수 추가 실패: '+e.message,'error');
   }
 }
@@ -2197,7 +2304,7 @@ function renderTL(){
     return`<div class="tc"><div class="tc-hdr"><h3>${t.name}</h3><span class="sbadge ${sm[t.status]||'s-open'}">${sl2[t.status]||'접수중'}</span></div>
     <div class="tc-body"><div class="tc-meta"><span class="tc-mi">📅 ${t.date}</span>${t.venue?`<span class="tc-mi">📍 ${t.venue}</span>`:''}<span class="tc-mi">👥 ${tc}팀</span></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">${(t.divisions||[]).map(d=>`<span class="dpill ${dc(d)}" style="cursor:pointer" onclick="openRoster('${t.id}','${d}')">${dl(d)} <small>${(G.teams[t.id+'_'+d]||[]).length}팀</small></span>`).join('')}</div>
-    ${AD?`<div class="tc-acts"><select class="form-select" style="width:auto;padding:5px 8px;font-size:.75rem" onchange="chgTS('${t.id}',this.value)"><option value="open" ${t.status==='open'?'selected':''}>접수중</option><option value="closed" ${t.status==='closed'?'selected':''}>마감</option><option value="ongoing" ${t.status==='ongoing'?'selected':''}>진행중</option><option value="finished" ${t.status==='finished'?'selected':''}>종료</option></select><button class="btn btn-outline" style="font-size:.75rem;padding:5px 10px" onclick="openTD('${t.id}')">⚙️ 설정</button><button class="btn btn-primary" style="font-size:.75rem;padding:5px 10px" onclick="openET('${t.id}')">✏️ 편집</button><button class="btn btn-danger" style="font-size:.75rem;padding:5px 10px" onclick="delT('${t.id}')">삭제</button></div>`:
+    ${AD?`<div class="tc-acts"><select class="form-select" style="width:auto;padding:5px 8px;font-size:.75rem" onchange="window.chgTS('${t.id}',this.value)"><option value="open" ${t.status==='open'?'selected':''}>접수중</option><option value="closed" ${t.status==='closed'?'selected':''}>마감</option><option value="ongoing" ${t.status==='ongoing'?'selected':''}>진행중</option><option value="finished" ${t.status==='finished'?'selected':''}>종료</option></select><button class="btn btn-outline" style="font-size:.75rem;padding:5px 10px" onclick="openTD('${t.id}')">⚙️ 설정</button><button class="btn btn-primary" style="font-size:.75rem;padding:5px 10px" onclick="openET('${t.id}')">✏️ 편집</button><button class="btn btn-danger" style="font-size:.75rem;padding:5px 10px" onclick="delT('${t.id}')">삭제</button></div>`:
     `<div class="tc-acts"><button class="btn btn-outline" style="font-size:.75rem" onclick="openTD('${t.id}')">상세보기</button></div>`}</div></div>`;
   };
   const activeHtml=active.map(renderCard).join('');
@@ -3125,19 +3232,38 @@ function renderCombinedBracketSection(tid, div){
   }
 
   let mainHTML = '';
-  if(mMs.length){
-    mainHTML = renderBracketTree(key,mMs,teams);
-  } else if(cfg.format==='group_knockout'){
+  if(cfg.format==='group_knockout'){
     const pv = buildPreviewMainSlots(draw,cfg);
     if(pv.n>=2){
-      mainHTML = `<div class="card" style="margin:0;background:linear-gradient(135deg,#fffdf5,#eef5ff);border:1.5px dashed var(--accent)">
-        <div class="card-title" style="margin-bottom:8px;color:var(--primary-dark)">🏆 본선 대진표 미리보기</div>
-        <div style="font-size:.75rem;color:var(--text2);margin-bottom:8px">예선이 끝나기 전에도 <b>몇 조 몇 위</b>가 들어갈 자리를 먼저 보여줍니다.</div>
-        ${renderMainPreviewHTML(pv.matchSlots,pv.n,true)}
-      </div>`;
+      const adv=draw.advance||cfg.advance||2;
+      const grpCount=draw.groups?.length||0;
+      if(mMs.length){
+        mainHTML = renderBracketTree(key,mMs,teams);
+        mainHTML += `<div style="margin-top:10px">
+          <button class="btn btn-outline" style="font-size:.72rem;padding:4px 12px" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.nextElementSibling.style.display==='none'?'🌳 조별 본선 연결구조 보기':'🌳 조별 본선 연결구조 접기'">🌳 조별 본선 연결구조 보기</button>
+          <div style="display:none;margin-top:8px">
+            <div style="font-size:.75rem;color:var(--text2);margin-bottom:6px;padding:0 2px">각 조 몇 위가 어느 본선 슬롯에 배정됐는지 확인합니다.</div>
+            <div style="background:linear-gradient(135deg,#fffdf5,#eef5ff);border:1.5px dashed var(--accent);border-radius:var(--radius-lg);padding:12px">
+              ${renderMainPreviewHTML(pv.matchSlots,pv.n,true)}
+            </div>
+          </div>
+        </div>`;
+      } else {
+        mainHTML = `<div class="card" style="margin:0;background:linear-gradient(135deg,#fffdf5,#eef5ff);border:1.5px dashed var(--accent)">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+            <div class="card-title" style="color:var(--primary-dark);margin:0">🌳 본선 대진표 구조 미리보기</div>
+            <span class="badge" style="background:var(--accent);color:#fff;font-size:.72rem">${adv}팀 진출 × ${grpCount}조 → ${pv.n}강</span>
+          </div>
+          <div style="font-size:.75rem;color:var(--text2);margin-bottom:10px">📌 <b>몇 조 몇 위</b>가 어느 본선 슬롯으로 가는지 확인하세요. 예선 결과가 나오면 자동으로 실제 팀명으로 바뀝니다.</div>
+          ${renderMainPreviewHTML(pv.matchSlots,pv.n,true)}
+        </div>`;
+      }
     } else {
-      mainHTML = `<div class="card" style="margin:0"><div class="empty-state" style="padding:28px"><p>본선 대진표 데이터가 없습니다</p></div></div>`;
+      if(mMs.length) mainHTML = renderBracketTree(key,mMs,teams);
+      else mainHTML = `<div class="card" style="margin:0"><div class="empty-state" style="padding:28px"><p>본선 대진표 데이터가 없습니다</p></div></div>`;
     }
+  } else if(mMs.length){
+    mainHTML = renderBracketTree(key,mMs,teams);
   }
 
   let groupsHTML = '';
@@ -3204,7 +3330,6 @@ function renderCombinedBracketSection(tid, div){
     </div>
   </div>`;
 }
-
 function renderBracketView(tid, div){
   const body = ge('mBVBody');
   const t = G.tournaments.find(t=>t.id===tid);
@@ -4478,138 +4603,177 @@ async function startMainDraw(){
   const {key,tid,div,advT,bracketSize:n,byeCount,rank1,rank2}=MD;
   const teams=G.teams[key]||[];
   const matchCount=n/2;
+  const plan=buildHybridMainSlots([...(rank1||[]), ...(rank2||[])], n);
   const matchSlots=Array.from({length:matchCount},(_,i)=>({id:i,t1:null,t2:null,bye:false}));
-  const allIdxs=shuffle([...Array(matchCount).keys()]);
-  const byeIdxs=allIdxs.slice(0,byeCount);
-  const normalIdxs=allIdxs.slice(byeCount);
-  const rank1Pool=shuffle([...rank1]);
-  const rank2Pool=shuffle([...rank2]);
+  const byeIdxs=plan.byeIdxs||[];
+  const normalIdxs=plan.normalIdxs||[];
+  const fullPool = uniquePoolNames([...(rank1||[]), ...(rank2||[])]);
 
-  const byeRank1Count=Math.min(byeCount, rank1Pool.length);
-  const byeRank1=rank1Pool.slice(0,byeRank1Count);
-  const byeRank2=rank2Pool.slice(0,byeCount-byeRank1Count);
-  const rank2Remaining=rank2Pool.slice(byeCount-byeRank1Count);
-  const normalRank1=rank1Pool.slice(byeRank1Count);
+  const byeRevealIdxs=byeIdxs.filter(i=>plan.matchSlots[i]?.t1);
+  const rank1RevealIdxs=normalIdxs.filter(i=>{
+    const ms=plan.matchSlots[i];
+    return ms?.t1 && ms.t1.rk===1 && !ms.bye;
+  });
+  const vsRank1Idxs=normalIdxs.filter(i=>{
+    const ms=plan.matchSlots[i];
+    return ms?.t1 && ms.t1.rk===1 && ms?.t2;
+  });
+  const emptyNormalIdxs=normalIdxs.filter(i=>{
+    const ms=plan.matchSlots[i];
+    return ms && !ms.bye && (!ms.t1 || ms.t1.rk!==1);
+  });
 
-  let stepTotal=byeCount + normalRank1.length + rank2Remaining.length;
+  const extraR2Steps=emptyNormalIdxs.reduce((acc,i)=>{
+    const ms=plan.matchSlots[i];
+    return acc + (ms?.t1?1:0) + (ms?.t2?1:0);
+  },0);
+  const stepTotal=Math.max(1, byeRevealIdxs.length + rank1RevealIdxs.length + vsRank1Idxs.length + extraR2Steps);
   let stepDone=0;
-  const allNames = advT.map(t=>`${t.rk===1?'👑':'🥈'} ${t.nm}`);
 
-  showMainStageMsg(`<div style="font-size:1rem;font-weight:800;color:var(--primary-dark)">🏆 본선 추첨 준비</div><div style="font-size:.8rem;color:var(--text2);margin-top:6px;line-height:1.6">예선과 같은 슬롯 방식으로<br>한 자리씩 천천히 대진을 완성합니다.</div>`);
-  await dSleep(760);
+  if(byeRevealIdxs.length>0){
+    showMainStageMsg(`<div style="font-size:1rem;font-weight:700;color:var(--accent)">🎫 부전승 자리 공개</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">하이브리드 모드로 미리 보여준 자리 그대로 확정합니다</div>`);
+    await dSleep(1000);
 
-  if(byeCount>0){
-    showMainStageMsg(`<div style="font-size:1rem;font-weight:800;color:var(--accent)">🎫 부전승 추첨</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">부전승 자리도 한 팀씩 공개됩니다</div>`);
-    await dSleep(700);
+    for(let i=0;i<byeRevealIdxs.length;i++){
+      const slotIdx=byeRevealIdxs[i];
+      const team=plan.matchSlots[slotIdx].t1;
+      const isR1=team?.rk===1;
+      const accent=isR1?'var(--accent)':'var(--success)';
+      const icon=isR1?'👑':'🥈';
 
-    const byeAllTeams=[...byeRank1,...byeRank2];
-    for(let i=0;i<byeCount;i++){
-      const team=byeAllTeams[i];
-      const isR1=i<byeRank1Count;
-      await spinTeamSlot(allNames, (1320 + Math.random()*720) * DRAW_SPEED, `🎫 부전승 ${i+1}번 자리 추첨 중`);
-      playSound('reveal');
-      showMainStageMsg(`<div style="font-size:.92rem;font-weight:800;color:${isR1?'var(--accent)':'var(--success)'};margin-bottom:8px">🎫 부전승 확정!</div>${tennisRevealHTML(`${isR1?'👑':'🥈'} ${team.nm}`, isR1?'accent':'success', `${team.gn}조 ${team.rk}위 팀이 다음 라운드 직행`)}`);
-      await dSleep(680);
+      await spinTeamSlot(uniquePoolNames([team, ...fullPool]).map(t=>typeof t==='string'?t:(t?.nm?`${t.rk===1?'👑':'🥈'} ${t.nm}`:'')).filter(Boolean), 2100 + randInt(1200), `🎫 부전승 ${i+1}번 자리 공개`);
+      SFX.reveal();
 
-      matchSlots[byeIdxs[i]].t1={...team};
-      matchSlots[byeIdxs[i]].bye=true;
+      showMainStageMsg(`<div style="font-size:.95rem;font-weight:700;color:${accent};margin-bottom:8px">🎫 부전승 확정!</div>
+        ${tennisRevealHTML(`${icon} ${team.nm}`, 'accent', `미리보기 ${slotIdx+1}번 자리 그대로 적용`)}`);
+      await dSleep(850);
+
+      matchSlots[slotIdx].t1={...team};
+      matchSlots[slotIdx].bye=true;
       renderMainPreview(matchSlots,n,teams,key);
       stepDone++;
       ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-      await dSleep(320);
+      await dSleep(340);
     }
   }
 
-  if(normalRank1.length>0){
-    showMainStageMsg(`<div style="font-size:1rem;font-weight:800;color:var(--primary)">👑 1위팀 자리 배정</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">1위팀은 서로 빨리 만나지 않도록 배치합니다</div>`);
-    await dSleep(720);
+  if(rank1RevealIdxs.length>0){
+    showMainStageMsg(`<div style="font-size:1rem;font-weight:700;color:var(--primary)">👑 1위팀 자리 공개</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">예선 전에 본 본선표 자리에 그대로 채워집니다</div>`);
+    await dSleep(1000);
 
-    const r1MatchIdxs=shuffle([...normalIdxs]).slice(0,normalRank1.length);
-    for(let i=0;i<normalRank1.length;i++){
-      const team=normalRank1[i];
-      const mIdx=r1MatchIdxs[i];
-      await spinTeamSlot(allNames, (1380 + Math.random()*700) * DRAW_SPEED, `👑 ${i+1}번째 1위팀 자리 추첨`);
-      playSound('reveal');
-      showMainStageMsg(`<div style="font-size:.9rem;font-weight:800;color:var(--primary);margin-bottom:8px">✨ ${i+1}번 자리 배정 완료!</div>${tennisRevealHTML(`👑 ${team.nm}`, 'primary', `${team.gn}조 1위가 상단 시드 자리에 들어갑니다`)}`);
-      await dSleep(620);
+    for(let i=0;i<rank1RevealIdxs.length;i++){
+      const mIdx=rank1RevealIdxs[i];
+      const team=plan.matchSlots[mIdx].t1;
+
+      await spinTeamSlot(uniquePoolNames([team, ...fullPool]).map(t=>typeof t==='string'?t:(t?.nm?`${t.rk===1?'👑':'🥈'} ${t.nm}`:'')).filter(Boolean), 2200 + randInt(1300), `👑 ${i+1}번째 1위팀 자리 공개`);
+      SFX.reveal();
+
+      showMainStageMsg(`<div style="font-size:.9rem;font-weight:700;color:var(--primary);margin-bottom:8px">✨ ${mIdx+1}번 자리 확정!</div>
+        ${tennisRevealHTML(`👑 ${team.nm}`, 'primary', '같은 조 1위끼리는 첫 경기에서 만나지 않게 배치')}`);
+      await dSleep(780);
 
       matchSlots[mIdx].t1={...team};
       renderMainPreview(matchSlots,n,teams,key);
       stepDone++;
       ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-      await dSleep(300);
+      await dSleep(320);
     }
   }
 
-  if(rank2Remaining.length>0){
-    showMainStageMsg(`<div style="font-size:1rem;font-weight:800;color:var(--success)">🥈 상대팀 추첨</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">남은 팀들을 한 자리씩 채워 대진을 완성합니다</div>`);
-    await dSleep(720);
-
-    const vsRank1Idxs=shuffle(normalIdxs.filter(i=>matchSlots[i].t1&&!matchSlots[i].bye));
-    const emptyNormalIdxs=shuffle(normalIdxs.filter(i=>!matchSlots[i].t1));
-    let r2done=0;
-    const r2pool=[...rank2Remaining];
+  if(vsRank1Idxs.length || emptyNormalIdxs.length){
+    showMainStageMsg(`<div style="font-size:1rem;font-weight:700;color:var(--success)">🥈 2위팀 자리 공개</div><div style="font-size:.78rem;color:var(--text2);margin-top:4px">부전승끼리 바로 붙지 않도록 최대한 벌려 놓은 구조를 유지합니다</div>`);
+    await dSleep(1000);
 
     for(const mIdx of vsRank1Idxs){
-      if(r2done>=r2pool.length) break;
-      const team=r2pool[r2done];
-      const opp=matchSlots[mIdx].t1;
-      await spinTeamSlot(allNames, (1360 + Math.random()*680) * DRAW_SPEED, `🥈 ${team.nm} 상대팀 추첨 중...`);
-      playSound('reveal');
-      showMainStageMsg(`<div style="font-size:.92rem;font-weight:800;color:var(--success);margin-bottom:10px">⚡ 대진 확정!</div>${tennisVsHTML(`👑 ${opp?.nm||'?'}`, `🥈 ${team.nm}`, 'primary', 'success')}<div style="margin-top:10px;font-size:.76rem;color:var(--text2)">한 경기씩 맞대결이 완성됩니다</div>`);
-      await dSleep(760);
+      const team=plan.matchSlots[mIdx].t2;
+      const opp=plan.matchSlots[mIdx].t1;
+      if(!team) continue;
+
+      await spinTeamSlot(uniquePoolNames([team, opp, ...fullPool]).map(t=>typeof t==='string'?t:(t?.nm?`${t.rk===1?'👑':'🥈'} ${t.nm}`:'')).filter(Boolean), 2200 + randInt(1200), `🥈 ${team.nm} 상대 자리 공개`);
+      SFX.reveal();
+
+      showMainStageMsg(`<div style="font-size:.95rem;font-weight:700;color:var(--success);margin-bottom:10px">⚡ 대진 확정!</div>
+        <div style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap">
+          ${`<span style="display:inline-block;padding:6px 16px;border-radius:999px;background:var(--primary);color:white;font-size:.82rem;font-weight:800">👑 ${opp?.nm||'?'}</span>`}
+          <div style="font-size:1.4rem;font-weight:900;color:var(--text2)">VS</div>
+          ${`<span style="display:inline-block;padding:6px 16px;border-radius:999px;background:var(--success);color:white;font-size:.82rem;font-weight:800;animation-delay:.12s">🥈 ${team.nm}</span>`}
+        </div>`);
+      await dSleep(900);
 
       matchSlots[mIdx].t2={...team};
       renderMainPreview(matchSlots,n,teams,key);
-      stepDone++; r2done++;
+      stepDone++;
       ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-      await dSleep(320);
+      await dSleep(340);
     }
 
-    let eIdx=0;
-    while(r2done<r2pool.length){
-      const mIdx=emptyNormalIdxs[eIdx++];
-      if(mIdx===undefined) break;
-      const teamA=r2pool[r2done];
-      const teamB=r2pool[r2done+1];
+    for(const mIdx of emptyNormalIdxs){
+      const teamA=plan.matchSlots[mIdx].t1;
+      const teamB=plan.matchSlots[mIdx].t2;
 
       if(teamA){
-        await spinTeamSlot(allNames, (1280 + Math.random()*620) * DRAW_SPEED, `🥈 ${teamA.nm} 자리 추첨 중`);
-        playSound('reveal');
-        matchSlots[mIdx].t1={...teamA};
-        showMainStageMsg(`<div style="font-size:.9rem;font-weight:800;color:var(--success);margin-bottom:8px">✨ 첫 번째 자리 배정</div>${tennisRevealHTML(`🥈 ${teamA.nm}`, 'success')}`);
-        await dSleep(520);
-        r2done++;
-        renderMainPreview(matchSlots,n,teams,key);
-        stepDone++;
-        ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-        await dSleep(240);
-      }
+        await spinTeamSlot(uniquePoolNames([teamA, ...fullPool]).map(t=>typeof t==='string'?t:(t?.nm?`${t.rk===1?'👑':'🥈'} ${t.nm}`:'')).filter(Boolean), 2100 + randInt(1200), `추첨 중...`);
+        SFX.reveal();
 
-      if(teamB){
-        await spinTeamSlot(allNames, (1280 + Math.random()*620) * DRAW_SPEED, `🥈 상대팀 추첨 중`);
-        playSound('reveal');
-        matchSlots[mIdx].t2={...teamB};
-        showMainStageMsg(`<div style="font-size:.92rem;font-weight:800;color:var(--success);margin-bottom:10px">⚡ 대진 확정!</div>${tennisVsHTML(`🥈 ${teamA?.nm||'?'}`, `🥈 ${teamB.nm}`, 'success', 'success')}`);
+        matchSlots[mIdx].t1={...teamA};
+        showMainStageMsg(`<div style="font-size:.9rem;font-weight:700;color:var(--success);margin-bottom:8px">✨ ${teamA.nm} 자리 확정</div>
+          ${`<span style="display:inline-block;padding:6px 16px;border-radius:999px;background:var(--success);color:white;font-size:.82rem;font-weight:800">🥈 ${teamA.nm}</span>`}`);
         await dSleep(760);
-        r2done++;
         renderMainPreview(matchSlots,n,teams,key);
         stepDone++;
         ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
-        await dSleep(320);
+        await dSleep(280);
+      }
+      if(teamB){
+        await spinTeamSlot(uniquePoolNames([teamB, teamA, ...fullPool]).map(t=>typeof t==='string'?t:(t?.nm?`${t.rk===1?'👑':'🥈'} ${t.nm}`:'')).filter(Boolean), 2100 + randInt(1200), `추첨 중...`);
+        SFX.reveal();
+
+        matchSlots[mIdx].t2={...teamB};
+        showMainStageMsg(`<div style="font-size:.95rem;font-weight:700;color:var(--success);margin-bottom:10px">⚡ 2위팀 대진 확정!</div>
+          <div style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap">
+            ${`<span style="display:inline-block;padding:6px 16px;border-radius:999px;background:var(--success);color:white;font-size:.82rem;font-weight:800">🥈 ${teamA?.nm||'?'}</span>`}
+            <div style="font-size:1.4rem;font-weight:900;color:var(--text2)">VS</div>
+            ${`<span style="display:inline-block;padding:6px 16px;border-radius:999px;background:var(--success);color:white;font-size:.82rem;font-weight:800;animation-delay:.12s">🥈 ${teamB.nm}</span>`}
+          </div>`);
+        await dSleep(860);
+        renderMainPreview(matchSlots,n,teams,key);
+        stepDone++;
+        ge('mainProgressBar').style.width=`${stepDone/stepTotal*100}%`;
+        await dSleep(300);
       }
     }
   }
 
+  showMainStageMsg(`<div style="font-size:1.05rem;font-weight:700;color:var(--success);margin-bottom:8px">🎉 하이브리드 본선 대진 확정!</div>
+    <div style="font-size:.82rem;color:var(--text2)">미리보기 구조를 유지하면서 애니메이션으로 한 자리씩 공개했습니다</div>`);
   ge('mainProgressBar').style.width='100%';
-  playSound('final');
-  showMainStageMsg(`<div style="font-size:1.3rem;font-weight:800;color:var(--success);margin:10px 0">🎉 본선 추첨 완료!</div><div style="font-size:.8rem;color:var(--text2)">대진표를 확인하세요</div>`);
   renderMainPreview(matchSlots,n,teams,key,true);
-  await dSleep(920);
+  await dSleep(900);
 
-  const mainMs=buildMainMatches(matchSlots,n);
-  await saveMainDraw(mainMs,n);
+  const mainMs=buildMainMatches(matchSlots,n,teams,key);
+  const allMs=(G.matches[key]||[]).filter(m=>m.phase!=='main');
+  G.matches[key]=[...allMs,...mainMs];
+
+  sl(true);
+  try{
+    await stM(key);
+    await fbLog(`본선 하이브리드 대진표 생성: ${(G.tournaments.find(t=>t.id===tid)||{}).name||''} ${dl(div)} ${n}강`,'🏆');
+    sl(false);
+    ge('mainDrawBtn').textContent='✅ 닫기';
+    ge('mainDrawBtn').onclick=()=>{cm('mMain');renderBracket();};
+    ge('mainDrawBtn').disabled=false;
+    ge('mainCancelBtn').style.display='none';
+    MD.isRunning=false;
+    SFX.finale();
+    toast('본선 대진표 생성 완료 🏆','success');
+  }catch(e){
+    sl(false);
+    toast('저장 실패: '+e.message,'error');
+    MD.isRunning=false;
+    ge('mainDrawBtn').disabled=false;
+  }
 }
+
 
 // ─── 저장 함수 분리 ─────────────────────────────────────
 async function saveMainDraw(mainMs,n){
@@ -6054,8 +6218,16 @@ function shuffle(a){
 function np2(n){let p=1;while(p<n)p*=2;return p;}
 function ago(iso){const d=Date.now()-new Date(iso).getTime(),m=Math.floor(d/60000);if(m<1)return'방금';if(m<60)return m+'분 전';const h=Math.floor(m/60);if(h<24)return h+'시간 전';return Math.floor(h/24)+'일 전';}
 function ge(id){return document.getElementById(id);}
-function om(id){document.getElementById(id)?.classList.add('open');}
+let __modalZ=9500;
+function om(id,{closeOthers=false}={}){
+  if(closeOthers){document.querySelectorAll('.modal-overlay.open').forEach(m=>{if(m.id!==id)m.classList.remove('open');});}
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.style.zIndex=String(++__modalZ);
+  el.classList.add('open');
+}
 function cm(id){document.getElementById(id)?.classList.remove('open');}
+function closeAllModals(exceptId=''){document.querySelectorAll('.modal-overlay.open').forEach(m=>{if(!exceptId||m.id!==exceptId)m.classList.remove('open');});}
 function toast(msg,type='info'){const c=ge('TC');const el=document.createElement('div');el.className='toast '+type;el.innerHTML=`${type==='success'?'✅':type==='error'?'❌':'ℹ️'} ${msg}`;c.appendChild(el);setTimeout(()=>{el.style.cssText='opacity:0;transform:translateX(30px);transition:all .3s';setTimeout(()=>el.remove(),300)},3000);}
 
 window.addEventListener('scroll',()=>ge('stBtn').classList.toggle('show',window.scrollY>300));
@@ -6153,14 +6325,11 @@ function exportPlayersExcel(){
 function backupPlayersExcel(){
   exportPlayersCSV();
 }
-
-// ─── 대진표 이미지/PDF 저장 ─────────────────────────────
-async function bracketToImage(){
+window.bracketToKakaoImage = async function(){
   const el=ge('bracketContent');
   if(!el||!el.querySelector('.t-bracket,.grp-card')){toast('대진표를 먼저 불러오세요','info');return;}
   toast('이미지 생성 중...','info');
   try{
-    // html2canvas CDN 동적 로드
     if(!window.html2canvas){
       await new Promise((res,rej)=>{
         const s=document.createElement('script');
@@ -6169,42 +6338,22 @@ async function bracketToImage(){
       });
     }
     const canvas=await html2canvas(el,{scale:2,backgroundColor:'#f0f4fa',useCORS:true,logging:false});
-    const a=document.createElement('a');
-    a.href=canvas.toDataURL('image/png');
-    a.download=`대진표_${new Date().toISOString().substring(0,10)}.png`;
-    a.click();
-    toast('이미지 저장 완료 🖼️','success');
-  }catch(e){toast('이미지 저장 실패: '+e.message,'error');}
-}
-
-async function bracketToPDF(){
-  const el=ge('bracketContent');
-  if(!el||!el.querySelector('.t-bracket,.grp-card')){toast('대진표를 먼저 불러오세요','info');return;}
-  toast('PDF 생성 중...','info');
-  try{
-    if(!window.html2canvas){
-      await new Promise((res,rej)=>{
-        const s=document.createElement('script');
-        s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-        s.onload=res;s.onerror=rej;document.head.appendChild(s);
-      });
-    }
-    if(!window.jspdf){
-      await new Promise((res,rej)=>{
-        const s=document.createElement('script');
-        s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-        s.onload=res;s.onerror=rej;document.head.appendChild(s);
-      });
-    }
-    const canvas=await html2canvas(el,{scale:2,backgroundColor:'#f0f4fa',useCORS:true,logging:false});
-    const imgData=canvas.toDataURL('image/png');
-    const {jsPDF}=window.jspdf;
-    const pdf=new jsPDF({orientation:canvas.width>canvas.height?'landscape':'portrait',unit:'px',format:[canvas.width/2,canvas.height/2]});
-    pdf.addImage(imgData,'PNG',0,0,canvas.width/2,canvas.height/2);
-    pdf.save(`대진표_${new Date().toISOString().substring(0,10)}.pdf`);
-    toast('PDF 저장 완료 📄','success');
-  }catch(e){toast('PDF 저장 실패: '+e.message,'error');}
-}
+    const dataUrl = canvas.toDataURL('image/png');
+    
+    // 화면에 팝업으로 띄우기
+    const old = document.getElementById('_kakaoImgPopup'); if(old) old.remove();
+    const popup = document.createElement('div');
+    popup.id = '_kakaoImgPopup';
+    popup.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.2s ease';
+    popup.innerHTML = `
+      <div style="color:white;margin-bottom:12px;font-weight:700;font-size:1.1rem">👇 아래 이미지를 길게 눌러 [이미지 저장] 하세요</div>
+      <img src="${dataUrl}" style="max-width:100%;max-height:75vh;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.5);object-fit:contain">
+      <button onclick="this.parentElement.remove()" style="margin-top:20px;padding:12px 30px;background:#f0f0f0;color:#333;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer">닫기</button>
+    `;
+    document.body.appendChild(popup);
+    toast('화면의 이미지를 길게 눌러 저장하세요','success');
+  }catch(e){toast('이미지 생성 실패: '+e.message,'error');}
+};// ─── 대진표 이미지/PDF 저장 ─────────────────────────────
 
 // ═══════════════════════════════════════════════════════
 //  📌 대회요강(텍스트/링크/파일) 업로드 & 표시
@@ -6603,19 +6752,25 @@ function openGroupCourtModal(key,gi){
   GC_MODAL={key,gi};
   const grpCourts=(G.draws[key]?.groups?.[gi]?.courts)||[];
   const title=`🎾 ${grpLabel(gi)} 코트 배정 (복수 선택)`;
-  const rows = COURT_LIST.map(c=>{
-    const chk = grpCourts.includes(c) ? 'checked' : '';
-    return `<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:white;font-size:.8rem;cursor:pointer">
-      <input type="checkbox" value="${c}" ${chk}>
-      <span>${c}</span>
-    </label>`;
+  const sectionsHtml = COURT_GROUPS.map(g=>{
+    const labels = g.courts.map(c=>{
+      const chk = grpCourts.includes(c) ? 'checked' : '';
+      return `<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:white;font-size:.8rem;cursor:pointer">
+        <input type="checkbox" value="${c}" ${chk}>
+        <span>${c}</span>
+      </label>`;
+    }).join('');
+    return `<div style="margin-bottom:12px">
+      <div style="font-size:.75rem;font-weight:900;color:var(--primary-dark);margin:2px 2px 8px">📍 ${g.title}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">${labels}</div>
+    </div>`;
   }).join('');
   const hint = `<div style="font-size:.72rem;color:var(--text2);margin-bottom:10px;padding:8px 10px;background:var(--panel2);border-radius:var(--radius);border:1px solid var(--border)">
     • 체크박스로 여러 코트를 선택할 수 있습니다.<br>
     • 아래 <b>저장</b>을 눌러야 반영됩니다.
   </div>`;
   ge('mGCourtT').textContent = title;
-  ge('mGCourtB').innerHTML = hint + `<div style="display:flex;flex-wrap:wrap;gap:8px">${rows}</div>`;
+  ge('mGCourtB').innerHTML = hint + sectionsHtml;
   om('mGCourt');
 }
 
@@ -7397,6 +7552,45 @@ async function deleteSelectedMatches(){
 }
 
 
+async function bracketToImage(){
+  const el=ge('bracketContent');
+  if(!el||!el.querySelector('.t-bracket,.grp-card,.rr-team-card')){toast('대진표를 먼저 불러오세요','info');return;}
+  toast('이미지 생성 중...','info');
+  try{
+    if(!window.html2canvas){
+      await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+    }
+    const canvas=await html2canvas(el,{scale:2,backgroundColor:'#f0f4fa',useCORS:true,logging:false});
+    const a=document.createElement('a');
+    a.href=canvas.toDataURL('image/png');
+    a.download=`대진표_${new Date().toISOString().substring(0,10)}.png`;
+    document.body.appendChild(a);a.click();a.remove();
+    toast('이미지 저장 완료 🖼️','success');
+  }catch(e){toast('이미지 저장 실패: '+e.message,'error');}
+}
+
+async function bracketToPDF(){
+  const el=ge('bracketContent');
+  if(!el||!el.querySelector('.t-bracket,.grp-card,.rr-team-card')){toast('대진표를 먼저 불러오세요','info');return;}
+  toast('PDF 생성 중...','info');
+  try{
+    if(!window.html2canvas){
+      await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+    }
+    if(!window.jspdf){
+      await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+    }
+    const canvas=await html2canvas(el,{scale:2,backgroundColor:'#f0f4fa',useCORS:true,logging:false});
+    const imgData=canvas.toDataURL('image/png');
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:canvas.width>canvas.height?'landscape':'portrait',unit:'px',format:[canvas.width/2,canvas.height/2]});
+    pdf.addImage(imgData,'PNG',0,0,canvas.width/2,canvas.height/2);
+    pdf.save(`대진표_${new Date().toISOString().substring(0,10)}.pdf`);
+    toast('PDF 저장 완료 📄','success');
+  }catch(e){toast('PDF 저장 실패: '+e.message,'error');}
+}
+
+
 Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, adminAddPlayer, 
   showPage,toggleAdmin,doLogin,openAdminSettings,saveAdminPassword,goBracket,onGuideFilesSelected,removeGuideFile,openGuide,loadHistFromDB,uploadHistFromExcel,renderGuidePreview,onHistGuideFilesSelected,uploadHistGuideFiles,manageHistGuide,deleteHistGuideFile,removeHistGuidePending,
   createTournament,renderTL,chgTS,delT,openET,saveET,openTD,applyRec,saveDivS,
@@ -7417,7 +7611,7 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   renderAdminContactList,saveContactFromAdmin,renderAdminNoticeSection,
   prefillNoticeMsg,renderNoticeContactBtns,captureAndShareBracket,
   toggleClubSel,selAllClubs,sendSmsSelected,sendSmsAll,sendKakaoSelected,sendKakaoAll,copyMsgOnly,
-  gDS,om,cm,toast,ge,esc,setRbSc,
+  gDS,om,cm,closeAllModals,toast,ge,esc,setRbSc,
   buildDrawPresets,updateAdvPresets,updateMainSizeDisplay,calcGroupPresets,
   saveAdminPhone,
   openSupportSMS,
@@ -7429,12 +7623,14 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   deleteSelectedMatches,
   mdSelectAll,
   mdUpdateCount,
+  renderBracketHTMLForDiv,
   switchToRunScreen,runRoulette,leafLandReveal,initDrawStage,fillSlotWithLeaf,activateSlot,celebrateGroupComplete,refreshRunPreview,buildRouletteStrip,grpLabel,
   updateDrawMainPreview,
   toggleDivRubber,selRub,getDivRubbers,etToggleRub,etSelRub,etGetRubbers});
 
 initFB();
 </script>
+
 
 <script>
   // PWA - 업데이트 자동 감지 및 적용
@@ -7634,18 +7830,16 @@ initFB();
 
 
 
-<!-- ====== BV 본선 브라켓(가지형) 오버라이드 시작 ====== -->
+
+
+<!-- ====== BV 나무가지 CSS ====== -->
 <style>
 .bv-wrap{overflow-x:auto;overflow-y:visible;padding:8px 0 20px;}
 .bv-tree{display:flex;align-items:flex-start;min-width:max-content;}
-
-/* 각 라운드 컬럼 */
 .bv-col{display:flex;flex-direction:column;position:relative;}
 .bv-col-title{text-align:center;font-size:.7rem;font-weight:800;padding:5px 8px;border-radius:6px;margin:0 0 10px;background:var(--primary);color:white;}
 .bv-col-title.fin{background:var(--accent);color:var(--text);}
-.bv-col-body{position:relative;} /* height는 JS로 설정 */
-
-/* 매치 박스 — position:absolute로 정확한 Y 위치 */
+.bv-col-body{position:relative;}
 .bv-match{position:absolute;left:0;right:0;border:1.5px solid var(--border);border-radius:9px;overflow:hidden;background:white;box-shadow:0 1px 4px rgba(0,0,0,.08);cursor:pointer;transition:.15s;}
 .bv-match:hover{box-shadow:0 3px 10px rgba(0,0,0,.13);transform:translateY(-1px);}
 .bv-slot{display:flex;align-items:center;gap:6px;padding:7px 9px;font-size:.78rem;border-bottom:1px solid var(--border);}
@@ -7656,169 +7850,16 @@ initFB();
 .bv-slot.win .nm{font-weight:800;}
 .bv-slot.tbd{background:var(--bg2);color:var(--text3);font-style:italic;}
 .bv-slot.bye-slot{background:#f0fdf4;color:#16a34a;font-style:italic;font-size:.7rem;}
-
-/* 컬럼 간 연결선 SVG */
 .bv-connector-col{position:relative;flex-shrink:0;}
-
-/* 시상 */
 .bv-champ-col{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:120px;gap:8px;padding:0 8px;margin-left:4px;}
 .bv-champ-box{border:2px solid var(--accent);border-radius:12px;background:linear-gradient(135deg,#fef3cd,#ffe082);padding:10px 14px;text-align:center;min-width:108px;}
 .bv-champ-box .ci{font-size:1.5rem;}
 .bv-champ-box .cn{font-size:.78rem;font-weight:800;color:#b45309;margin-top:3px;}
 .bv-champ-box .cl{font-size:.6rem;color:#92400e;margin-top:1px;}
-
-/* 툴바 */
 .bv-toolbar{display:flex;gap:6px;justify-content:flex-end;margin-bottom:10px;flex-wrap:wrap;}
 .bv-pill{padding:5px 14px;border-radius:999px;border:1.5px solid var(--border);background:white;cursor:pointer;font-size:.74rem;font-weight:800;}
 .bv-pill.active{background:var(--primary);color:white;border-color:var(--primary);}
-
-/* ── 추첨 애니메이션 ── */
-@keyframes slotBlink{
-  0%,100%{background:var(--panel);border-color:#93c5fd;box-shadow:none;color:var(--text2);}
-  50%    {background:#dbeafe;border-color:#1565c0;box-shadow:0 0 0 4px rgba(21,101,192,.22);color:#1565c0;}
-}
-@keyframes slotFill{
-  0%  {transform:scale(.65) translateY(-10px);opacity:0;}
-  60% {transform:scale(1.1) translateY(2px);opacity:1;}
-  80% {transform:scale(.97);}
-  100%{transform:scale(1) translateY(0);opacity:1;}
-}
-.leaf-card-stage{
-  display:inline-flex;align-items:center;justify-content:center;
-  padding:10px 18px;border-radius:14px;font-size:.9rem;font-weight:800;
-  background:linear-gradient(135deg,#1565c0,#1e88e5);color:white;
-  box-shadow:0 6px 22px rgba(21,101,192,.42);
-  border:2px solid rgba(255,255,255,.28);
-  min-width:100px;white-space:nowrap;cursor:default;
-}
-.leaf-card-stage.same-club-card{background:linear-gradient(135deg,#d97706,#f59e0b);}
-.leaf-card-stage.floating{animation:leafFloat 2.2s ease-in-out infinite;}
-.leaf-card-stage.landing{animation:leafLand .88s cubic-bezier(.22,.68,.35,1.25) forwards;}
-/* ── 조 슬롯 ── */
-.draw-team-slot{
-  display:inline-flex;align-items:center;justify-content:center;
-  padding:5px 10px;border-radius:10px;font-size:.78rem;font-weight:600;
-  background:var(--panel);border:1.5px dashed #93c5fd;
-  width:90px;height:32px;box-sizing:border-box;
-  color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  transition:background .25s,border-color .25s;flex-shrink:0;
-}
-.draw-team-slot.slot-active{
-  animation:slotBlink .52s ease-in-out infinite;
-}
-.draw-team-slot.slot-filled{
-  background:linear-gradient(135deg,#1565c0,#1e88e5)!important;
-  color:white!important;border:1.5px solid #1565c0!important;
-  font-weight:800!important;
-  animation:slotFill .42s cubic-bezier(.22,.68,.35,1.3) forwards;
-}
-.draw-team-slot.slot-filled.same-club{
-  background:linear-gradient(135deg,#d97706,#f59e0b)!important;
-  border-color:#d97706!important;
-}
-/* ── 낙엽 카드 (스테이지용) ── */
-.leaf-card-stage{
-  display:inline-flex;align-items:center;justify-content:center;
-  padding:10px 20px;border-radius:14px;font-size:.92rem;font-weight:800;
-  background:linear-gradient(135deg,#1565c0,#1e88e5);color:white;
-  box-shadow:0 6px 24px rgba(21,101,192,.42);
-  border:2px solid rgba(255,255,255,.28);
-  min-width:110px;white-space:nowrap;
-}
-.leaf-card-stage.same-club-card{background:linear-gradient(135deg,#d97706,#f59e0b);}
-.leaf-card-stage.floating{animation:leafFloat 2.2s ease-in-out infinite;}
-.leaf-card-stage.landing{animation:leafLand .88s cubic-bezier(.22,.68,.35,1.25) forwards;}
-/* ── 룰렛 ── */
-.roulette-strip-wrap{
-  width:100%;height:180px;overflow:hidden;border-radius:12px;
-  border:1.5px solid var(--border);background:var(--bg2);position:relative;
-}
-.roulette-strip-wrap::before,.roulette-strip-wrap::after{
-  content:'';position:absolute;left:0;right:0;height:44px;z-index:2;pointer-events:none;
-}
-.roulette-strip-wrap::before{top:0;background:linear-gradient(to bottom,var(--bg2) 30%,transparent);}
-.roulette-strip-wrap::after{bottom:0;background:linear-gradient(to top,var(--bg2) 30%,transparent);}
-.roulette-highlight{
-  position:absolute;left:4px;right:4px;top:50%;transform:translateY(-50%);
-  height:42px;background:rgba(21,101,192,.08);
-  border-top:2px solid rgba(21,101,192,.4);border-bottom:2px solid rgba(21,101,192,.4);
-  z-index:1;pointer-events:none;border-radius:6px;
-}
-.roulette-strip{display:flex;flex-direction:column;will-change:transform;}
-.roulette-strip.spinning{animation:rouletteScroll var(--speed,.1s) linear infinite;}
-.roulette-item{
-  height:42px;display:flex;align-items:center;justify-content:center;
-  font-size:.85rem;font-weight:600;color:var(--text1);
-  border-bottom:1px solid var(--border);flex-shrink:0;padding:0 14px;
-  white-space:nowrap;
-}
-.roulette-item.winner-item{
-  color:#fff;font-weight:900;font-size:.9rem;
-  background:linear-gradient(135deg,#1565c0,#1e88e5);border-radius:6px;
-}
-/* ── 스테이지 카드 ── */
-.draw-stage-card{
-  background:linear-gradient(135deg,#f8faff,#eef5ff);
-  border:1.5px solid #c7d8f5;border-radius:14px;padding:12px;
-}
-/* ── confetti ── */
-.confetti-piece{position:absolute;width:8px;height:8px;border-radius:2px;pointer-events:none;animation:confettiFall .7s ease-out forwards;}
-.grp-preset{display:inline-block;padding:5px 11px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text1);font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s;user-select:none;}
-.grp-preset:hover{border-color:var(--primary);color:var(--primary);background:#e8f0fe;}
-.grp-preset.active{background:var(--primary);color:#fff;border-color:var(--primary);}
-.draw-cfg-label{font-size:.78rem;font-weight:700;color:var(--text2);min-width:90px;}
-@media(max-width:600px){
-  #drawCfgScreen > div[style*="grid-template-columns"],
-  #drawRunScreen > div[style*="grid-template-columns"]{
-    grid-template-columns:1fr!important;
-  }
-}
-.draw-progress{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:10px 0;}
-.draw-progress-bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:2px;transition:width .4s ease;}
-.same-club-warn{font-size:.72rem;color:#b45309;background:#fef3cd;padding:5px 10px;border-radius:var(--radius);margin-top:6px;display:none;}
-.same-club-warn.show{display:block;}
-@media(max-width:680px){
-  .g2,.g3,.g4{grid-template-columns:1fr;}
-  .home-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
-  .home-stat-card{min-height:78px;padding:10px 8px;}
-  .home-stat-card .stat-val{font-size:1.45rem;}
-  .frow,.frow3{grid-template-columns:1fr;}
-  .ps-row{grid-template-columns:1fr 1fr;}
-  .match-teams{flex-direction:column;}
-}
-
-
-@keyframes rouletteScroll{
-  0%  {transform:translateY(0);}
-  100%{transform:translateY(-50%);}
-}
-
-@keyframes leafLand{
-  0%  {transform:translate(var(--lx,0px),var(--ly,-80px)) rotate(var(--lr,25deg)) scale(.6); opacity:0;}
-  45% {opacity:1;}
-  68% {transform:translate(calc(var(--lx,0px)*.03),6px) rotate(-2deg) scale(1.08);}
-  82% {transform:translate(0,-2px) rotate(1deg) scale(1.02);}
-  100%{transform:translate(0,0) rotate(0deg) scale(1); opacity:1;}
-}
-
-@keyframes leafFloat{
-  0%  {transform:translate(0,0) rotate(0deg) scale(1);}
-  20% {transform:translate(7px,-10px) rotate(7deg) scale(1.03);}
-  40% {transform:translate(-5px,-16px) rotate(-5deg) scale(.98);}
-  60% {transform:translate(8px,-8px) rotate(8deg) scale(1.02);}
-  80% {transform:translate(-6px,-12px) rotate(-4deg) scale(.99);}
-  100%{transform:translate(0,0) rotate(0deg) scale(1);}
-}
-
-@keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(60px) rotate(720deg);opacity:0}}
-
-
-/* ── 부서별 복식 수 선택 ── */
-.div-rubber-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--radius);background:var(--panel2);border:1px solid var(--border);}
-.div-rubber-sel{display:flex;gap:5px;}
-.rub-opt{display:inline-block;padding:4px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);color:var(--text2);font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s;user-select:none;}
-.rub-opt:hover{border-color:var(--primary);color:var(--primary);}
-.rub-opt.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.bv-pill.disabled{opacity:.4;cursor:not-allowed;}
 </style>
 
 <script>
@@ -7844,52 +7885,30 @@ initFB();
     const key = tid+"_"+div;
     const allMs = G.matches[key]||[];
     const mMs = allMs.filter(m=>m.phase==="main").sort((a,b)=>(a.round-b.round)||((a.slot||0)-(b.slot||0)));
-    if(!mMs.length) return `<div style="text-align:center;padding:40px;color:var(--text3)">본선 대진표가 없습니다<br><small style="font-size:.75rem">예선 완료 후 본선 대진표를 생성하세요</small></div>`;
+    if(!mMs.length) return `<div style="text-align:center;padding:40px;color:var(--text3)">본선 대진표가 아직 생성되지 않았습니다<br><small style="font-size:.75rem">위의 본선 대진표 미리보기에서 조별 진출 자리 구조를 먼저 볼 수 있습니다</small></div>`;
 
     const maxR = Math.max(...mMs.map(m=>m.round||0));
     const totalRounds = maxR + 1;
-
-    // 라운드별 매치 묶기
     const byR = {};
     for(let r=0;r<=maxR;r++) byR[r] = mMs.filter(m=>(m.round||0)===r).sort((a,b)=>(a.slot||0)-(b.slot||0));
 
-    // ── 레이아웃 상수 ──
-    const MATCH_H = 62;  // 각 매치 박스 높이(px) — 슬롯 2개 × ~31px
-    const COL_W   = 158; // 매치 박스 가로 폭
-    const CON_W   = 28;  // 컬럼 간 연결선 영역 폭
-    const COL_PAD = 6;   // 좌우 패딩
-
-    // r0의 매치 수 (전체 1라운드)
+    const MATCH_H = 62;
+    const COL_W   = 158;
+    const CON_W   = 28;
+    const COL_PAD = 6;
+    const GAP0 = 8;
     const r0count = byR[0].length;
-
-    // 각 라운드 매치 수
     const matchCount = r => Math.ceil(r0count / Math.pow(2, r));
 
-    // r라운드 매치의 Y 간격: 2^r * MATCH_H + (2^r - 1) * gap
-    // gap = r0일 때 8px, 각 상위 라운드마다 2배
-    const GAP0 = 8; // r0 매치 간 gap
-    const unitH = r => Math.pow(2,r) * MATCH_H + (Math.pow(2,r)-1) * GAP0 * Math.pow(2, Math.max(0,r-1));
-
-    // r라운드 i번째 매치의 top Y
-    // r0: Y(r0,i) = i * (MATCH_H + GAP0)
-    // r1: 매치 i는 r0의 매치 2i, 2i+1의 중심 중간에 위치
-    // Y(r,i) = (Y(r-1, 2i) + Y(r-1, 2i+1)) / 2 + (MATCH_H - MATCH_H) / 2
-    //        = (Y(r-1, 2i) + Y(r-1, 2i+1)) / 2  (매치 높이가 같으니 top 기준)
-
-    // 재귀적으로 계산
     function matchTop(r, i){
       if(r===0) return i * (MATCH_H + GAP0);
       const child0 = matchTop(r-1, i*2);
       const child1 = matchTop(r-1, i*2+1);
-      // 두 자식의 중심 Y 평균 → 자신의 중심 Y
       const center = (child0 + MATCH_H/2 + child1 + MATCH_H/2) / 2;
       return center - MATCH_H/2;
     }
 
-    // 전체 컬럼 높이 = r0 전체 매치가 차지하는 높이
     const totalH = r0count * MATCH_H + (r0count-1) * GAP0 + 20;
-
-    // HTML 생성
     let html = `<div class="bv-wrap"><div class="bv-tree">`;
 
     for(let r=0; r<totalRounds; r++){
@@ -7905,28 +7924,21 @@ initFB();
       for(let i=0; i<mc; i++){
         const m = ms[i];
         const top = matchTop(r, i);
-
         if(!m){
-          // 빈 슬롯 (데이터 없음)
           html += `<div class="bv-match" style="top:${top}px;left:${COL_PAD}px;right:${COL_PAD}px">
             <div class="bv-slot tbd"><span class="nm">TBD</span></div>
             <div class="bv-slot tbd"><span class="nm">TBD</span></div>
           </div>`;
           continue;
         }
-
         const isBye = !!m.bye;
-        // 부전승: winner가 이미 있음 → 상위 라운드로 전파됐으므로
-        // 이 슬롯은 "부전승 직행" 표시만
         const t1n = _getName(key, m.t1);
         const t2n = isBye ? '' : _getName(key, m.t2);
         const w1 = m.winner!=null && m.t1!=null && m.winner===m.t1;
         const w2 = m.winner!=null && m.t2!=null && m.winner===m.t2;
-
         const sc1 = (typeof rbSc==="function") ? rbSc(m,0) : 0;
         const sc2 = (typeof rbSc==="function") ? rbSc(m,1) : 0;
         const showSc = !isBye && (sc1>0||sc2>0||m.winner!=null);
-
         const s1cls = m.t1==null?'tbd':(w1?'win':'');
         const s2cls = isBye?'bye-slot':(m.t2==null?'tbd':(w2?'win':''));
 
@@ -7944,20 +7956,15 @@ initFB();
         </div>`;
       }
 
-      html += `</div></div>`; // bv-col-body, bv-col
+      html += `</div></div>`;
 
-      // 컬럼 간 SVG 연결선 (마지막 컬럼 제외)
       if(r < totalRounds-1){
         const nextMc = matchCount(r+1);
         const svgLines = [];
         for(let i=0; i<nextMc; i++){
-          // i번째 상위 매치 ← r라운드의 2i, 2i+1 매치 연결
           const topChild0 = matchTop(r, i*2)   + MATCH_H/2;
           const topChild1 = matchTop(r, i*2+1) + MATCH_H/2;
           const topParent  = matchTop(r+1, i)  + MATCH_H/2;
-          // 오른쪽 끝 Y → 가운데 세로선 → 왼쪽 끝 Y
-          // child0: (CON_W, topChild0) → (CON_W/2, topChild0) → (CON_W/2, topParent) → (0, topParent)
-          // child1: (CON_W, topChild1) → (CON_W/2, topChild1)   (합류 지점은 같음)
           svgLines.push(`<path d="M${CON_W},${topChild0} H${CON_W/2} V${topParent} H0" fill="none" stroke="var(--border)" stroke-width="1.5"/>`);
           if(i*2+1 < matchCount(r)){
             svgLines.push(`<path d="M${CON_W},${topChild1} H${CON_W/2} V${topParent}" fill="none" stroke="var(--border)" stroke-width="1.5"/>`);
@@ -7969,7 +7976,6 @@ initFB();
       }
     }
 
-    // 시상 칼럼
     const finalM = byR[maxR]?.[0];
     if(finalM){
       const champ  = finalM.winner!=null ? _getName(key, finalM.winner) : null;
@@ -7998,16 +8004,23 @@ initFB();
   window.__BV_MODE = window.__BV_MODE || "main";
 
   window.renderBracketView = function(tid, div){
+    const body = ge('mBVBody');
+    if(!body) return;
+
+    // __ALL__ 모드: 각 부서 섹션 렌더링 (_old 위임)
+    if(div === '__ALL__'){
+      if(typeof _old === "function") _old(tid, div);
+      return;
+    }
+
     const key = tid+"_"+div;
     const allMs = G.matches[key]||[];
     const hasMain = allMs.some(m=>m.phase==="main");
     const mode = hasMain ? (window.__BV_MODE||"main") : "group";
-    const body = ge('mBVBody');
-    if(!body) return;
 
     const toolbar = `<div class="bv-toolbar">
-      <button class="bv-pill${mode==="group"?" active":""}" onclick="window.__BV_MODE='group';renderBracketView('${tid}','${div}')">예선</button>
-      <button class="bv-pill${mode==="main"?" active":""}${!hasMain?" disabled":""}" ${!hasMain?'style="opacity:.4;cursor:not-allowed"':''} onclick="${hasMain?"window.__BV_MODE='main';renderBracketView('"+tid+"','"+div+"')":"return false"}">본선(토너먼트)</button>
+      <button class="bv-pill${mode==="group"?" active":""}" onclick="window.__BV_MODE='group';renderBracketView('${tid}','${div}')">📋 예선</button>
+      <button class="bv-pill${mode==="main"?" active":""}${!hasMain?" disabled":""}" ${!hasMain?'style="opacity:.4;cursor:not-allowed"':''} onclick="${hasMain?"window.__BV_MODE='main';renderBracketView('"+tid+"','"+div+"')":"return false"}">🏆 본선</button>
     </div>`;
 
     if(mode==="main"){
@@ -8016,11 +8029,15 @@ initFB();
         el.addEventListener('click',()=>{ if(typeof openM3==="function") openM3(el.dataset.key, el.dataset.mid); });
       });
     } else {
+      // 예선: _old 호출 후 toolbar 앞에 삽입
       if(typeof _old==="function"){
-        body.innerHTML = toolbar;
         _old(tid, div);
-        const now = ge('mBVBody');
-        if(now) now.insertAdjacentHTML('afterbegin', toolbar);
+        const bvContent = body.querySelector('#bvContent');
+        if(bvContent){
+          bvContent.insertAdjacentHTML('beforebegin', toolbar);
+        } else {
+          body.insertAdjacentHTML('afterbegin', toolbar);
+        }
       } else {
         body.innerHTML = toolbar + `<div style="text-align:center;padding:34px;color:var(--text3)">예선 데이터를 찾을 수 없습니다</div>`;
       }
@@ -8028,423 +8045,7 @@ initFB();
   };
 })();
 </script>
-<!-- ====== BV 본선 브라켓(가지형) 오버라이드 끝 ====== -->
-
-
-<!-- ====== Hybrid combined bracket patch for Jangyu ====== -->
-<script>
-(function(){
-  const _oldOpenBracketView = window.openBracketView;
-  const _oldRenderBracketHTMLForDiv = window.renderBracketHTMLForDiv;
-
-  function hyEscape(s){ return String(s??'').replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
-  function hyNextPow2(n){ let p=1; while(p<n) p*=2; return p; }
-  function hyLabelForEntry(e){
-    if(!e) return 'TBD';
-    if(e.placeholder) return `${e.gn}조 ${e.rk}위`;
-    return e.nm || 'TBD';
-  }
-  function hySorted(list){
-    return [...(list||[])].sort((a,b)=>{
-      const ga = parseInt(a.gn||0), gb = parseInt(b.gn||0);
-      if(ga!==gb) return ga-gb;
-      return (a.rk||0)-(b.rk||0);
-    });
-  }
-  function hySpreadIndices(matchCount, count){
-    const out = [];
-    if(count<=0 || matchCount<=0) return out;
-    const used = new Set();
-    const candidates = [];
-    if(matchCount===1) return [0].slice(0,count);
-    candidates.push(0, matchCount-1);
-    const midL = Math.floor((matchCount-1)/2);
-    const midR = Math.ceil((matchCount-1)/2);
-    candidates.push(midL, midR);
-    for(let i=1;i<matchCount-1;i++){
-      candidates.push(i, matchCount-1-i);
-    }
-    for(const idx of candidates){
-      if(idx>=0 && idx<matchCount && !used.has(idx)){
-        used.add(idx); out.push(idx);
-        if(out.length>=count) break;
-      }
-    }
-    return out;
-  }
-  function hyBuildPlan(entries, bracketSize){
-    const matchCount = bracketSize/2;
-    const slots = Array.from({length:matchCount}, (_,i)=>({id:i,t1:null,t2:null,bye:false}));
-    const byeCount = Math.max(0, bracketSize - (entries||[]).length);
-    const rank1 = hySorted((entries||[]).filter(e => (e.rk||0)===1));
-    const others = hySorted((entries||[]).filter(e => (e.rk||0)!==1));
-
-    const byeIdxs = hySpreadIndices(matchCount, byeCount);
-    const normalIdxs = Array.from({length:matchCount}, (_,i)=>i).filter(i=>!byeIdxs.includes(i));
-    const normalSpread = hySpreadIndices(normalIdxs.length, normalIdxs.length).map(i=>normalIdxs[i]);
-
-    const byeEntries = [];
-    const rank1Remain = [...rank1];
-    const othersRemain = [...others];
-
-    // 부전승은 1위 우선 배정
-    while(byeEntries.length < byeCount && rank1Remain.length) byeEntries.push(rank1Remain.shift());
-    while(byeEntries.length < byeCount && othersRemain.length) byeEntries.push(othersRemain.shift());
-
-    byeIdxs.forEach((mi, idx)=>{
-      const e = byeEntries[idx];
-      if(!e) return;
-      slots[mi].t1 = {...e};
-      slots[mi].bye = true;
-    });
-
-    // 남은 1위팀을 먼저 시드 자리 배치
-    const rank1TargetIdxs = normalSpread.slice(0, rank1Remain.length);
-    rank1Remain.forEach((e, idx)=>{
-      const mi = rank1TargetIdxs[idx];
-      if(mi==null) return;
-      slots[mi].t1 = {...e};
-    });
-
-    // 2팀 진출 기본 원칙: 같은 조 재대결 금지 → 크로스 우선 배치
-    // 예: A1-B2, B1-A2 / C1-D2, D1-C2
-    const groupOrder = [...new Set(rank1Remain.map(e=>parseInt(e.gn||0)).filter(Boolean))].sort((a,b)=>a-b);
-    const poolByGroup = {};
-    othersRemain.forEach(e=>{
-      const g = parseInt(e.gn||0) || 0;
-      if(!poolByGroup[g]) poolByGroup[g] = [];
-      poolByGroup[g].push({...e});
-    });
-    const anyPool = ()=>Object.values(poolByGroup).some(arr=>arr && arr.length);
-    const takeFromGroup = (g)=> (poolByGroup[g] && poolByGroup[g].length) ? poolByGroup[g].shift() : null;
-    const takeAnyDifferent = (selfG)=>{
-      const keys = Object.keys(poolByGroup).map(Number).filter(g=>g!==selfG && poolByGroup[g]?.length).sort((a,b)=>a-b);
-      return keys.length ? takeFromGroup(keys[0]) : null;
-    };
-    const prefGroups = (selfG)=>{
-      if(groupOrder.length<=1) return [];
-      const idx = groupOrder.indexOf(selfG);
-      if(idx<0) return groupOrder.filter(g=>g!==selfG);
-      const out = [];
-      for(let step=1; step<groupOrder.length; step++){
-        const a = groupOrder[(idx + step) % groupOrder.length];
-        const b = groupOrder[(idx - step + groupOrder.length) % groupOrder.length];
-        if(a!==selfG && !out.includes(a)) out.push(a);
-        if(b!==selfG && !out.includes(b)) out.push(b);
-      }
-      return out;
-    };
-
-    // 1위가 들어간 경기에는 같은 조가 아닌 상대를 우선 붙인다.
-    for(const mi of normalSpread){
-      if(!slots[mi].t1 || slots[mi].bye || slots[mi].t2) continue;
-      const selfG = parseInt(slots[mi].t1.gn||0) || 0;
-      let picked = null;
-      for(const g of prefGroups(selfG)){
-        picked = takeFromGroup(g);
-        if(picked) break;
-      }
-      if(!picked) picked = takeAnyDifferent(selfG);
-      // 정말 어쩔 수 없을 때만 같은 조 허용
-      if(!picked){
-        const same = takeFromGroup(selfG);
-        if(same) picked = same;
-      }
-      if(picked) slots[mi].t2 = picked;
-    }
-
-    // 완전히 빈 경기는 남은 팀들로 채우되, 가능하면 같은 조끼리 바로 만나지 않게 분산
-    const leftover = [];
-    Object.keys(poolByGroup).map(Number).sort((a,b)=>a-b).forEach(g=>{
-      (poolByGroup[g]||[]).forEach(e=>leftover.push({...e}));
-      poolByGroup[g] = [];
-    });
-
-    function pullDifferent(groupNo){
-      const idx = leftover.findIndex(e => (parseInt(e.gn||0)||0) !== groupNo);
-      if(idx>=0) return leftover.splice(idx,1)[0];
-      return leftover.length ? leftover.shift() : null;
-    }
-
-    for(const mi of normalSpread){
-      if(!slots[mi].t1 && leftover.length){
-        slots[mi].t1 = leftover.shift();
-      }
-      if(!slots[mi].t2 && leftover.length){
-        const g1 = parseInt(slots[mi].t1?.gn||0) || 0;
-        slots[mi].t2 = pullDifferent(g1);
-      }
-    }
-
-    // 혹시 남은 팀이 있으면 남은 빈 칸 채우기
-    for(const mi of normalSpread){
-      if(!leftover.length) break;
-      if(!slots[mi].t1) slots[mi].t1 = leftover.shift();
-      if(leftover.length && !slots[mi].t2) slots[mi].t2 = leftover.shift();
-    }
-
-    return slots;
-  }
-
-  function hyPreviewEntries(tid, div){
-    const key = tid+'_'+div;
-    const t = G.tournaments.find(t=>t.id===tid);
-    const draw = G.draws[key];
-    const teams = G.teams[key] || [];
-    const cfg = gDS(t,div);
-    const allMs = G.matches[key] || [];
-    const gMs = allMs.filter(m=>m.phase==='group');
-    const done = gMs.length>0 && gMs.every(m=>m.winner!==null);
-    if(done){
-      const advT = (typeof getAdvT==='function') ? getAdvT(key, draw, teams, cfg) : [];
-      return advT.map(a => ({...a, placeholder:false}));
-    }
-    const groups = draw?.groups || [];
-    const advance = Math.max(1, parseInt(cfg?.advance||2));
-    const out = [];
-    groups.forEach((grp, gi)=>{
-      for(let rk=1; rk<=advance; rk++){
-        out.push({nm:`${grpLabel(gi)} ${rk}위`, gn:gi+1, rk, placeholder:true});
-      }
-    });
-    return out;
-  }
-
-  function hyTreeFromSlots(slots, n, title, showHint){
-    const rounds = Math.log2(n);
-    const matchCount = n/2;
-    const rank1Badge = '<span style="font-size:.58rem;background:#1565c0;color:white;padding:1px 5px;border-radius:4px;margin-right:3px;white-space:nowrap">1위</span>';
-    const rank2Badge = '<span style="font-size:.58rem;background:#27ae60;color:white;padding:1px 5px;border-radius:4px;margin-right:3px;white-space:nowrap">2위</span>';
-    let html = `<div class="card" style="margin-top:14px">
-      <div class="card-title">${title||'🏆 본선 대진표'}</div>
-      ${showHint?`<div style="font-size:.75rem;color:var(--text2);margin:-4px 0 10px">배치는 고정이고, 본선 추첨을 누르면 이 자리 순서대로 룰렛 애니메이션으로 공개됩니다.</div>`:''}
-      <div style="overflow-x:auto;padding-bottom:6px"><div style="display:flex;gap:3px;min-width:${Math.max(300,rounds*155)}px">`;
-
-    html += `<div style="flex:0 0 150px"><div style="background:var(--primary);color:white;text-align:center;padding:5px 4px;border-radius:4px 4px 0 0;font-size:.72rem;font-weight:700;margin-bottom:4px">${n}강</div>`;
-    for(let i=0;i<matchCount;i++){
-      const ms = slots[i];
-      const t1 = ms.t1, t2 = ms.t2;
-      const t1r = t1?.rk, t2r = t2?.rk;
-      html += `<div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:5px">
-        <div style="display:flex;align-items:center;padding:5px 8px;font-size:.77rem;min-height:30px;background:${t1?(t1r===1?'#e3f0ff':'#edfaf2'):'var(--panel2)'};border-bottom:1px solid var(--border)">
-          ${t1&&t1r===1?rank1Badge:t1&&t1r!==1?rank2Badge:''}
-          <span style="flex:1;font-weight:${t1?700:400};color:${t1?'var(--primary-dark)':'var(--text3)'}">${hyEscape(hyLabelForEntry(t1)||'대기중')}</span>
-          ${ms.bye?'<span style="font-size:.58rem;background:var(--accent);color:white;padding:1px 4px;border-radius:5px;white-space:nowrap">🎫부전승</span>':''}
-        </div>
-        ${!ms.bye?`<div style="display:flex;align-items:center;padding:5px 8px;font-size:.77rem;min-height:30px;background:${t2?(t2r===1?'#e3f0ff':'#edfaf2'):'var(--bg2)'}">
-          ${t2&&t2r===1?rank1Badge:t2&&t2r!==1?rank2Badge:''}
-          <span style="flex:1;font-weight:${t2?700:400};color:${t2?'var(--primary-dark)':'var(--text3)'};font-style:${t2?'normal':'italic'}">${hyEscape(t2?hyLabelForEntry(t2):'TBD')}</span>
-        </div>`:`<div style="padding:4px 8px;font-size:.68rem;color:var(--text3);background:var(--bg2);font-style:italic">→ 직행</div>`}
-      </div>`;
-    }
-    html += `</div>`;
-
-    for(let r=1;r<rounds;r++){
-      const rMatches=Math.ceil(matchCount/Math.pow(2,r));
-      const lbl=r===rounds-1?'결승':r===rounds-2&&rounds>2?'준결승':`${n/Math.pow(2,r)}강`;
-      const topPad=Math.pow(2,r-1)*35.5+Math.pow(2,r-1)*5.5-5;
-      const betweenPad=Math.pow(2,r)*35.5+Math.pow(2,r)*5.5;
-      html += `<div style="flex:0 0 148px"><div style="background:${r===rounds-1?'var(--accent)':'var(--primary-dark)'};color:white;text-align:center;padding:5px 4px;border-radius:4px 4px 0 0;font-size:.72rem;font-weight:700;margin-bottom:4px">${lbl}</div><div style="padding-top:${topPad}px">`;
-      for(let i=0;i<rMatches;i++){
-        html += `<div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:${i<rMatches-1?betweenPad:0}px">
-          <div style="padding:5px 8px;font-size:.75rem;color:var(--text3);font-style:italic;border-bottom:1px solid var(--border);background:var(--bg2);min-height:30px">TBD</div>
-          <div style="padding:5px 8px;font-size:.75rem;color:var(--text3);font-style:italic;background:var(--bg2);min-height:30px">TBD</div>
-        </div>`;
-      }
-      html += `</div></div>`;
-    }
-
-    html += `</div></div></div>`;
-    return html;
-  }
-
-  function hyPreviewSection(tid, div){
-    const key = tid+'_'+div;
-    const draw = G.draws[key];
-    if(!draw?.groups?.length) return '';
-    const entries = hyPreviewEntries(tid, div);
-    if(entries.length < 2) return '';
-    const n = hyNextPow2(entries.length);
-    const slots = hyBuildPlan(entries, n);
-    const done = entries.every(e=>!e.placeholder);
-    const t = G.tournaments.find(t=>t.id===tid);
-    const cfg = gDS(t,div);
-    const allMs = G.matches[key] || [];
-    const hasMain = allMs.some(m=>m.phase==='main');
-    const button = (AD && cfg.format==='group_knockout' && !hasMain)
-      ? `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-           <button class="btn btn-primary" style="padding:8px 18px" onclick="openMainDraw('${tid}','${div}')">🎾 하이브리드 본선 추첨</button>
-           <span style="font-size:.75rem;color:var(--text2);display:flex;align-items:center">미리 보이는 자리 그대로 공개됩니다</span>
-         </div>` : '';
-    return hyTreeFromSlots(slots, n, done?'🏆 본선 대진표 (고정 배치 + 공개 연출)':'🏆 본선 대진표 미리보기', !hasMain) + button;
-  }
-
-  window.renderBracketHTMLForDiv = function(tid, div, isAll){
-    let html = _oldRenderBracketHTMLForDiv ? _oldRenderBracketHTMLForDiv(tid, div, isAll) : '';
-    const key = tid+'_'+div;
-    const allMs = G.matches[key] || [];
-    const hasMain = allMs.some(m=>m.phase==='main');
-    if(!hasMain){
-      const preview = hyPreviewSection(tid, div);
-      if(preview) html += preview;
-    }
-    return html;
-  };
-
-  window.openBracketView = function(){
-    const tid = ge('brTS')?.value;
-    if(!tid){ toast('대회를 먼저 선택하세요','info'); return; }
-    const t = G.tournaments.find(t=>t.id===tid);
-    if(!t) return;
-    BV.tid = tid;
-    const divs = t.divisions || [];
-    const tabsEl = ge('mBVTabs');
-    tabsEl.innerHTML = [`<button onclick="switchBVTab('__ALL__')" id="bvtab___ALL__" style="padding:4px 12px;font-size:.75rem;border-radius:999px;border:1.5px solid rgba(255,255,255,.5);background:rgba(255,255,255,.15);color:white;cursor:pointer;transition:.2s">전체</button>`]
-      .concat(divs.map(d=>`<button onclick="switchBVTab('${d}')" id="bvtab_${d}" style="padding:4px 12px;font-size:.75rem;border-radius:999px;border:1.5px solid rgba(255,255,255,.5);background:rgba(255,255,255,.15);color:white;cursor:pointer;transition:.2s">${dl(d)}</button>`))
-      .join('');
-    switchBVTab('__ALL__');
-    om('mBracketView');
-  };
-
-  window.switchBVTab = function(div){
-    BV.div = div;
-    document.querySelectorAll('[id^="bvtab_"]').forEach(b=>{
-      const active = b.id === ('bvtab_' + div);
-      b.style.background = active ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.15)';
-      b.style.color = active ? '#1565c0' : 'white';
-      b.style.fontWeight = active ? '700' : '400';
-    });
-    ge('mBVTitle').textContent = div==='__ALL__' ? '📊 전체 대진표' : `📊 ${dl(div)} 대진표`;
-    renderBracketView(BV.tid, div);
-  };
-
-  window.renderBracketView = function(tid, div){
-    const body = ge('mBVBody');
-    if(!body) return;
-    const t = G.tournaments.find(t=>t.id===tid);
-    if(!t){ body.innerHTML='<div style="text-align:center;padding:40px;color:#666">대회 정보를 찾을 수 없습니다</div>'; return; }
-
-    if(div==='__ALL__'){
-      const parts = (t.divisions||[]).map(d => window.renderBracketHTMLForDiv(tid, d, true)).filter(Boolean);
-      body.innerHTML = parts.length ? parts.join('<div style="height:14px"></div>') : '<div style="text-align:center;padding:40px;color:#666">표시할 부서가 없습니다</div>';
-    } else {
-      body.innerHTML = window.renderBracketHTMLForDiv(tid, div, false) || '<div style="text-align:center;padding:40px;color:#666">표시할 대진표가 없습니다</div>';
-    }
-  };
-
-  // ---------- 하이브리드 본선 추첨(고정 배치 + 공개 연출) ----------
-  window.openMainDraw = function(tid,div){
-    const key=tid+'_'+div, t=G.tournaments.find(t=>t.id===tid),
-          draw=G.draws[key], teams=G.teams[key]||[], cfg=gDS(t,div);
-    const advT=(typeof getAdvT==='function') ? getAdvT(key,draw,teams,cfg) : [];
-    if(advT.length<2){toast('진출팀 2팀 이상 필요','error');return;}
-
-    const n=hyNextPow2(advT.length);
-    const byeCount=n-advT.length;
-    const rank1=advT.filter(a=>a.rk===1);
-    const rank2=advT.filter(a=>a.rk!==1);
-    MD={key,tid,div,advT,bracketSize:n,byeCount,rank1,rank2,isRunning:false};
-    MD.fixedPlan = hyBuildPlan(advT.map(a=>({...a, placeholder:false})), n);
-
-    ge('mainAdvTeams').innerHTML=`
-      <div style="padding:10px 14px;background:linear-gradient(135deg,#eef2ff,#dce8fb);border-radius:var(--radius-lg);border:1.5px solid var(--success);margin-bottom:10px">
-        <div style="font-weight:700;font-size:.88rem;margin-bottom:8px">🏆 본선 진출팀 (${advT.length}팀)</div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px">
-          ${rank1.map(a=>`<span class="badge" style="background:var(--primary);color:white;font-size:.78rem">👑 ${hyEscape(a.nm)} <small style="opacity:.7">${a.gn}조 1위</small></span>`).join('')}
-          ${rank2.map(a=>`<span class="badge bg-green" style="font-size:.78rem">${hyEscape(a.nm)} <small style="opacity:.7">${a.gn}조 ${a.rk}위</small></span>`).join('')}
-        </div>
-      </div>`;
-
-    ge('mainBracketInfo').innerHTML=`
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <div>📊 진출팀: <b>${advT.length}팀</b></div>
-        <div>🎯 본선 규모: <b>${n}강</b></div>
-        <div>👑 조 1위팀: <b>${rank1.length}팀</b></div>
-        <div>🥈 조 2위이하: <b>${rank2.length}팀</b></div>
-        ${byeCount>0?`<div style="grid-column:1/-1;padding-top:4px;border-top:1px solid var(--border);color:var(--success);font-weight:600">🎫 부전승 ${byeCount}자리 → 최대한 분산 배치</div>`:''}
-      </div>
-      <div style="margin-top:8px;padding:6px 10px;background:var(--panel2);border-radius:var(--radius);font-size:.75rem;color:var(--text2)">
-        ✅ 미리보기와 같은 자리 구조로 공개됩니다<br>
-        ✅ 부전승끼리는 최대한 바로 만나지 않게 분산합니다
-      </div>`;
-
-    ge('mainStep1').style.display='block';
-    ge('mainStep2').style.display='none';
-    ge('mainDrawBtn').textContent='🎲 하이브리드 본선 추첨 시작';
-    ge('mainDrawBtn').disabled=false;
-    ge('mainDrawBtn').onclick=window.startMainDraw;
-    ge('mainCancelBtn').textContent='취소';
-    ge('mainCancelBtn').style.display='';
-    ge('mainCancelBtn').onclick=()=>cm('mMain');
-    if(typeof renderMainPreview==='function') renderMainPreview(Array.from({length:n/2},(_,i)=>({id:i,t1:null,t2:null,bye:false})), n, teams, key);
-    om('mMain');
-  };
-
-  window.startMainDraw = async function(){
-    if(MD.isRunning) return;
-    MD.isRunning = true;
-    ge('mainDrawBtn').disabled = true;
-    ge('mainStep1').style.display='none';
-    ge('mainStep2').style.display='block';
-
-    const {key, bracketSize:n} = MD;
-    const teams=G.teams[key]||[];
-    const target = MD.fixedPlan || [];
-    const matchSlots = Array.from({length:n/2}, (_,i)=>({id:i,t1:null,t2:null,bye:false}));
-
-    const steps = [];
-    target.forEach((ms, idx)=>{
-      if(ms.bye && ms.t1) steps.push({kind:'bye', idx, entry:ms.t1});
-    });
-    target.forEach((ms, idx)=>{
-      if(!ms.bye && ms.t1 && ms.t1.rk===1) steps.push({kind:'seed', idx, entry:ms.t1});
-    });
-    target.forEach((ms, idx)=>{
-      if(!ms.bye && ms.t2) steps.push({kind:'opp', idx, entry:ms.t2, other:ms.t1});
-      else if(!ms.bye && ms.t1 && ms.t1.rk!==1) steps.push({kind:'fill1', idx, entry:ms.t1});
-    });
-
-    ge('mainProgressBar').style.width='0%';
-    showMainStageMsg(`<div style="font-size:1rem;font-weight:800;color:var(--primary-dark)">🏆 본선 추첨 준비</div><div style="font-size:.8rem;color:var(--text2);margin-top:6px;line-height:1.6">미리보기와 같은 자리 구조를<br>한 자리씩 룰렛으로 공개합니다.</div>`);
-    await dSleep(700);
-
-    for(let i=0;i<steps.length;i++){
-      const st = steps[i];
-      const names = MD.advT.map(t=>`${t.rk===1?'👑':'🥈'} ${t.nm}`);
-      await spinTeamSlot(names, (1250 + Math.random()*500) * (window.DRAW_SPEED||1), `🎾 ${i+1}번째 자리 공개 중`);
-      playSound('reveal');
-
-      if(st.kind==='bye'){
-        matchSlots[st.idx].t1 = {...st.entry};
-        matchSlots[st.idx].bye = true;
-        showMainStageMsg(`<div style="font-size:.92rem;font-weight:800;color:var(--accent);margin-bottom:8px">🎫 부전승 확정</div>${tennisRevealHTML(`👑 ${hyEscape(st.entry.nm)}`, 'accent', `${st.entry.gn}조 ${st.entry.rk}위 · 다음 라운드 직행`)}`);
-      }else if(st.kind==='seed'){
-        matchSlots[st.idx].t1 = {...st.entry};
-        showMainStageMsg(`<div style="font-size:.9rem;font-weight:800;color:var(--primary);margin-bottom:8px">👑 1위팀 자리 배정</div>${tennisRevealHTML(`👑 ${hyEscape(st.entry.nm)}`, 'primary', `${st.entry.gn}조 1위 시드 자리`)}`);
-      }else if(st.kind==='opp'){
-        if(!matchSlots[st.idx].t1 && st.other) matchSlots[st.idx].t1 = {...st.other};
-        matchSlots[st.idx].t2 = {...st.entry};
-        showMainStageMsg(`<div style="font-size:.92rem;font-weight:800;color:var(--success);margin-bottom:10px">⚡ 대진 확정</div>${tennisVsHTML(`${matchSlots[st.idx].t1?.rk===1?'👑':'🥈'} ${hyEscape(matchSlots[st.idx].t1?.nm||'?')}`, `🥈 ${hyEscape(st.entry.nm)}`, matchSlots[st.idx].t1?.rk===1?'primary':'success', 'success')}`);
-      }else{
-        matchSlots[st.idx].t1 = {...st.entry};
-        showMainStageMsg(`<div style="font-size:.9rem;font-weight:800;color:var(--success);margin-bottom:8px">✨ 자리 배정</div>${tennisRevealHTML(`🥈 ${hyEscape(st.entry.nm)}`, 'success')}`);
-      }
-      if(typeof renderMainPreview==='function') renderMainPreview(matchSlots, n, teams, key);
-      ge('mainProgressBar').style.width = `${((i+1)/steps.length)*100}%`;
-      await dSleep(st.kind==='opp' ? 760 : 520);
-    }
-
-    ge('mainProgressBar').style.width='100%';
-    playSound('final');
-    showMainStageMsg(`<div style="font-size:1.3rem;font-weight:800;color:var(--success);margin:10px 0">🎉 본선 추첨 완료!</div><div style="font-size:.8rem;color:var(--text2)">미리보기와 같은 고정 배치로 확정되었습니다.</div>`);
-    if(typeof renderMainPreview==='function') renderMainPreview(matchSlots, n, teams, key, true);
-    await dSleep(900);
-    const mainMs = buildMainMatches(matchSlots, n);
-    await saveMainDraw(mainMs, n);
-  };
-})();
-</script>
-<!-- ====== Hybrid combined bracket patch end ====== -->
+<!-- ====== BV 본선 브라켓(나무가지) ====== -->
 
 </body>
 </html>
