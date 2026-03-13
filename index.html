@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "2026-03-06-v12-doubles-config-seednum";
+  const APP_VERSION = "2026-03-13-v12-bulk-sms";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -1698,8 +1698,8 @@ function renderNoticeContactBtns(){
     <div style="background:linear-gradient(135deg,#e3f2fd,#f0f8ff);border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid #bbdefb">
       <div style="font-size:.8rem;font-weight:700;color:#1565c0;margin-bottom:8px">📱 문자(SMS) 발송</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn" style="font-size:.78rem;padding:7px 14px;background:#1976d2;color:#fff;border:none;border-radius:8px;flex:1;min-width:120px" onclick="sendSmsSelected()">✉️ 선택 클럽 문자</button>
-        <button class="btn" style="font-size:.78rem;padding:7px 14px;background:#0d47a1;color:#fff;border:none;border-radius:8px;flex:1;min-width:120px" onclick="sendSmsAll()">📨 전체 문자 (${withPhone.length}개)</button>
+        <button class="btn" style="font-size:.78rem;padding:7px 14px;background:#1976d2;color:#fff;border:none;border-radius:8px;flex:1;min-width:140px" onclick="sendSmsSelected()">✉️ 선택한 번호 문자 한번에</button>
+        <button class="btn" style="font-size:.78rem;padding:7px 14px;background:#0d47a1;color:#fff;border:none;border-radius:8px;flex:1;min-width:140px" onclick="sendSmsAll()">📨 전체 문자 한번에 (${withPhone.length}개)</button>
       </div>
     </div>
     <div style="background:linear-gradient(135deg,#fffde7,#fff9c4);border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid #f9a825">
@@ -1741,51 +1741,59 @@ function _checkBodyAndGet(){
   return body;
 }
 
+function _collectSmsTargets(clubs){
+  const contacts=G.meta.clubContacts||{};
+  return (clubs||[]).map(club=>{
+    const raw=String(contacts[club]||'').trim();
+    const phone=raw.replace(/[^0-9+]/g,'');
+    return {club, raw, phone};
+  }).filter(x=>x.phone);
+}
+
+function _buildSmsRecipientList(targets){
+  return [...new Set((targets||[]).map(x=>x.phone).filter(Boolean))];
+}
+
 function sendSmsSelected(){
   const body=_checkBodyAndGet();if(!body)return;
   const contacts=G.meta.clubContacts||{};
-  const targets=[..._selClubs].filter(c=>contacts[c]);
-  if(!targets.length){toast('선택된 클럽이 없습니다','error');return;}
-  _sendSmsQueue(targets,body,0);
+  const clubs=[..._selClubs].filter(c=>contacts[c]);
+  if(!clubs.length){toast('선택된 클럽이 없습니다','error');return;}
+  sendSmsBulk(clubs, body, '선택한 번호');
 }
 
 function sendSmsAll(){
   const body=_checkBodyAndGet();if(!body)return;
   const contacts=G.meta.clubContacts||{};
-  const all=(G.clubs||[]).filter(c=>contacts[c]);
-  if(!all.length){toast('등록된 번호가 없습니다','error');return;}
-  if(!confirm(`전체 ${all.length}개 클럽에 문자를 보냅니다.
-${all.join(', ')}
-
-시작하시겠습니까?`))return;
-  _sendSmsQueue(all,body,0);
+  const clubs=(G.clubs||[]).filter(c=>contacts[c]);
+  if(!clubs.length){toast('등록된 번호가 없습니다','error');return;}
+  sendSmsBulk(clubs, body, '전체');
 }
 
-function _sendSmsQueue(clubs,body,idx){
-  if(idx>=clubs.length){toast(`✅ 전체 ${clubs.length}개 클럽 문자 완료`,'success');return;}
-  const club=clubs[idx];
-  const contacts=G.meta.clubContacts||{};
-  const phone=(contacts[club]||'').replace(/[^0-9+]/g,'');
-  if(!phone){_sendSmsQueue(clubs,body,idx+1);return;}
-  const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  if(!isMobile){
-    const allLines=clubs.map(c=>`${c}: ${contacts[c]||''}`).join('\n');
-    navigator.clipboard.writeText(`[수신자]
-${allLines}
+function sendSmsBulk(clubs, body, label){
+  const targets=_collectSmsTargets(clubs);
+  if(!targets.length){toast('보낼 번호가 없습니다','error');return;}
 
-[내용]
-${body}`)
-      .then(()=>toast(`PC: ${clubs.length}개 클럽 번호+내용 복사됨`,'info')).catch(()=>{});
+  const recipients=_buildSmsRecipientList(targets);
+  const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  if(!isMobile){
+    const allLines=targets.map(x=>`${x.club}: ${x.raw||x.phone}`).join('\n');
+    const copyText=`[수신자]\n${allLines}\n\n[내용]\n${body}`;
+    navigator.clipboard.writeText(copyText)
+      .then(()=>toast(`PC: ${label} 번호 ${targets.length}개와 내용이 복사되었습니다`,'info'))
+      .catch(()=>toast('번호와 내용 복사에 실패했습니다','error'));
     return;
   }
-  if(clubs.length>1&&idx<clubs.length-1){
-    if(!confirm(`(${idx+1}/${clubs.length}) ${club} 에게 문자 발송
-번호: ${contacts[club]}
 
-[확인] = 문자앱 열기 후 다음으로`))return;
-  }
-  window.location.href=`sms:${phone}?body=${encodeURIComponent(body)}`;
-  if(clubs.length>1)setTimeout(()=>_sendSmsQueue(clubs,body,idx+1),3000);
+  const clubNames=targets.map(x=>x.club).join(', ');
+  if(!confirm(`${label} 문자 한번에 보내기\n\n대상: ${targets.length}개\n${clubNames}\n\n문자 앱을 한 번만 열어 수신자 전체에게 작성합니다.`)) return;
+
+  const sep=/iPhone|iPad|iPod/i.test(navigator.userAgent) ? ',' : ',';
+  const to=recipients.join(sep);
+  const smsUrl=`sms:${to}?body=${encodeURIComponent(body)}`;
+  window.location.href=smsUrl;
+  toast(`${label} 문자창을 열었습니다`,'success');
 }
 
 
