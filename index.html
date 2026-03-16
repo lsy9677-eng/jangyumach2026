@@ -1059,6 +1059,7 @@ body{overflow-x:hidden;}
       <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem;background:var(--primary);color:#fff;font-weight:700" onclick="migrateHistDataToFirebase()">🚀 과거대회 데이터 Firebase 이전 (HIST_DATA→DB)</button>
       <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="cm('mAdminSettings');om('mHistExcel')">📥 엑셀로 과거대회 등록</button>
       <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="openSelectiveClearModal()">🗑️ 대회별 개별 삭제(선수기록 포함)</button>
+      <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="syncAllTnames()">🔄 선수기록 대회명 전체 동기화</button>
       <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="cleanupPlayerHistories()">🧹 개인기록 정리(중복/삭제대회)</button>
       <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="cleanupUnusedPlayers()">🗑️ 유령/테스트 선수 정리</button>
       <button class="btn btn-danger" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="hardResetAllData()">🧨 전체 리셋(대회/팀/경기/선수)</button>
@@ -2630,6 +2631,7 @@ function openET(tid){
 async function saveET(){
   const t=G.tournaments.find(t=>t.id===CE_tid);if(!t)return;
   const nm=ge('etN').value.trim();if(!nm){toast('대회명 필수','error');return;}
+  const oldName=t.name; // 변경 전 대회명 저장
   const newD=['금','은','동','테린이'].filter(d=>document.getElementById('etD_'+d)?.checked);if(!newD.length){toast('부서 1개 이상','error');return;}
   sl(true);
   try{
@@ -2646,8 +2648,83 @@ async function saveET(){
     const assets=GUIDE_FILES_EDIT||[];
     await updateDoc(doc(db,'tournaments',CE_tid),{name:nm,date:ge('etDt').value,venue:ge('etVn').value.trim(),deadline:ge('etDl').value,status:ge('etSt').value,divisions:newD,divSettings:ds,notice:ge('etNt').value.trim(),guideText:ge('etGuideText')?.value.trim()||'',guideUrl:ge('etGuideUrl')?.value.trim()||'',hasGuideAssets:assets.length>0});
     if(assets.length>0) await setDoc(doc(db,'tourGuides',CE_tid),{assets,updatedAt:serverTimestamp()});
+
+    // ✅ 대회명이 바뀌었으면 → 모든 선수 history의 tname도 일괄 업데이트
+    if(nm !== oldName){
+      await syncTnameInPlayers(CE_tid, nm);
+    }
+
+    // G.tournaments 메모리 반영
+    t.name = nm;
+
     await fbLog('대회 편집: '+nm,'✏️');sl(false);cm('mET');toast('저장 완료','success');
   }catch(e){sl(false);toast('저장 실패: '+e.message,'error');}
+}
+
+// ✅ 모든 대회의 tname을 현재 tournaments 기준으로 전체 동기화 (소급 적용)
+async function syncAllTnames(){
+  if(!AD && !REG){ toast('관리자 또는 경기이사 로그인 필요','info'); return; }
+  if(!confirm('모든 선수 기록의 대회명을 현재 대회 목록 기준으로 동기화합니다.\n(이미 수정된 대회명이 선수 기록에 반영됩니다)\n계속하시겠습니까?')) return;
+
+  sl(true);
+  try{
+    // tournaments ID → 현재 name 맵
+    const tidToName = {};
+    (G.tournaments||[]).forEach(t=>{ if(t.id && t.name) tidToName[t.id]=t.name; });
+
+    let totalUpdated = 0;
+    let batch = writeBatch(db), ops = 0;
+
+    for(const k of Object.keys(G.players||{})){
+      const p = G.players[k]||{};
+      let changed = false;
+      (p.history||[]).forEach(h=>{
+        if(h.tid && tidToName[h.tid] && h.tname !== tidToName[h.tid]){
+          h.tname = tidToName[h.tid];
+          changed = true;
+        }
+      });
+      if(changed){
+        batch.set(doc(db,'players', k.replace(/[\/\.#\$\[\]]/g,'_')), {...p, key:k}, {merge:true});
+        ops++; totalUpdated++;
+        if(ops>=400){ await batch.commit(); batch=writeBatch(db); ops=0; }
+      }
+    }
+    if(ops>0) await batch.commit();
+
+    sl(false);
+    renderAllP();
+    toast(`대회명 동기화 완료 ✅ (${totalUpdated}명 업데이트)`, 'success');
+    await fbLog(`선수기록 대회명 전체 동기화: ${totalUpdated}명`,'🔄');
+  }catch(e){
+    sl(false);
+    toast('동기화 실패: '+(e?.message||e), 'error');
+  }
+}
+
+// 선수 history의 tname을 대회 ID 기준으로 일괄 업데이트
+async function syncTnameInPlayers(tid, newName){
+  const affected = Object.keys(G.players||{}).filter(k=>{
+    const p = G.players[k]||{};
+    return (p.history||[]).some(h=>h.tid===tid && h.tname!==newName);
+  });
+  if(!affected.length) return;
+
+  let batch = writeBatch(db), ops = 0;
+  for(const k of affected){
+    const p = G.players[k];
+    let changed = false;
+    (p.history||[]).forEach(h=>{
+      if(h.tid===tid){ h.tname=newName; changed=true; }
+    });
+    if(changed){
+      batch.set(doc(db,'players', k.replace(/[\/\.#\$\[\]]/g,'_')), {...p, key:k}, {merge:true});
+      ops++;
+      if(ops>=400){ await batch.commit(); batch=writeBatch(db); ops=0; }
+    }
+  }
+  if(ops>0) await batch.commit();
+  console.log(`tname 동기화: ${affected.length}명 업데이트 (${tid} → "${newName}")`);
 }
 
 function openTD(tid){
@@ -2692,7 +2769,8 @@ function popSel(){
   if(rankEl){
     let v = rankEl.value;
     if(!v) v = pickDefaultTournamentId();
-    const allT=[...G.tournaments,...HIST_DATA].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    // ✅ HIST_DATA 이전 후: G.tournaments만 사용 (마이그레이션된 대회 포함)
+    const allT=[...G.tournaments].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     rankEl.innerHTML='<option value="">-- 대회 선택 --</option>'+
       allT.map(t=>`<option value="${t.id}" ${t.id===v?'selected':''}>${t.name} (${(t.date||'').substring(0,7)||''})</option>`).join('');
   }
@@ -5383,8 +5461,14 @@ function onRankTC(){
   const tid=ge('rankTS').value, ds=ge('rankDS');
   ds.innerHTML='<option value="">전체 부서</option><option value="__GUIDE__">📌 요강</option>';
   if(!tid)return;
-  const t=[...G.tournaments,...HIST_DATA].find(t=>t.id===tid);
-  if(t)ds.innerHTML+=t.divisions.map(d=>`<option value="${d}">${dl(d)}</option>`).join('');
+  const t=G.tournaments.find(t=>t.id===tid);
+  // divisions가 없는 마이그레이션 대회: registrations에서 부서 목록 추출
+  let divList = t?.divisions || [];
+  if(!divList.length && t){
+    const keyPrefix = tid+'_';
+    divList = [...new Set(Object.keys(G.teams||{}).filter(k=>k.startsWith(keyPrefix)).map(k=>k.slice(keyPrefix.length)))].filter(Boolean);
+  }
+  if(divList.length) ds.innerHTML+=divList.map(d=>`<option value="${d}">${dl(d)}</option>`).join('');
   // 관리자: 요강 업로드 바 초기화
   const bar=ge('histGuideUploadBar');
   if(bar){ bar.dataset.tid=tid; ge('histGuidePreview').innerHTML=''; const fi=ge('histGuideFileInput'); if(fi)fi.value=''; window.HIST_GUIDE_PENDING=[]; }
@@ -5407,13 +5491,15 @@ function renderRanking(){
     return;
   }
 
-  // Firebase 대회인지 내장 과거 대회인지 판별
-  const isHist=HIST_DATA.some(t=>t.id===tid);
+  // 대회 판별: 종료된 과거 대회 vs 진행중 대회
   const fbTour=G.tournaments.find(t=>t.id===tid);
+  const isHist=HIST_DATA.some(t=>t.id===tid); // HIST_DATA가 비어도 false
+  // ✅ _migrated(코드→FB 이전), isHistorical(엑셀 업로드), status=done 모두 과거 대회 렌더링
+  const isPastTour = isHist || fbTour?.isHistorical || fbTour?._migrated || fbTour?.status==='done';
   if(isHist){
     renderHistRanking(tid,div,cont);
-  } else if(fbTour?.isHistorical){
-    // 엑셀 업로드된 과거 대회 → registrations의 rank로 순위 표시
+  } else if(isPastTour){
+    // 마이그레이션된 과거 대회 + 엑셀 업로드 대회 → registrations의 rank로 순위 표시
     renderHistRankingFromRegistrations(tid,div,cont);
   } else {
     renderLiveRanking(tid,div,cont);
@@ -5437,7 +5523,8 @@ function renderHistRankingFromRegistrations(tid, div, cont){
         div: team.division || divPart,
         club: team.club||'',
         players: team.players||[],
-        rank: team.rank ?? team._rank ?? null
+        rank: team.rank ?? team._rank ?? null,
+        doublesCount: team.doublesCount || null
       });
     });
   });
@@ -8071,7 +8158,16 @@ async function _deleteCollectionAll(colName){
 // ─── HIST_DATA → Firebase 완전 이전 ────────────────────────────────────
 async function migrateHistDataToFirebase(){
   if(!AD && !REG){ toast('관리자 또는 경기이사 로그인 필요','info'); return; }
-  if(!HIST_DATA || !HIST_DATA.length){ toast('이전할 HIST_DATA가 없습니다','info'); return; }
+  if(!HIST_DATA || !HIST_DATA.length){
+    // HIST_DATA가 비어있으면 → G.tournaments에서 t_hist_ 대회가 있는지 확인
+    const alreadyMigrated = G.tournaments.filter(t=>t.id&&t.id.startsWith('t_hist_'));
+    if(alreadyMigrated.length){
+      toast(`이미 이전 완료 ✅ (${alreadyMigrated.length}개 대회가 Firebase에 있습니다)`,'success');
+    } else {
+      toast('이전할 HIST_DATA가 없습니다. 이전 버전 앱에서 먼저 마이그레이션을 실행해주세요.','error');
+    }
+    return;
+  }
 
   const alreadyDone = HIST_DATA.every(t => G.tournaments.some(gt => gt.id === t.id));
   if(alreadyDone){
@@ -8240,7 +8336,7 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   openManualEdit,saveManualEdit,toggleByeEdit,
   openM3,saveM3,tC,setCourt,toggleGroupCourtUI,onGroupCourtChange,openGroupCourtModal,saveGroupCourtModal,
   openMatchCourtModal,saveMatchCourtModal,autoOrderMatches,runAutoOrder,
-  openPD,openEditPlayer,saveEditPlayer,deletePlayer,mergePlayer,openSelectiveClearModal,selectiveClearTournament,cleanupPlayerHistories,hardResetAllData,migrateHistDataToFirebase,
+  openPD,openEditPlayer,saveEditPlayer,deletePlayer,mergePlayer,openSelectiveClearModal,selectiveClearTournament,cleanupPlayerHistories,hardResetAllData,migrateHistDataToFirebase,syncAllTnames,syncTnameInPlayers,
   resetMatchRecords,recalcAllPlayerStats,
   backupJSON,restoreFromJSON,backupPlayersExcel,exportPlayersCSV,exportPlayersExcel,
   bracketToImage,bracketToPDF,openBracketView,switchBVTab,renderBracketView,saveBracketViewImage,
