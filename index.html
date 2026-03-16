@@ -1056,9 +1056,11 @@ body{overflow-x:hidden;}
       <button class="btn btn-outline" style="padding:12px 8px;font-size:.82rem" onclick="cm('mAdminSettings');om('mBackup')">💾 백업 / 복구</button>
       <button class="btn btn-danger" style="padding:12px 8px;font-size:.82rem" onclick="recalcAllPlayerStats()">🔄 관리자 복구(승패 재계산)</button>
     
+      <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem;background:var(--primary);color:#fff;font-weight:700" onclick="migrateHistDataToFirebase()">🚀 과거대회 데이터 Firebase 이전 (HIST_DATA→DB)</button>
       <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="cm('mAdminSettings');om('mHistExcel')">📥 엑셀로 과거대회 등록</button>
       <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="openSelectiveClearModal()">🗑️ 대회별 개별 삭제(선수기록 포함)</button>
       <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="cleanupPlayerHistories()">🧹 개인기록 정리(중복/삭제대회)</button>
+      <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="cleanupUnusedPlayers()">🗑️ 유령/테스트 선수 정리</button>
       <button class="btn btn-danger" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="hardResetAllData()">🧨 전체 리셋(대회/팀/경기/선수)</button>
 </div>
     <div style="margin-top:8px;font-size:.72rem;color:var(--text3);line-height:1.5">
@@ -1398,7 +1400,7 @@ const storage=getStorage(_app);
 let AD=false;
 let REG=false; // 팀등록 로그인 상태
 // ── 과거 대회 내장 데이터 ─────────────────────────────────
-let HIST_DATA = [{"id":"t_hist_17","name":"2025년 제17회 장유연합회 클럽대항전","date":"2025-10-18","year":2025,"seq":17,"season":"추계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"하모니A","div":"금","players":["엄성환","박흥수","문성균","황동현","이지현","백정렬","권혁태","양우홍"],"rank":1},{"club":"하모니B","div":"금","players":["손범규","서종완","제해근","장재천","박철완","이명호","안응수"],"rank":null},{"club":"능동","div":"금","players":["이창민","박명환","강해근","신수빈","홍명철","김미영"],"rank":3},{"club":"모던A","div":"금","players":["김병모","박병국","이경우","이규용","정민기","최인규","황성록"],"rank":null},{"club":"모던B","div":"금","players":["강대영","박영복","백성우","안증호","여찬윤","유병준","천수연"],"rank":2},{"club":"능동","div":"은","players":["김윤묵","이상구","정태백","권오준","이영기","정종철","박진득"],"rank":1},{"club":"모던","div":"은","players":["강병수","김경준","김성준","김윤환","원동빈","조광식","한두현"],"rank":2},{"club":"하모니A","div":"동","players":["장홍일","윤장호","황인범","윤수일","배병철","전진규","윤종윤","김홍희"],"rank":2},{"club":"하모니B","div":"동","players":["손덕상","하종식","홍종호","김홍식","김광수","이재아"],"rank":null},{"club":"하모니C","div":"동","players":["송화진","홍영주","남진애","진경희","남미경","도경식"],"rank":null},{"club":"하모니D","div":"동","players":["노경수","노상영","이국원","고경덕","김찬순","서준근"],"rank":1},{"club":"하모니E","div":"동","players":["이형원","최종렬","강인주","조성수","홍성환","김진우","양수석"],"rank":null},{"club":"능동A","div":"동","players":["최경환","허주철","이말수","허형선","이상곤","공대환"],"rank":3},{"club":"능동B","div":"동","players":["정교진","정종만","장현숙","박민수","여진호","백수영","김재금"],"rank":null},{"club":"능동C","div":"동","players":["김종일","강태옹","정해경","이재환","전윤영","김단우","이성희"],"rank":null},{"club":"모던","div":"동","players":["김경재","심재갑","이주찬","차한성","최승환","최진영"],"rank":null},{"club":"테사모","div":"동","players":["정금숙","김영렬","강덕호","정현주","정성한","송윤정","엄창언"],"rank":null},{"club":"불사조","div":"동","players":["강동현","김석용","박방구","이호철","최상철","박지동","김종호","조영태"],"rank":3},{"club":"하모니","div":"테린이","players":["이동헌","정순권","이종희","최유찬","서은혜","이은정"],"rank":2},{"club":"능동A","div":"테린이","players":["김지범","염철중","전수진","유미선","강동기","정지한"],"rank":1},{"club":"능동B","div":"테린이","players":["이서희","윤윤미","장혜경","박인자","이수민","한수정","신승환"],"rank":3},{"club":"테사모","div":"테린이","players":["박진규","강윤국","김진국","김다혜","황혜진","박선정"],"rank":null}]},{"id":"t_hist_16","name":"2025년 제16회 장유연합회장배 테니스대회","date":"2025-05-01","year":2025,"seq":16,"season":"춘계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"하모니A","div":"금","players":["엄성환","문성균","박흥수","안인출","이지현","김일중","박재우"],"rank":1},{"club":"하모니B","div":"금","players":["이외종","제해근","전용규","황동현","백정렬","이명호","이은호"],"rank":3},{"club":"하모니C","div":"금","players":["장재천","권혁태","손범규","박철완","조민철","양우홍","안웅수"],"rank":null},{"club":"능동","div":"금","players":["이창민","강해근","정현식","박명환","신수빈","홍명철","조덕현","배기효"],"rank":2},{"club":"모던A","div":"금","players":["강대영","김의용","박준열","백성우","여찬윤","이상영","천수연"],"rank":3},{"club":"모던B","div":"금","players":["김호진","박영복","안증호","이경우","이규용","최인규"],"rank":null},{"club":"모던C","div":"금","players":["강기홍","김병모","남철현","김성민","원동빈","장혜성"],"rank":null},{"club":"테사모","div":"금","players":["임성태","윤성구","김욱중","이순보","박종성","오태섭","배인공"],"rank":null},{"club":"능동","div":"은","players":["김윤묵","오창수","오정윤","이성희","하병호","김재금","박진특"],"rank":3},{"club":"모던A","div":"은","players":["나창만","박병국","서교수","유병준","임민택","정민기"],"rank":1},{"club":"모던B","div":"은","players":["강병수","김경준","조광식","김윤환","황성록"],"rank":2},{"club":"테사모","div":"은","players":["하태명","장일권","정연석","박재홍","엄창언","김영렬","김인석"],"rank":null},{"club":"하모니A","div":"동","players":["윤장호","장홍일","고경덕","조찬걸","전진규","노경수","양수석"],"rank":1},{"club":"하모니B","div":"동","players":["김치도","이완병","배병철","이형원","윤수일","김경수","홍성환"],"rank":3},{"club":"하모니C","div":"동","players":["홍종호","이재아","하종식","김광수","장순애","홍영주","도경식"],"rank":null},{"club":"능동A","div":"동","players":["이상구","박용오","허주철","정창수","권오준","최성호","이말수"],"rank":2},{"club":"능동B","div":"동","players":["최경환","오정석","오원근","여진호","허형선","박민수","차진숙"],"rank":null},{"club":"능동C","div":"동","players":["김종일","김지범","이재환","곽영란","백수영","최양호"],"rank":null},{"club":"모던","div":"동","players":["김경재","김성재","김경탁","이주찬","최승환","최진영"],"rank":3},{"club":"테사모","div":"동","players":["조성호","강윤국","정성한","김용찬","정현주","강재이","송윤정"],"rank":null},{"club":"불사조","div":"동","players":["김석용","서정호","구영록","오경실","이수연","김경화","김정화(불사조)","양진석"],"rank":null},{"club":"하모니A","div":"테린이","players":["강준호","김진우","이진혁","정순권","이은정","임다정","강배진"],"rank":2},{"club":"하모니B","div":"테린이","players":["이동헌","신진기","여어진","이지아","황수진","이종희","유수완"],"rank":null},{"club":"능동A","div":"테린이","players":["정교진","구수한","강동기","임재훈","이건혁","전수진"],"rank":3},{"club":"능동B","div":"테린이","players":["정해경","강태옹","정지한","박인자","장혜경","이서희"],"rank":3},{"club":"모던","div":"테린이","players":["김도리","김택현","박철영","부신영","이종화","차한성"],"rank":null},{"club":"불사조","div":"테린이","players":["최상철","김종호","공우택","조영태","김헌경","허정은","옥성윤","김승태"],"rank":1}]},{"id":"t_hist_15","name":"2025년 제15회 장유연합회장배 테니스대회","date":"2024-11-10","year":2024,"seq":15,"season":"추계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"능동A","div":"금","players":["강해근","손봉룡","홍명철","신수빈","홍경산","정현식"],"rank":2},{"club":"등동B","div":"금","players":["조덕현","이상구","이창민","박명환","최진우","배기효"],"rank":null},{"club":"모던","div":"금","players":["이상영","강대영","여찬윤","안증호","이규용","박준열","김호진","최인규"],"rank":1},{"club":"하모니A","div":"금","players":["이지현","박재우","안인출","이외종","문성균","김일중"],"rank":3},{"club":"하모니B","div":"금","players":["황동현","제해근","박흥수","전용규","백정렬","서종완"],"rank":3},{"club":"하모니C","div":"금","players":["국동구","안응수","장재천","박철완","손범규","조민철","양우홍"],"rank":null},{"club":"테사모","div":"금","players":["배인공","신만생","박종성","차해윤","김선화","신석","임성태"],"rank":null},{"club":"모던A","div":"은","players":["유병준","원동빈","박병국","서교수","이종호","김성대"],"rank":3},{"club":"모던B","div":"은","players":["이경우","김성준","장혜성","강기홍","김성민","김병모"],"rank":1},{"club":"모던C","div":"은","players":["김정화","감해상","남철현","김윤환","임민택","김경준"],"rank":2},{"club":"능동A","div":"은","players":["오창수","박기영","정창수","정종철","김윤묵","이성희","차진숙"],"rank":null},{"club":"능동B","div":"은","players":["허주철","박진득","김성희","오정윤","이상곤","최성호","김재금"],"rank":3},{"club":"테사모A","div":"은","players":["정연석","하태명","오태섭","강호상","박유도","이정렬","윤성구"],"rank":null},{"club":"테사모B","div":"은","players":["장일권","조정민","노동진","김인석","엄창언","이순보","정금숙"],"rank":null},{"club":"모던","div":"동","players":["강병수","최현준","조광식","남덕현","정민기","이도"],"rank":1},{"club":"능동","div":"동","players":["정미경","장현숙","박민수","이성대","최경환","공대환","김규언"],"rank":null},{"club":"하모니A","div":"동","players":["이국원","이용수","조찬걸","민영규","배병철","윤수일"],"rank":2},{"club":"하모니B","div":"동","players":["김찬순","노경수","하종식","김경수","강인주","황인범"],"rank":3},{"club":"하모니C","div":"동","players":["강명옥","장순애","임다정","여어진","조용현","이은정","김상옥"],"rank":null},{"club":"테사모","div":"동","players":["김용찬","정성한","송윤정","박진규","정현주","강재이"],"rank":null},{"club":"불사조","div":"동","players":["김동현","손지훈","김석용","이호철","서정호","오경실","구영록","김경화"],"rank":3},{"club":"모던A","div":"테린이","players":["최승환","최진영","이주찬","김경재","부신영","김성재"],"rank":2},{"club":"모던B","div":"테린이","players":["이종화","황유진","차한성","안이타","김택현","이영옥"],"rank":null},{"club":"능동","div":"테린이","players":["여진호","박경주","김종일","정교진","고경빈","이재환","김지범","임정희"],"rank":3},{"club":"불사조","div":"테린이","players":["박지동","공우택","김종호","최상철","옥성윤","김현경","류병혁","양진석"],"rank":1}]},{"id":"t_hist_14","name":"2024년 제14회 장유연합회 클럽대항전","date":"2024-05-12","year":2024,"seq":14,"season":"춘계","status":"done","divisions":["금","은","동","테린이"],"teams":[{"club":"테사모","div":"금","players":["이두목","신만생","박종성","배인공","신석","임성태","곽현진","이상곤"],"rank":3},{"club":"테사모","div":"은","players":["하태명","이정렬","김인석","오태섭","정연석","엄창언","조정민","이준석"],"rank":3},{"club":"테사모","div":"동","players":["장일권","김영렬","박재홍","노동진","김용찬","정성한","정금숙","송윤정"],"rank":null},{"club":"테사모","div":"테린이","players":["조성호"],"rank":null},{"club":"테사모","div":"테린이","players":["정교진","이언주","윤혜진"],"rank":null},{"club":"하모니","div":"금","players":["제해근","문성균","박재우","이명호","이외종","이지현","김일중"],"rank":1},{"club":"하모니","div":"은","players":["국동구","손범규","신창륜","장재천","정남현","박철완"],"rank":1},{"club":"하모니","div":"동","players":["김찬순","노경수","서영완","양우홍","윤수일","조용현","황인범"],"rank":3},{"club":"하모니","div":"동","players":["강인주","김광수","김예","남미경","손덕상","이형원","조성수"],"rank":null},{"club":"하모니","div":"테린이","players":["민성규"],"rank":null},{"club":"하모니","div":"테린이","players":["서은혜","여어진","이은정","임다정","황수진"],"rank":null},{"club":"모던","div":"금","players":["강대영","박준열","이규용","이상영","박영복","여찬윤","안증호"],"rank":null},{"club":"모던","div":"은","players":["유병준","원동빈","김정화","나창만","박성진","남철현"],"rank":3},{"club":"모던","div":"은","players":["박병국","이경우","이종호","김경준","임민택","김윤환"],"rank":2},{"club":"모던","div":"동","players":["이도","박병철","최승환","이주찬","심재갑","강병수","최현준"],"rank":3},{"club":"모던","div":"동","players":["최현석","장혜성","강기홍","김병모","김성준","김성민","김성대","조광식","김현수","김도리"],"rank":1},{"club":"모던","div":"테린이","players":["김경재","이종화"],"rank":null},{"club":"불사조","div":"동","players":["이호철","구영록","오경실","김동현","서정호","김석용","김경화","김혁진"],"rank":null},{"club":"불사조","div":"테린이","players":["구수한","공우택","박지동"],"rank":null},{"club":"능동","div":"금","players":["이상구","조덕현","이창민","박명환","배기효","박기영"],"rank":null},{"club":"능동","div":"금","players":["손봉룡","강해근","최진우","홍명철","신수빈","홍경산"],"rank":2},{"club":"능동","div":"은","players":["이영기","오정윤","이성희","권오준","정보암","허주철"],"rank":null},{"club":"능동","div":"은","players":["김재금","박상록","하병호","김성희","김윤묵","이재석"],"rank":null},{"club":"능동","div":"동","players":["이상곤","정종철","김교중","박진득","허형선","이성대"],"rank":2},{"club":"능동","div":"동","players":["장현숙","최경환","최양호","박민수","정종연","오정석","백수영"],"rank":null},{"club":"능동","div":"테린이","players":["김종일","박동건","여진호"],"rank":null},{"club":"능동","div":"테린이","players":["임정희","황경미"],"rank":null}]}]; // 장유 과거 대회 데이터
+let HIST_DATA = []; // 과거 대회 데이터는 Firebase로 이전 완료 (tournaments/registrations 컬렉션)
 
 let G={meta:{pw:'jangyu1234',regPw:'202601',clubContacts:{}},clubs:['하모니','능동','모던','테사모','불사조'],tournaments:[],teams:{},draws:{},matches:{},players:{},log:[]};
 let CE_tid=null,CE_key=null,CE_idx=null,CM_key=null,CM_id=null,CD_key=null;
@@ -3060,17 +3062,17 @@ async function registerTeam(){
   if(!club){toast('클럽 선택','error');return;}
   const dbl=getRegDoublesCount();
   const mainCount=dbl*2;
-  const names=[];for(let i=1;i<=mainCount+2;i++){const v=ge('p'+i)?.value.trim();if(v)names.push(v);}
+  const names=collectSanitizedPlayerNames('p', mainCount+2, club);
   if(names.length<mainCount){toast(`주전 ${mainCount}명(${dbl}복식) 필수 입력`,'error');return;}
   if(names.length>mainCount+2){toast(`최대 ${mainCount+2}명(후보 2명 포함)`,'error');return;}
   const uniq=new Set(names);if(uniq.size!==names.length){toast('이름 중복 있음','error');return;}
   const missing2026=missingMembers2026(names, club, t);
   if(missing2026.length){showMissingMembers2026(missing2026);return;}
   const key=tid+'_'+div,ex=G.teams[key]||[];
-  // ✅ 같은 이름이라도 클럽이 다르면 다른 선수로 취급 (동명이인/이적 대응)
-  const newKeys = new Set(names.map(n=>pKey(n,club)));
-  const dup = ex.find(t=>(t.players||[]).some(p=>newKeys.has(pKey(p,t.club||club))));
-  if(dup){toast('이미 등록된 선수 포함(같은 클럽 기준)','error');return;}
+  // ✅ 이름 기준으로 이미 등록된 선수 체크 (클럽이 달라도 같은 이름이면 중복)
+  const normNames = new Set(names.map(n=>normName(cleanName(n))));
+  const dup = ex.find(tm=>(tm.players||[]).some(p=>normNames.has(normName(cleanName(p)))));
+  if(dup){toast('이미 등록된 선수 포함(이름 기준 중복 체크)','error');return;}
   sl(true);
   try{
     if(!G.teams[key])G.teams[key]=[];
@@ -3234,10 +3236,10 @@ async function saveETeam(){
   const dblEl=document.querySelector('input[name="etDbl"]:checked');
   const dbl=dblEl?parseInt(dblEl.value):(team.doublesCount||(isT?3:3));
   const mainCount=dbl*2;
-  const np=[];for(let i=1;i<=mainCount+2;i++){const el=ge('ep'+i);if(el){const v=el.value.trim();if(v)np.push(v);}}
+  const newClub=ge('etTC').value;
+  const np=collectSanitizedPlayerNames('ep', mainCount+2, newClub);
   if(np.length<mainCount){toast(`주전 ${mainCount}명 필요`,'error');return;}
   const uniq=new Set(np);if(uniq.size!==np.length){toast('이름 중복','error');return;}
-  const newClub=ge('etTC').value;
   const tid=CE_key.split('_')[0];
   const tournament=G.tournaments.find(t=>t.id===tid);
   const missing2026=missingMembers2026(np, newClub, tournament);
@@ -5720,7 +5722,9 @@ function upLog(){if(G.log.length)ge('recentLog').innerHTML=G.log.slice(0,6).map(
 
 async function regP(name,club,tid,div){
   const bc=baseClub(club); // 소속 클럽 (A/B 제거: 하모니A→하모니)
-  const k=pKey(name,bc);
+  // ✅ 동일 이름 선수가 다른 클럽 key로 이미 존재하면 그 key를 재사용 (이중등록 방지)
+  const existingKey = getPlayerKeyByName(name);
+  const k = existingKey || pKey(name,bc);
   if(!G.players[k])G.players[k]={clubs:[],history:[],wins:0,losses:0,name,club:bc};
   const p=G.players[k];
   if(!p.clubs)p.clubs=[];
@@ -5738,8 +5742,56 @@ function normName(s){ return (s||'').replace(/\s+/g,'').trim(); }
 // 이름에서 전화번호/괄호 정보 제거: "강민지(010-2574-4391)" → "강민지"
 function cleanName(s){
   if(!s) return '';
+  const raw = String(s);
+  const pk = pKeyParse(raw);
+  let out = (pk?.name || raw).toString();
   // 전화번호 패턴 제거: (010-...) 또는 (01x-...)
-  return s.replace(/\s*\(0\d{1,2}[-\d]+\)/g,'').trim();
+  out = out.replace(/\s*\(0\d{1,2}[-\d]+\)\s*/g,' ');
+  // 자동완성/브라우저 저장값에 붙는 클럽 표기 제거: 박종성(테사모) -> 박종성
+  out = out.replace(/\s*\((?!0\d{1,2}[-\d]+\))[^()]*\)\s*$/g,'');
+  return out.replace(/\s+/g,' ').trim();
+}
+function sanitizePlayerInputName(raw, club){
+  const cleaned = cleanName(raw||'');
+  if(!cleaned) return '';
+  const bc = baseClub(club||'').trim();
+  const norm = normName(cleaned);
+
+  // ① 같은 이름+클럽 exact 매칭
+  if(bc){
+    const exactKey = pKey(cleaned, bc);
+    if(G.players[exactKey]) return cleanName(G.players[exactKey].name||cleaned);
+
+    for(const k of Object.keys(G.players||{})){
+      const pk = pKeyParse(k);
+      const keyName = cleanName(pk.name||k);
+      const keyClub = baseClub(pk.club||G.players[k]?.club||'').trim();
+      if(normName(keyName)===norm && keyClub===bc) return keyName;
+    }
+  }
+
+  // ② 클럽 무관 이름만으로 매칭 (이적/다른클럽 등록 시에도 동일인으로 처리)
+  for(const k of Object.keys(G.players||{})){
+    const pk = pKeyParse(k);
+    const keyName = cleanName(pk.name||k);
+    if(normName(keyName)===norm) return keyName;
+  }
+  return cleaned;
+}
+function collectSanitizedPlayerNames(prefix, count, club){
+  const arr=[];
+  for(let i=1;i<=count;i++){
+    const el=ge(prefix+i);
+    if(!el) continue;
+    const sanitized = sanitizePlayerInputName(el.value, club);
+    if(sanitized){
+      el.value = sanitized;
+      arr.push(sanitized);
+    }else{
+      el.value = '';
+    }
+  }
+  return arr;
 }
 function displayClubName(club){
   const bc = baseClub(club||'');
@@ -5791,11 +5843,12 @@ function formatTournamentTitle(tname, dateStr){
 
 
 function getPlayerKeyByName(name,club){
-  const n=normName(name);
-  if(club){const k1=pKey(name,club);if(G.players[k1])return k1;}
+  const n=normName(cleanName(name));
+  if(!n) return null;
+  if(club){const k1=pKey(cleanName(name),baseClub(club));if(G.players[k1])return k1;}
   for(const k of Object.keys(G.players||{})){
     const pk=pKeyParse(k);
-    if(normName(pk.name)===n) return k;
+    if(normName(cleanName(pk.name||k))===n) return k;
   }
   return null;
 }
@@ -5877,16 +5930,33 @@ function phint(inp,num){
     return;
   }
 
-  h.innerHTML = cand.slice(0,4).map(x=>{
-    // Firebase에 같은 이름이 여러 클럽으로 존재할 수 있으니, 표시용 클럽은 players 데이터 우선
+  // 현재 대회에 이미 등록된 선수 이름 목록
+  const curTid = (ge('regTS')?.value||'');
+  const curDiv = (ge('regDS')?.value||'');
+  const curKey = curTid+'_'+curDiv;
+  const alreadyReg = new Set();
+  if(curTid){
+    (G.teams[curKey]||[]).forEach(tm=>{
+      (tm.players||[]).forEach(pn=>alreadyReg.add(normName(cleanName(pn))));
+    });
+  }
+
+  // 이름 중복 후보 제거 (같은 이름이 여러 key로 있으면 하나만 표시)
+  const uniqDisp = new Map();
+  cand.forEach(x=>{ if(!uniqDisp.has(normName(x.disp))) uniqDisp.set(normName(x.disp),x); });
+  const dedupCand = [...uniqDisp.values()];
+
+  h.innerHTML = dedupCand.slice(0,5).map(x=>{
     const key = getPlayerKeyByName(x.disp, x.club||'');
     const fb = key ? G.players[key] : null;
     const clubDisp = (fb?.clubs?.slice(-1)[0]) || x.club || getLastClubFromHist(x.disp) || '';
+    const isReg = alreadyReg.has(normName(x.disp));
 
     // 클릭하면 "이름만" 입력되도록 고정 (name__club 방지)
     return `<span onclick="ge('p${num}').value='${x.disp}';ge('h${num}').innerHTML=''"
-      style="cursor:pointer;color:var(--primary);font-size:.73rem;text-decoration:underline">
-      ${x.disp}${clubDisp?`(${clubDisp})`:''}
+      style="cursor:pointer;color:${isReg?'var(--danger)':'var(--primary)'};font-size:.73rem;text-decoration:underline"
+      title="${isReg?'이미 이번 대회 등록됨':'클릭하여 선택'}">
+      ${x.disp}${clubDisp?`(${clubDisp})`:''}${isReg?' ⚠️':''}
     </span>`;
   }).join(' ');
 }
@@ -6025,12 +6095,38 @@ function showP(name,club){
   sec.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function renderAllP(){
-  // Firebase 선수 + HIST_DATA 선수 합산
-  const fbNames=new Set(Object.keys(G.players));
-  const histNames=new Set();
-  HIST_DATA.forEach(t=>t.teams.forEach(tm=>(tm.players||[]).forEach(pn=>{if(pn&&pn.trim())histNames.add(pn.trim());})));
-  // 전체 선수 이름 목록 (중복 제거)
-  let allNames=[...new Set([...fbNames,...histNames])].sort();
+  // ✅ Firebase players 만 사용 (HIST_DATA는 마이그레이션 후 불필요)
+  // HIST_DATA가 아직 남아있는 경우: 이름 기준으로 중복 없이 합산
+  const fbKeys=new Set(Object.keys(G.players));
+  // HIST_DATA가 비어있으면 FB만 사용, 아니면 이름 기준 보완
+  const histNameSet=new Set();
+  if(HIST_DATA && HIST_DATA.length){
+    HIST_DATA.forEach(t=>t.teams.forEach(tm=>(tm.players||[]).forEach(pn=>{
+      if(!pn||!pn.trim()) return;
+      const cn=cleanName(pn.trim());
+      if(!cn) return;
+      // Firebase에 같은 이름 선수가 이미 있으면 histNames에 추가 안 함
+      const existKey=getPlayerKeyByName(cn);
+      if(!existKey) histNameSet.add(cn);
+    })));
+  }
+  // Firebase keys는 이름__클럽 형태 → 표시용 이름으로 변환하여 중복 제거
+  const nameToKey=new Map(); // cleanName → key
+  for(const k of fbKeys){
+    const pk=pKeyParse(k);
+    const cn=cleanName(pk.name||k);
+    if(!cn) continue;
+    const nn=normName(cn);
+    if(!nameToKey.has(nn)) nameToKey.set(nn,k);
+    // 데이터가 더 많은 key 우선
+    else{
+      const prev=G.players[nameToKey.get(nn)]||{};
+      const cur=G.players[k]||{};
+      if(((cur.history||[]).length+(cur.wins||0))>((prev.history||[]).length+(prev.wins||0))) nameToKey.set(nn,k);
+    }
+  }
+  const dedupFbKeys=[...nameToKey.values()];
+  let allNames=[...new Set([...dedupFbKeys,...histNameSet])].sort((a,b)=>cleanName(pKeyParse(a).name||a).localeCompare(cleanName(pKeyParse(b).name||b),'ko'));
 
   // 필터 적용
   if(PF.club) allNames=allNames.filter(n=>{
@@ -6049,7 +6145,7 @@ function renderAllP(){
   });
   if(PF.search) allNames=allNames.filter(n=>n.includes(PF.search));
 
-  const total=new Set([...fbNames,...histNames]).size;
+  const total=new Set([...dedupFbKeys,...histNameSet]).size;
   const info=ge('pFInfo');if(info)info.textContent=allNames.length===total?`전체 ${total}명`:`필터: ${allNames.length}명 / 전체 ${total}명`;
 
   const rEl=ge('psResults');
@@ -6220,6 +6316,131 @@ async function renamePlayerEverywhere(oldName, newName, oldClub, newClub){
     await Promise.all([...touchedMatchKeys].map(k=>stM(k)));
   }
 }
+function _playerIsReferencedAnywhere(playerKey){
+  const pk=pKeyParse(playerKey||'');
+  const nm=cleanName(pk.name||playerKey);
+  const clubBase=baseClub(pk.club||'') || (pk.club||'');
+
+  for(const key of Object.keys(G.teams||{})){
+    for(const team of (G.teams[key]||[])){
+      const teamBase=baseClub(team.club||'') || (team.club||'');
+      if(clubBase && teamBase && clubBase!==teamBase) continue;
+      if((team.players||[]).some(pn=>cleanName(pn)===nm)) return true;
+    }
+  }
+
+  for(const row of (getMemberRegistry2026()||[])){
+    const rowBase=baseClub(row.club||'') || (row.club||'');
+    if(cleanName(row.name||'')===nm && (!clubBase || !rowBase || rowBase===clubBase)) return true;
+  }
+
+  return false;
+}
+function _isPlaceholderPlayerName(name){
+  const n=cleanName(name||'');
+  return /^[가-힣A-Za-z]+\d+$/.test(n);
+}
+async function cleanupUnusedPlayers(){
+  if(!AD && !REG){ toast('관리자 또는 경기이사 로그인 필요','info'); return; }
+  if(!confirm('유령/테스트 선수를 정리합니다.\n- 현재 팀등록에 없는 선수 + 기록도 없는 선수 삭제\n- 모던1, 테사모2 같은 테스트 이름: 참조 여부 무관 강제 삭제\n- 이름이 같은 이중 key 자동 병합\n계속하시겠습니까?')) return;
+
+  sl(true);
+  try{
+    // ── ① 이중 key 병합: 이름이 같은 선수가 여러 key로 존재하면 하나로 합치기 ──
+    const nameMap={};
+    for(const k of Object.keys(G.players||{})){
+      const p=G.players[k]||{};
+      const nm=normName(cleanName(p.name||pKeyParse(k).name||k));
+      if(!nm) continue;
+      if(!nameMap[nm]) nameMap[nm]=[];
+      nameMap[nm].push(k);
+    }
+    let mergeCount=0;
+    for(const nm of Object.keys(nameMap)){
+      const ks=nameMap[nm];
+      if(ks.length<2) continue;
+      ks.sort((a,b)=>{
+        const pa=G.players[a]||{}, pb=G.players[b]||{};
+        return ((pb.wins||0)+(pb.losses||0)+(pb.history||[]).length)-((pa.wins||0)+(pa.losses||0)+(pa.history||[]).length);
+      });
+      const baseKey=ks[0];
+      const base=G.players[baseKey];
+      for(let i=1;i<ks.length;i++){
+        const tgtKey=ks[i];
+        const tgt=G.players[tgtKey]||{};
+        const mergedClubs=[...new Set([...(base.clubs||[]),...(tgt.clubs||[])])];
+        const seen=new Set((base.history||[]).map(h=>(h.tid||h.tname||'')+'_'+(h.div||'')+'_'+(h.club||'')));
+        const mergedHist=[...(base.history||[])];
+        for(const h of (tgt.history||[])){
+          const hk=(h.tid||h.tname||'')+'_'+(h.div||'')+'_'+(h.club||'');
+          if(!seen.has(hk)){ seen.add(hk); mergedHist.push(h); }
+        }
+        mergedHist.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+        base.clubs=mergedClubs;
+        base.history=mergedHist;
+        base.wins=(base.wins||0)+(tgt.wins||0);
+        base.losses=(base.losses||0)+(tgt.losses||0);
+        await setDoc(doc(db,'players',baseKey.replace(/[\/\.#\$\[\]]/g,'_')),{...base,key:baseKey});
+        await deleteDoc(doc(db,'players',tgtKey.replace(/[\/\.#\$\[\]]/g,'_')));
+        delete G.players[tgtKey];
+        mergeCount++;
+      }
+    }
+
+    // ── ② 유령/테스트 선수 삭제 ──
+    const deletable=[];
+    for(const k of Object.keys(G.players||{})){
+      const p=G.players[k]||{};
+      const histLen=(p.history||[]).length;
+      const wins=(p.wins||0), losses=(p.losses||0);
+      const referenced=_playerIsReferencedAnywhere(k);
+      const nm=cleanName(p.name||pKeyParse(k).name||k);
+      const isPlaceholder=_isPlaceholderPlayerName(nm);
+      // 플레이스홀더: 참조 여부 무관 강제 삭제
+      // 일반: 참조 없고 기록도 없을 때만 삭제
+      if(isPlaceholder || (!referenced && histLen===0 && wins===0 && losses===0)){
+        deletable.push({key:k,name:nm,isPlaceholder});
+      }
+    }
+    // 플레이스홀더 선수가 팀 등록에 남아 있으면 팀에서도 제거
+    let teamChanged=false;
+    const placeholderNames=new Set(deletable.filter(r=>r.isPlaceholder).map(r=>normName(r.name)));
+    if(placeholderNames.size>0){
+      for(const key of Object.keys(G.teams||{})){
+        for(const tm of (G.teams[key]||[])){
+          const before=(tm.players||[]).length;
+          tm.players=(tm.players||[]).filter(pn=>!placeholderNames.has(normName(cleanName(pn))));
+          if(tm.players.length!==before) teamChanged=true;
+        }
+      }
+      if(teamChanged){
+        for(const key of Object.keys(G.teams||{})) await stT(key).catch(()=>{});
+      }
+    }
+
+    let batch=writeBatch(db), ops=0;
+    for(const row of deletable){
+      batch.delete(doc(db,'players', row.key.replace(/[\/\.#\$\[\]]/g,'_')));
+      delete G.players[row.key];
+      ops++;
+      if(ops>=400){ await batch.commit(); batch=writeBatch(db); ops=0; }
+    }
+    if(ops>0) await batch.commit();
+
+    sl(false);
+    renderAllP();
+    popCF();
+    const msg=[];
+    if(mergeCount>0) msg.push(`이중 key 병합 ${mergeCount}건`);
+    if(deletable.length>0) msg.push(`테스트/유령 선수 ${deletable.length}명 삭제`);
+    toast(msg.length ? `정리 완료 ✅ (${msg.join(', ')})` : '정리할 항목이 없습니다', msg.length?'success':'info');
+    await fbLog(`유령선수 정리: 병합 ${mergeCount}건, 삭제 ${deletable.length}명`,'🧹');
+  }catch(e){
+    sl(false);
+    console.error(e);
+    toast('정리 실패: '+(e?.message||e), 'error');
+  }
+}
 async function saveEditPlayer(){
   const oldKey = EP_name;
   const oldPk = pKeyParse(oldKey);
@@ -6304,54 +6525,45 @@ async function mergePlayer(){
   if(!targetKey){ toast('합칠 선수를 선택하세요','error'); return; }
   if(targetKey===baseKey){ toast('같은 선수입니다','error'); return; }
 
-  const baseName=cleanName(pKeyParse(baseKey).name||baseKey);
-  const targetName=cleanName(pKeyParse(targetKey).name||targetKey);
-  if(!confirm(`"${baseName}"에 "${targetName}"의 이력·승패를 합칩니다.\n합쳐진 후 "${targetName}"은 삭제됩니다.\n계속하시겠습니까?`)) return;
+  const basePk=pKeyParse(baseKey);
+  const targetPk=pKeyParse(targetKey);
+  const baseName=cleanName(basePk.name||baseKey);
+  const targetName=cleanName(targetPk.name||targetKey);
+  if(!confirm(`"${baseName}"에 "${targetName}"의 이력·승패를 합칩니다.
+합쳐진 후 "${targetName}"은 삭제됩니다.
+계속하시겠습니까?`)) return;
 
   const base=G.players[baseKey]||{clubs:[],history:[],wins:0,losses:0};
   const target=G.players[targetKey]||{clubs:[],history:[],wins:0,losses:0};
-
-  // 이름 정리 (전화번호 제거)
-  const cleanBaseName=cleanName(pKeyParse(baseKey).name||baseKey);
-
-  // clubs 합산
+  const cleanBaseName=cleanName(basePk.name||baseKey);
   const mergedClubs=[...new Set([...(base.clubs||[]),...(target.clubs||[])])];
-  // 승패 합산
-  const mergedWins=(base.wins||0)+(target.wins||0);
-  const mergedLosses=(base.losses||0)+(target.losses||0);
-  // 이력 합산 (tid+div+club 중복 제거)
-  const seen=new Set((base.history||[]).map(h=>h.tid+'|'+h.div+'|'+h.club));
+  const seen=new Set((base.history||[]).map(h=>(h.tid||'')+'|'+(h.div||'')+'|'+(baseClub(h.club||'')||h.club||'')));
   const mergedHist=[...(base.history||[])];
   (target.history||[]).forEach(h=>{
-    const k=h.tid+'|'+h.div+'|'+h.club;
-    if(!seen.has(k)){ seen.add(k); mergedHist.push(h); }
+    const hk=(h.tid||'')+'|'+(h.div||'')+'|'+(baseClub(h.club||'')||h.club||'');
+    if(!seen.has(hk)){ seen.add(hk); mergedHist.push(h); }
   });
   mergedHist.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 
-  // phone: base 우선, 없으면 target
   const phone=base.phone||target.phone||'';
-
-  // baseKey의 이름에 전화번호가 포함된 경우 → 새 키로 교체
-  const needRename = (pKeyParse(baseKey).name||baseKey) !== cleanBaseName;
-  const finalClub=pKeyParse(baseKey).club||base.club||'';
+  const needRename=(basePk.name||baseKey)!==cleanBaseName;
+  const finalClub=basePk.club||base.club||targetPk.club||target.club||'';
   const finalKey=needRename ? pKey(cleanBaseName, finalClub) : baseKey;
 
   sl(true);
   try{
+    await renamePlayerEverywhere(targetName, cleanBaseName, targetPk.club||target.club||'', finalClub);
+
     const merged={...base, name:cleanBaseName, club:finalClub,
-      clubs:mergedClubs, wins:mergedWins, losses:mergedLosses,
+      clubs:mergedClubs, wins:(base.wins||0)+(target.wins||0), losses:(base.losses||0)+(target.losses||0),
       history:mergedHist, phone, key:finalKey};
 
-    // Firebase 저장
     await setDoc(doc(db,'players',finalKey.replace(/[\/\.#\$\[\]]/g,'_')), merged);
-    // target 삭제
     await deleteDoc(doc(db,'players',targetKey.replace(/[\/\.#\$\[\]]/g,'_')));
-    // base가 이름 변경된 경우 기존 문서 삭제
     if(needRename && finalKey!==baseKey){
       await deleteDoc(doc(db,'players',baseKey.replace(/[\/\.#\$\[\]]/g,'_')));
     }
 
-    // 로컬 상태 업데이트
     G.players[finalKey]=merged;
     if(finalKey!==baseKey) delete G.players[baseKey];
     delete G.players[targetKey];
@@ -6361,6 +6573,8 @@ async function mergePlayer(){
     toast(`합치기 완료 ✅ "${cleanBaseName}"으로 통합됐습니다`,'success');
     cm('mEditP');
     renderAllP();
+    renderRL();
+    renderBracket();
     popCF();
   }catch(e){
     sl(false);
@@ -6370,14 +6584,30 @@ async function mergePlayer(){
 }
 
 async function deletePlayer(){
-  const name=EP_name;
-  if(!confirm(`"${name}" 선수를 완전히 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`))return;
+  const key=EP_name;
+  const pk=pKeyParse(key);
+  const displayName=cleanName(pk.name||key);
+  if(!confirm(`"${displayName}" 선수를 완전히 삭제하시겠습니까?
+현재 팀/경기/명단에 남아 있으면 삭제되지 않습니다.`))return;
+
+  if(_playerIsReferencedAnywhere(key)){
+    toast('이 선수는 아직 팀등록/명단에 남아 있어 바로 삭제할 수 없습니다. 먼저 팀 명단에서 제거해주세요.','error');
+    return;
+  }
+
   sl(true);
   try{
-    await deleteDoc(doc(db,'players',name.replace(/[\/\.#\$\[\]]/g,'_')));
-    delete G.players[name];
-    sl(false);cm('mEditP');toast(`"${name}" 삭제 완료`,'success');
-    await fbLog(`선수삭제: ${name}`,'🗑️');
+    if(Array.isArray(G.meta.memberRegistry2026)){
+      G.meta.memberRegistry2026 = G.meta.memberRegistry2026.filter(r=>!(cleanName(r.name||'')===displayName && (baseClub(r.club||'')||r.club||'') === (baseClub(pk.club||'')||pk.club||'')));
+      await saveMeta();
+    }
+
+    await deleteDoc(doc(db,'players',key.replace(/[\/\.#\$\[\]]/g,'_')));
+    delete G.players[key];
+    sl(false);cm('mEditP');toast(`"${displayName}" 삭제 완료`,'success');
+    renderAllP();
+    popCF();
+    await fbLog(`선수삭제: ${displayName}`,'🗑️');
   }catch(e){sl(false);toast('삭제 실패: '+e.message,'error');}
 }
 function openRoster(tid,div){
@@ -7838,6 +8068,133 @@ async function _deleteCollectionAll(colName){
   return deleted;
 }
 
+// ─── HIST_DATA → Firebase 완전 이전 ────────────────────────────────────
+async function migrateHistDataToFirebase(){
+  if(!AD && !REG){ toast('관리자 또는 경기이사 로그인 필요','info'); return; }
+  if(!HIST_DATA || !HIST_DATA.length){ toast('이전할 HIST_DATA가 없습니다','info'); return; }
+
+  const alreadyDone = HIST_DATA.every(t => G.tournaments.some(gt => gt.id === t.id));
+  if(alreadyDone){
+    toast('이미 모두 Firebase에 이전되어 있습니다 ✅','info');
+    return;
+  }
+
+  if(!confirm('HIST_DATA 과거 대회(' + HIST_DATA.length + '개)를 Firebase로 이전합니다.\n이미 있는 대회는 건너뜁니다.\n계속하시겠습니까?')) return;
+
+  sl(true);
+  let tourCount=0, regCount=0, playerCount=0;
+  try{
+    for(const ht of HIST_DATA){
+      // ① 이미 tournaments 컬렉션에 있으면 skip
+      if(G.tournaments.some(t=>t.id===ht.id)){
+        console.log('skip:', ht.id);
+        continue;
+      }
+
+      // ② tournaments 문서 저장
+      const tourDoc = {
+        id: ht.id,
+        name: ht.name,
+        date: ht.date || '',
+        year: ht.year || parseInt((ht.date||'').substring(0,4)),
+        seq: ht.seq || null,
+        season: ht.season || '',
+        status: 'done',
+        divisions: ht.divisions || [...new Set((ht.teams||[]).map(t=>t.div).filter(Boolean))],
+        createdAt: ht.date ? ht.date+'T00:00:00.000Z' : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        _migrated: true
+      };
+      await setDoc(doc(db,'tournaments',ht.id), tourDoc);
+      G.tournaments.push(tourDoc);
+      tourCount++;
+
+      // ③ registrations 문서 저장 (팀별)
+      let batch = writeBatch(db);
+      let batchOps = 0;
+      for(const tm of (ht.teams||[])){
+        const regId = ht.id + '_' + (tm.div||'') + '_' + (tm.club||'').replace(/[^가-힣A-Za-z0-9]/g,'');
+        const regDoc = {
+          tournamentId: ht.id,
+          division: tm.div || '',
+          club: tm.club || '',
+          players: tm.players || [],
+          rank: tm.rank || null,
+          doublesCount: Math.floor((tm.players||[]).length / 2),
+          registeredAt: ht.date ? ht.date+'T00:00:00.000Z' : new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          _migrated: true
+        };
+        batch.set(doc(db,'registrations',regId), regDoc, {merge:true});
+        batchOps++;
+        if(batchOps >= 400){ await batch.commit(); batch=writeBatch(db); batchOps=0; }
+
+        // G.teams에도 반영
+        const key = ht.id + '_' + (tm.div||'');
+        if(!G.teams[key]) G.teams[key] = [];
+        const already = G.teams[key].some(t=>t.club===tm.club);
+        if(!already){
+          G.teams[key].push({
+            _id: regId,
+            club: tm.club||'',
+            players: tm.players||[],
+            rank: tm.rank||null,
+            doublesCount: Math.floor((tm.players||[]).length/2),
+            registeredAt: ht.date ? ht.date+'T00:00:00.000Z' : new Date().toISOString()
+          });
+        }
+        regCount++;
+
+        // ④ players 문서 저장 (선수별)
+        for(const pName of (tm.players||[])){
+          const cleanN = cleanName(pName||'');
+          if(!cleanN) continue;
+          const bc = baseClub(tm.club||'');
+          // 이미 존재하는 key 찾기 (이름 기준)
+          const existKey = getPlayerKeyByName(cleanN);
+          const k = existKey || pKey(cleanN, bc);
+
+          if(!G.players[k]){
+            G.players[k] = {clubs:[], history:[], wins:0, losses:0, name:cleanN, club:bc, key:k};
+          }
+          const p = G.players[k];
+          if(!p.clubs) p.clubs=[];
+          if(!p.clubs.includes(bc)) p.clubs.push(bc);
+          if(!p.history) p.history=[];
+          const hk = (ht.id||'') + '_' + (tm.div||'') + '_' + (tm.club||'');
+          if(!p.history.find(h=>(h.tid===ht.id&&h.div===tm.div&&h.club===tm.club))){
+            p.history.push({
+              tid:ht.id, tname:ht.name||'', date:ht.date||'',
+              club:tm.club||'', baseClub:bc, div:tm.div||'',
+              result: tm.rank ? tm.rank+'위' : '참가',
+              rank: tm.rank||null
+            });
+          }
+          const fid = k.replace(/[\/\.#\$\[\]]/g,'_');
+          batch.set(doc(db,'players',fid), {...p, key:k, updatedAt:new Date().toISOString()}, {merge:true});
+          batchOps++;
+          if(batchOps >= 400){ await batch.commit(); batch=writeBatch(db); batchOps=0; }
+          playerCount++;
+        }
+      }
+      if(batchOps>0) await batch.commit();
+    }
+
+    // ⑤ 이전 완료 후 HIST_DATA를 빈 배열로 교체 (재로드 없이 즉시 반영)
+    HIST_DATA.length = 0;
+
+    sl(false);
+    renderAllP();
+    popCF();
+    toast(`Firebase 이전 완료 ✅\n대회 ${tourCount}개 / 팀등록 ${regCount}건 / 선수기록 ${playerCount}건`, 'success');
+    await fbLog(`HIST_DATA Firebase 이전: 대회 ${tourCount}개, 팀 ${regCount}건, 선수 ${playerCount}건`,'🚀');
+  }catch(e){
+    sl(false);
+    console.error('migration error:', e);
+    toast('이전 실패: '+(e?.message||e), 'error');
+  }
+}
+
 async function hardResetAllData(){
   if(!AD){ toast('관리자 로그인 필요','info'); return; }
   if(!confirm('⚠️ 전체 리셋을 진행합니다.\n\n삭제 대상:\n- tournaments(대회)\n- registrations(팀등록)\n- draws(추첨)\n- matches(경기)\n- players(선수)\n- activityLog(활동로그)\n- tourGuides(요강메타)\n\n※ 이 작업은 되돌릴 수 없습니다.\n계속하시겠습니까?')) return;
@@ -7883,7 +8240,7 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   openManualEdit,saveManualEdit,toggleByeEdit,
   openM3,saveM3,tC,setCourt,toggleGroupCourtUI,onGroupCourtChange,openGroupCourtModal,saveGroupCourtModal,
   openMatchCourtModal,saveMatchCourtModal,autoOrderMatches,runAutoOrder,
-  openPD,openEditPlayer,saveEditPlayer,deletePlayer,mergePlayer,openSelectiveClearModal,selectiveClearTournament,cleanupPlayerHistories,hardResetAllData,
+  openPD,openEditPlayer,saveEditPlayer,deletePlayer,mergePlayer,openSelectiveClearModal,selectiveClearTournament,cleanupPlayerHistories,hardResetAllData,migrateHistDataToFirebase,
   resetMatchRecords,recalcAllPlayerStats,
   backupJSON,restoreFromJSON,backupPlayersExcel,exportPlayersCSV,exportPlayersExcel,
   bracketToImage,bracketToPDF,openBracketView,switchBVTab,renderBracketView,saveBracketViewImage,
