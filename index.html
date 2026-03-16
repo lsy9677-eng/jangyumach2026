@@ -5741,6 +5741,13 @@ function cleanName(s){
   // 전화번호 패턴 제거: (010-...) 또는 (01x-...)
   return s.replace(/\s*\(0\d{1,2}[-\d]+\)/g,'').trim();
 }
+function displayClubName(club){
+  const bc = baseClub(club||'');
+  return (bc||club||'').trim();
+}
+function uniqueDisplayClubs(clubs){
+  return [...new Set((clubs||[]).map(c=>displayClubName(c)).filter(Boolean))];
+}
 // ✅ 화면표시용: "이름__클럽" 키가 들어와도 이름/클럽 분리
 function splitKeyNameClub(raw){
   const pk = pKeyParse(raw||'');
@@ -5966,11 +5973,12 @@ function buildPH(name,p){
     .map(([d,c])=>`<span class="dpill ${dc(d)}" style="font-size:.62rem;padding:2px 7px">${dl(d)} ${c}회</span>`)
     .join('');
 
+  const displayClubs=uniqueDisplayClubs((p.clubs||[]).length?(p.clubs||[]):[(p.club||'')]);
   return`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
       <div style="width:46px;height:46px;background:var(--primary);color:white;border-radius:50%;font-size:1.2rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${name.charAt(0)}</div>
       <div style="flex:1">
         <b style="font-size:1.1rem">${name}</b>
-        <div style="font-size:.75rem;color:var(--text2);margin-top:2px">소속: ${(p.clubs||[]).join(', ')||'-'}</div>
+        <div style="font-size:.75rem;color:var(--text2);margin-top:2px">소속: ${displayClubs.join(', ')||'-'}</div>
         ${AD&&p.phone?`<div style="font-size:.75rem;color:var(--text2);margin-top:2px">📱 ${p.phone}</div>`:''}
         ${divTags?`<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">${divTags}</div>`:''}
       </div>
@@ -6008,7 +6016,7 @@ function showP(name,club){
       });
     });
     if(!histRecs.length){ sec.style.display='none'; toast(`"${dispName}" 기록 없음`,'info'); return; }
-    p={name:dispName,clubs:[...new Set(histRecs.map(r=>r.club))],history:[],wins:0,losses:0};
+    p={name:dispName,clubs:uniqueDisplayClubs(histRecs.map(r=>r.club)),history:[],wins:0,losses:0};
   }
 
   sec.style.display='block';
@@ -6071,8 +6079,8 @@ function renderAllP(){
     HIST_DATA.forEach(t=>t.teams.forEach(tm=>{
       if((tm.players||[]).some(pn=>pn===name)&&(!keyClub||tm.club===keyClub))histRecs.push({club:tm.club,div:tm.div,rank:tm.rank});
     }));
-    const allClubs=[...new Set([...p.clubs,...(keyClub?[keyClub]:[]),...histRecs.map(r=>r.club)])];
-    const lc=keyClub||allClubs.slice(-1)[0]||'-';
+    const allClubs=uniqueDisplayClubs([...(p.clubs||[]),...(keyClub?[keyClub]:[]),...histRecs.map(r=>r.club)]);
+    const lc=displayClubName(keyClub)||allClubs.slice(-1)[0]||'-';
     const cnt=(p.history||[]).length+histRecs.length;
     const dCnt={'금':0,'은':0,'동':0,'테린이':0};
     (p.history||[]).forEach(h=>{if(dCnt[h.div]!==undefined)dCnt[h.div]++;});
