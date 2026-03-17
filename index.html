@@ -5900,31 +5900,34 @@ function formatTournamentTitle(tname, dateStr){
   const year = (dateStr||'').toString().substring(0,4);
   const raw = (tname||'').toString().trim();
 
-  // 회차 추출: "제43회", "제 43 회" 등
-  const m = raw.match(/제\s*(\d+)\s*회/);
+  // 회차 추출: "제43회", "16회", "2025년16회" 등
+  const m = raw.match(/(?:제\s*)?(\d+)\s*회/);
   const seq = m ? m[1] : null;
 
-  // 대회명 정리
-  let base = raw.replace(/제\s*\d+\s*회/g,'').trim();
-  // 표기 통일(원하신 예시 기준)
+  // 대회명 정리: 앞의 "YYYY년NN회", "제NN회", "YYYY년" 접두어 모두 제거
+  let base = raw
+    .replace(/^\d{4}년\d+회\s*/,'')   // "2025년16회 " 제거
+    .replace(/제?\s*\d+\s*회\s*/g,'') // 나머지 회차 표기 제거
+    .replace(/^\d{4}년\s*/,'')          // 남은 "YYYY년 " 제거
+    .replace(/\s+/g,' ').trim();
+
+  // 표기 통일
   base = base
     .replace('장유연합회 클럽대항전','장유클럽대항전')
+    .replace('장유연합회장배 테니스대회','장유연합회장배')
     .replace('장유해테니스협회장기','김해시협회장기')
     .replace('테니스협회장기','협회장기')
     .replace('김해시 협회장기','김해시협회장기')
-    .replace(/\s+/g,' ');
+    .replace(/\s+/g,' ').trim();
 
-  // 년도 없으면 원문 유지
-  if(!year) return raw;
+  // 년도 없으면 회차만으로 표시
+  if(!year) return seq ? seq+'회 '+base : base || raw;
 
   // 회차가 있으면 "YYYY년NN회 {대회명}"
-  if(seq){
-    const tail = base || raw;
-    return `${year}년${seq}회 ${tail}`.replace(/\s+/g,' ').trim();
-  }
+  if(seq) return (year+'년'+seq+'회 '+base).replace(/\s+/g,' ').trim();
 
   // 회차가 없으면 "YYYY년 {대회명}"
-  return `${year}년 ${base||raw}`.replace(/\s+/g,' ').trim();
+  return (year+'년 '+(base||raw)).replace(/\s+/g,' ').trim();
 }
 
 
