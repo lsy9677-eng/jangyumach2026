@@ -793,35 +793,35 @@ body{overflow-x:hidden;}
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label" id="regPlayerLabel">주전 선수 <span style="color:var(--text3);font-size:.72rem;font-weight:400">1·2번=1복식 / 3·4번=2복식 / 5·6번=3복식 / 7·8번=4복식 / 9·10번=5복식</span></label>
+        <label class="form-label" id="regPlayerLabel">선수 명단 <span style="color:var(--text3);font-size:.72rem;font-weight:400">페어는 경기 결과 입력 때 선택합니다</span></label>
         <div id="regPlayerSlots" style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:6px">
-          <div><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">① 1복식</div>
-            <div class="pslot"><div class="pslot-num">1</div><input type="text" id="p1" placeholder="1번" autocomplete="off" oninput="phint(this,1)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p1')">기록</button></div><div class="phint" id="h1"></div>
-            <div class="pslot"><div class="pslot-num">2</div><input type="text" id="p2" placeholder="2번" autocomplete="off" oninput="phint(this,2)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p2')">기록</button></div><div class="phint" id="h2"></div>
+          <div><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">기본 명단</div>
+            <div class="pslot"><div class="pslot-num">1</div><input type="text" id="p1" placeholder="선수 1" autocomplete="off" oninput="phint(this,1)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p1')">기록</button></div><div class="phint" id="h1"></div>
+            <div class="pslot"><div class="pslot-num">2</div><input type="text" id="p2" placeholder="선수 2" autocomplete="off" oninput="phint(this,2)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p2')">기록</button></div><div class="phint" id="h2"></div>
           </div>
-          <div><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">② 2복식</div>
-            <div class="pslot"><div class="pslot-num">3</div><input type="text" id="p3" placeholder="3번" autocomplete="off" oninput="phint(this,3)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p3')">기록</button></div><div class="phint" id="h3"></div>
-            <div class="pslot"><div class="pslot-num">4</div><input type="text" id="p4" placeholder="4번" autocomplete="off" oninput="phint(this,4)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p4')">기록</button></div><div class="phint" id="h4"></div>
+          <div><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">기본 명단</div>
+            <div class="pslot"><div class="pslot-num">3</div><input type="text" id="p3" placeholder="선수 3" autocomplete="off" oninput="phint(this,3)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p3')">기록</button></div><div class="phint" id="h3"></div>
+            <div class="pslot"><div class="pslot-num">4</div><input type="text" id="p4" placeholder="선수 4" autocomplete="off" oninput="phint(this,4)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p4')">기록</button></div><div class="phint" id="h4"></div>
           </div>
-          <div><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">③ 3복식</div>
-            <div class="pslot"><div class="pslot-num">5</div><input type="text" id="p5" placeholder="5번" autocomplete="off" oninput="phint(this,5)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p5')">기록</button></div><div class="phint" id="h5"></div>
-            <div class="pslot"><div class="pslot-num">6</div><input type="text" id="p6" placeholder="6번" autocomplete="off" oninput="phint(this,6)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p6')">기록</button></div><div class="phint" id="h6"></div>
+          <div><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">기본 명단</div>
+            <div class="pslot"><div class="pslot-num">5</div><input type="text" id="p5" placeholder="선수 5" autocomplete="off" oninput="phint(this,5)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p5')">기록</button></div><div class="phint" id="h5"></div>
+            <div class="pslot"><div class="pslot-num">6</div><input type="text" id="p6" placeholder="선수 6" autocomplete="off" oninput="phint(this,6)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p6')">기록</button></div><div class="phint" id="h6"></div>
           </div>
-          <div id="slot4"><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">④ 4복식</div>
-            <div class="pslot"><div class="pslot-num">7</div><input type="text" id="p7" placeholder="7번" autocomplete="off" oninput="phint(this,7)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p7')">기록</button></div><div class="phint" id="h7"></div>
-            <div class="pslot"><div class="pslot-num">8</div><input type="text" id="p8" placeholder="8번" autocomplete="off" oninput="phint(this,8)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p8')">기록</button></div><div class="phint" id="h8"></div>
+          <div id="slot4"><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">기본 명단</div>
+            <div class="pslot"><div class="pslot-num">7</div><input type="text" id="p7" placeholder="선수 7" autocomplete="off" oninput="phint(this,7)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p7')">기록</button></div><div class="phint" id="h7"></div>
+            <div class="pslot"><div class="pslot-num">8</div><input type="text" id="p8" placeholder="선수 8" autocomplete="off" oninput="phint(this,8)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p8')">기록</button></div><div class="phint" id="h8"></div>
           </div>
-          <div id="slot5"><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">⑤ 5복식</div>
-            <div class="pslot"><div class="pslot-num">9</div><input type="text" id="p9" placeholder="9번" autocomplete="off" oninput="phint(this,9)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p9')">기록</button></div><div class="phint" id="h9"></div>
-            <div class="pslot"><div class="pslot-num">10</div><input type="text" id="p10" placeholder="10번" autocomplete="off" oninput="phint(this,10)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p10')">기록</button></div><div class="phint" id="h10"></div>
+          <div id="slot5"><div style="font-size:.68rem;font-weight:700;color:var(--primary);padding:3px 0 5px">기본 명단</div>
+            <div class="pslot"><div class="pslot-num">9</div><input type="text" id="p9" placeholder="선수 9" autocomplete="off" oninput="phint(this,9)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p9')">기록</button></div><div class="phint" id="h9"></div>
+            <div class="pslot"><div class="pslot-num">10</div><input type="text" id="p10" placeholder="선수 10" autocomplete="off" oninput="phint(this,10)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p10')">기록</button></div><div class="phint" id="h10"></div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
-          <div><div style="font-size:.68rem;font-weight:700;color:var(--text3);padding:3px 0 5px">후보1 (선택)</div>
-            <div class="pslot" style="border-style:dashed"><div class="pslot-num" style="background:var(--bg2);color:var(--text3)" id="subNum1">11</div><input type="text" id="p11" placeholder="후보..." autocomplete="off" oninput="phint(this,11)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p11')">기록</button></div><div class="phint" id="h11"></div>
+          <div><div style="font-size:.68rem;font-weight:700;color:var(--text3);padding:3px 0 5px">추가 명단 (선택)</div>
+            <div class="pslot" style="border-style:dashed"><div class="pslot-num" style="background:var(--bg2);color:var(--text3)" id="subNum1">11</div><input type="text" id="p11" placeholder="선수 11" autocomplete="off" oninput="phint(this,11)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p11')">기록</button></div><div class="phint" id="h11"></div>
           </div>
-          <div><div style="font-size:.68rem;font-weight:700;color:var(--text3);padding:3px 0 5px">후보2 (선택)</div>
-            <div class="pslot" style="border-style:dashed"><div class="pslot-num" style="background:var(--bg2);color:var(--text3)" id="subNum2">12</div><input type="text" id="p12" placeholder="후보..." autocomplete="off" oninput="phint(this,12)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p12')">기록</button></div><div class="phint" id="h12"></div>
+          <div><div style="font-size:.68rem;font-weight:700;color:var(--text3);padding:3px 0 5px">추가 명단 (선택)</div>
+            <div class="pslot" style="border-style:dashed"><div class="pslot-num" style="background:var(--bg2);color:var(--text3)" id="subNum2">12</div><input type="text" id="p12" placeholder="선수 12" autocomplete="off" oninput="phint(this,12)"><button class="btn btn-gray" style="padding:3px 5px;font-size:.62rem" onclick="openPHist('p12')">기록</button></div><div class="phint" id="h12"></div>
           </div>
         </div>
       </div>
@@ -3003,16 +3003,13 @@ function updateRegisterSlots(){
   // 제목 레이블 업데이트
   const lbl=ge('regModeLabel');
   if(lbl){
-    if(isTerinee) lbl.textContent=`— ${dbl}복식 | 주전 ${mainCount}명 필수 + 후보 최대 2명`;
-    else lbl.textContent='— 5복식 | 주전 10명 필수 + 후보 최대 2명';
+    if(isTerinee) lbl.textContent=`— 선수 명단만 등록 | 최소 ${mainCount}명, 최대 ${mainCount+2}명`;
+    else lbl.textContent='— 선수 명단만 등록 | 최소 10명, 최대 12명';
   }
   // 선수 레이블 업데이트
   const pl=ge('regPlayerLabel');
   if(pl){
-    const parts=['1·2번=1복식','3·4번=2복식','5·6번=3복식'];
-    if(dbl>=4) parts.push('7·8번=4복식');
-    if(dbl>=5) parts.push('9·10번=5복식');
-    pl.innerHTML=`주전 선수 <span style="color:var(--text3);font-size:.72rem;font-weight:400">${parts.join(' / ')}</span>`;
+    pl.innerHTML=`선수 명단 <span style="color:var(--text3);font-size:.72rem;font-weight:400">페어는 경기 결과 입력 때 선택합니다 · 최소 ${mainCount}명, 최대 ${mainCount+2}명</span>`;
   }
 }
 
@@ -3038,33 +3035,18 @@ function renderRegistrationRosterPreview(tid,div,teams,key){
   let html='';
   teams.forEach((team,i)=>{
     const dn=tdn(team,key,i);
-    const p=team.players||[];
-    const dbl=team.doublesCount||(div==='테린이'?(p.length<=6?3:p.length<=8?4:5):3);
-    const mainCount=dbl*2;
-    const subs=p.slice(mainCount).filter(Boolean);
-
-    // 복식별 선수 카드 (모바일: 1~2열, 데스크탑: dbl열)
-    const rubCards=Array.from({length:dbl},(_,r)=>{
-      const pa=p[r*2], pb=p[r*2+1];
-      const paH=pa?rosterPlayerHTML(pa,team.club||'',tid):'';
-      const pbH=pb?rosterPlayerHTML(pb,team.club||'',tid):'';
-      return `<div class="rr-rub-card">
-        <div class="rr-rub-label">${r+1}복식</div>
-        <div class="rr-rub-names">${[paH,pbH].filter(Boolean).join('<span class="rr-slash"> / </span>')}</div>
-      </div>`;
-    }).join('');
-
-    const subHtml=subs.length
-      ?`<div class="rr-sub">후보: ${subs.map(n=>rosterPlayerHTML(n,team.club||'',tid)).join(', ')}</div>`
+    const p=(team.players||[]).filter(Boolean);
+    const rosterChips=p.map((name,pi)=>`<div class="rr-rub-card">
+        <div class="rr-rub-label">선수 ${pi+1}</div>
+        <div class="rr-rub-names">${rosterPlayerHTML(name,team.club||'',tid)}</div>
+      </div>`).join('');
+    const canManageTeam = AD || REG;
+    const adminBtns=canManageTeam
+      ?`<div class="rr-admin-btns">
+          <button class="btn rr-btn-edit" style="background:#f8fafc;color:#0f1e3a;border:1px solid #cbd5e1" onclick="openETeam('${esc(key)}',${i})">✏️ 수정</button>
+          <button class="btn btn-danger rr-btn-del" onclick="delTeam('${esc(key)}',${i})">🗑 삭제</button>
+        </div>`
       :'';
-
-  const canManageTeam = AD || REG;
-const adminBtns=canManageTeam
-  ?`<div class="rr-admin-btns">
-      <button class="btn rr-btn-edit" style="background:#f8fafc;color:#0f1e3a;border:1px solid #cbd5e1" onclick="openETeam('${esc(key)}',${i})">✏️ 수정</button>
-      <button class="btn btn-danger rr-btn-del" onclick="delTeam('${esc(key)}',${i})">🗑 삭제</button>
-    </div>`
-  :'';
     html+=`<div class="rr-team-card">
       <div class="rr-team-header">
         <div class="rr-team-info">
@@ -3074,8 +3056,7 @@ const adminBtns=canManageTeam
         </div>
         ${adminBtns}
       </div>
-      <div class="rr-rub-grid" style="--rr-cols:${Math.min(dbl,3)}">${rubCards}</div>
-      ${subHtml}
+      <div class="rr-rub-grid" style="--rr-cols:${Math.min(Math.max(p.length,1),3)}">${rosterChips}</div>
     </div>`;
   });
   body.innerHTML=html;
@@ -3141,8 +3122,8 @@ async function registerTeam(){
   const dbl=getRegDoublesCount();
   const mainCount=dbl*2;
   const names=collectSanitizedPlayerNames('p', mainCount+2, club);
-  if(names.length<mainCount){toast(`주전 ${mainCount}명(${dbl}복식) 필수 입력`,'error');return;}
-  if(names.length>mainCount+2){toast(`최대 ${mainCount+2}명(후보 2명 포함)`,'error');return;}
+  if(names.length<mainCount){toast(`최소 ${mainCount}명 입력해주세요`,'error');return;}
+  if(names.length>mainCount+2){toast(`최대 ${mainCount+2}명까지 등록할 수 있습니다`,'error');return;}
   const uniq=new Set(names);if(uniq.size!==names.length){toast('이름 중복 있음','error');return;}
   const missing2026=missingMembers2026(names, club, t);
   if(missing2026.length){showMissingMembers2026(missing2026);return;}
@@ -3229,12 +3210,19 @@ async function delTeam(key,idx){
     toast('삭제 실패: ' + e.message,'error');
   }
 }
+function buildRosterInputsHTML(prefix,count,values=[]){
+  let html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">';
+  for(let i=1;i<=count;i++){
+    html+=`<input type="text" id="${prefix}${i}" class="form-input" value="${values[i-1]||''}" placeholder="선수 ${i}">`;
+  }
+  html+='</div>';
+  return html;
+}
 function openETeam(key,idx){
   const team=(G.teams[key]||[])[idx];
   if(!team) return;
 
   const canManage = AD || REG;
-
   if(!canManage){
     toast('경기이사 로그인 후 수정할 수 있습니다','error');
     return;
@@ -3242,61 +3230,37 @@ function openETeam(key,idx){
 
   CE_key=key;
   CE_idx=idx;
-  const[,div]=key.split('_');const p=team.players||[];
+  const[,div]=key.split('_');
+  const p=team.players||[];
   const isT=(div==='테린이'||div==='terinee');
-  // 팀에 저장된 복식 수 또는 선수 수로 추정
   const dbl=team.doublesCount||(isT?(p.length<=6?3:p.length<=8?4:5):3);
   const mainCount=dbl*2;
-  const dbls=['①1복식','②2복식','③3복식','④4복식','⑤5복식'].slice(0,dbl);
-  let slotsHtml='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:6px">';
-  dbls.forEach((label,r)=>{
-    slotsHtml+=`<div><div style="font-size:.65rem;font-weight:700;color:var(--primary);margin-bottom:4px">${label}</div>`;
-    [0,1].forEach(j=>{
-      const idx2=r*2+j;
-      slotsHtml+=`<input type="text" id="ep${idx2+1}" class="form-input" style="margin-bottom:4px" value="${p[idx2]||''}" placeholder="${idx2+1}번">`;
-    });
-    slotsHtml+='</div>';
-  });
-  slotsHtml+='</div>';
-  // 테린이 복식수 선택
+  const totalCount=mainCount+2;
   const terineeSelHtml=isT?`<div style="margin-bottom:8px"><label class="form-label" style="font-size:.8rem">복식 수</label><div style="display:flex;gap:10px;margin-top:4px">${[3,4,5].map(n=>`<label style="font-size:.82rem;cursor:pointer"><input type="radio" name="etDbl" value="${n}" ${n===dbl?'checked':''} onchange="etUpdateSlots(this.value,${idx})"> ${n}복식</label>`).join('')}</div></div>`:'';
   ge('mETeamB').innerHTML=`<div style="margin-bottom:12px;padding:8px 14px;background:var(--primary);color:white;border-radius:var(--radius);font-weight:700">${tdn(team,key,idx)} — ${dl(div)}</div>
     ${terineeSelHtml}
     <div class="form-group"><label class="form-label">클럽</label><select class="form-select" id="etTC">${G.clubs.map(c=>`<option ${c===team.club?'selected':''}>${c}</option>`).join('')}</select></div>
-    <div class="form-group"><label class="form-label">선수 (주전 ${mainCount}명 필수)</label>
-    <div id="etSlots">${slotsHtml}</div>
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px"><input type="text" id="ep${mainCount+1}" class="form-input" value="${p[mainCount]||''}" placeholder="후보1(선택)"><input type="text" id="ep${mainCount+2}" class="form-input" value="${p[mainCount+1]||''}" placeholder="후보2(선택)"></div>
+    <div class="form-group"><label class="form-label" id="editRosterLabel">선수 명단 (최소 ${mainCount}명, 최대 ${totalCount}명)</label>
+      <div id="etSlots">${buildRosterInputsHTML('ep',totalCount,p)}</div>
+      <div style="font-size:.72rem;color:var(--text3);margin-top:6px">페어는 경기 결과 입력 때 선택합니다.</div>
     </div>`;
   om('mETeam');
 }
 function etUpdateSlots(newDbl,origIdx){
-  const team=(G.teams[CE_key]||[])[CE_idx];if(!team)return;
-  const[,div]=CE_key.split('_');const p=team.players||[];
-  const dbl=parseInt(newDbl);const mainCount=dbl*2;
-  const dbls=['①1복식','②2복식','③3복식','④4복식','⑤5복식'].slice(0,dbl);
-  // 기존 입력값 보존
-  const curVals=[];for(let i=1;i<=12;i++){const el=ge('ep'+i);if(el)curVals.push(el.value.trim());}
-  let slotsHtml='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:6px">';
-  dbls.forEach((label,r)=>{
-    slotsHtml+=`<div><div style="font-size:.65rem;font-weight:700;color:var(--primary);margin-bottom:4px">${label}</div>`;
-    [0,1].forEach(j=>{
-      const idx2=r*2+j;
-      slotsHtml+=`<input type="text" id="ep${idx2+1}" class="form-input" style="margin-bottom:4px" value="${curVals[idx2]||p[idx2]||''}" placeholder="${idx2+1}번">`;
-    });
-    slotsHtml+='</div>';
-  });
-  slotsHtml+='</div>';
-  ge('etSlots').innerHTML=slotsHtml;
-  // 후보 업데이트
-  const sub1=ge(`ep${mainCount+1}`),sub2=ge(`ep${mainCount+2}`);
-  // 기존 후보 입력 요소 교체
-  const subContainer=ge('etSlots').nextElementSibling;
-  if(subContainer){
-    subContainer.innerHTML=`<input type="text" id="ep${mainCount+1}" class="form-input" value="${curVals[mainCount]||p[mainCount]||''}" placeholder="후보1(선택)"><input type="text" id="ep${mainCount+2}" class="form-input" value="${curVals[mainCount+1]||p[mainCount+1]||''}" placeholder="후보2(선택)">`;
+  const team=(G.teams[CE_key]||[])[CE_idx];
+  if(!team) return;
+  const p=team.players||[];
+  const dbl=parseInt(newDbl,10);
+  const mainCount=dbl*2;
+  const totalCount=mainCount+2;
+  const curVals=[];
+  for(let i=1;i<=12;i++){
+    const el=ge('ep'+i);
+    if(el) curVals.push(el.value.trim());
   }
-  // 레이블 업데이트
-  const lbl=ge('etSlots').previousElementSibling?.querySelector('label.form-label');
-  if(lbl) lbl.textContent=`선수 (주전 ${mainCount}명 필수)`;
+  ge('etSlots').innerHTML=buildRosterInputsHTML('ep',totalCount,curVals.length?curVals:p);
+  const lbl=ge('editRosterLabel');
+  if(lbl) lbl.textContent=`선수 명단 (최소 ${mainCount}명, 최대 ${totalCount}명)`;
 }
 async function saveETeam(){
   const teams=G.teams[CE_key]||[];
@@ -3316,7 +3280,7 @@ async function saveETeam(){
   const mainCount=dbl*2;
   const newClub=ge('etTC').value;
   const np=collectSanitizedPlayerNames('ep', mainCount+2, newClub);
-  if(np.length<mainCount){toast(`주전 ${mainCount}명 필요`,'error');return;}
+  if(np.length<mainCount){toast(`최소 ${mainCount}명 입력해주세요`,'error');return;}
   const uniq=new Set(np);if(uniq.size!==np.length){toast('이름 중복','error');return;}
   const tid=CE_key.split('_')[0];
   const tournament=G.tournaments.find(t=>t.id===tid);
