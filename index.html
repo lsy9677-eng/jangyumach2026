@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "2026-03-20-v22-jangyu-bracket-team-fix";
+  const APP_VERSION = "2026-03-20-v26-jangyu-restore-edit-delete";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -3028,15 +3028,25 @@ function renderRegDivisionBoard(tid){
       return x.i-y.i;
     });
     const detailHtml=sorted.length
-      ? sorted.map(({team,i},viewIdx)=>`<div style="border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff">
+      ? sorted.map(({team,i},viewIdx)=>{
+          const canManageTeam = AD || REG;
+          const teamActions = canManageTeam
+            ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+                <span style="font-size:.72rem;opacity:.82">${(team.players||[]).filter(Boolean).length}명</span>
+                <button class="btn rr-btn-edit" style="background:#f8fafc;color:#0f1e3a;border:1px solid #cbd5e1" onclick="openETeam('${esc(key)}',${i})">✏️ 수정</button>
+                <button class="btn btn-danger rr-btn-del" onclick="delTeam('${esc(key)}',${i})">🗑 삭제</button>
+              </div>`
+            : `<span style="font-size:.72rem;opacity:.82">${(team.players||[]).filter(Boolean).length}명</span>`;
+          return `<div style="border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff">
           <div style="background:var(--primary-dark);color:#fff;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
               <span style="font-weight:800">${tdn(team,key,i)}</span>
             </div>
-            <span style="font-size:.72rem;opacity:.82">${(team.players||[]).filter(Boolean).length}명</span>
+            ${teamActions}
           </div>
           <div style="padding:10px 12px">${regRosterMiniHTML(team,key,i,div,tid,t)}</div>
-        </div>`).join('')
+        </div>`;
+        }).join('')
       : '<div style="font-size:.78rem;color:var(--text3);padding:8px 2px">등록된 팀 없음</div>';;
     const disabled = !isOpen ? 'disabled' : '';
     const btnLabel = isOpen ? '➕ 팀 등록' : '접수 마감';
