@@ -3192,10 +3192,11 @@ function renderRegistrationRosterPreview(tid,div,teams,key){
   sortedTeams.forEach(({team,i},viewIdx)=>{
     const dn=tdn(team,key,i);
     const p=(team.players||[]).filter(Boolean);
-    const rosterChips=p.map((name,pi)=>`<div class="rr-rub-card">
-        <div class="rr-rub-label">선수 ${pi+1}</div>
-        <div class="rr-rub-names">${rosterPlayerHTML(name,team.club||'',tid)}</div>
-      </div>`).join('');
+    const dbl=team.doublesCount||((div==='테린이')?(p.length<=6?3:p.length<=8?4:5):3);
+    const mainCount=dbl*2;
+    const mainPlayers=p.slice(0,mainCount);
+    const subPlayers=p.slice(mainCount);
+    const mainChips=mainPlayers.map((name,pi)=>`<div style="background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);padding:5px 7px;font-size:.78rem;display:flex;align-items:center;gap:4px"><span style="width:18px;height:18px;background:var(--primary);color:#fff;border-radius:50%;font-size:.62rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${pi+1}</span>${rosterPlayerHTML(name,team.club||'',tid)}</div>`).join('');
     const canManageTeam = AD || REG;
     const adminBtns=canManageTeam
       ?`<div class="rr-admin-btns">
@@ -3212,7 +3213,11 @@ function renderRegistrationRosterPreview(tid,div,teams,key){
         </div>
         ${adminBtns}
       </div>
-      <div class="rr-rub-grid" style="--rr-cols:${Math.min(Math.max(p.length,1),3)}">${rosterChips}</div>
+      <div style="padding:10px 12px">
+        <div style="font-size:.65rem;color:var(--text3);font-weight:600;letter-spacing:.03em;margin-bottom:6px">선수 명단 (페어는 경기 때 결정)</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:5px">${mainChips}</div>
+        ${subPlayers.length?`<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);font-size:.72rem;color:var(--text3)">후보: ${subPlayers.map(n=>rosterPlayerHTML(n,team.club||'',tid)).join(', ')}</div>`:''}
+      </div>
     </div>`;
   });
   body.innerHTML=html;
@@ -6917,7 +6922,7 @@ function openRoster(tid,div){
   let html=`<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;padding:8px 14px;background:var(--primary);color:white;border-radius:var(--radius-lg)"><b style="font-size:1.2rem">${teams.length}</b><span style="opacity:.8">팀</span><span style="opacity:.4">|</span><b style="font-size:1.2rem">${total}</b><span style="opacity:.8">명</span></div><div style="margin:-2px 0 12px;padding:8px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);font-size:.76rem;color:var(--text2)">밑줄 + ★ 표시는 첫 출전 선수입니다.</div>`;
   teams.forEach((team,i)=>{const dn=tdn(team,key,i);const p=team.players||[];const tc=esc(team.club||'');
     html+=`<div style="margin-bottom:10px;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden"><div style="background:var(--primary-dark);color:white;padding:7px 14px;display:flex;align-items:center;justify-content:space-between"><span style="font-weight:700">${dn}</span><span style="font-size:.72rem;opacity:.75">${p.length}명</span></div>
-    <div style="padding:10px 14px">${(()=>{const dbl=team.doublesCount||(div==='테린이'?(p.length<=6?3:p.length<=8?4:5):3);const mainCount=dbl*2;const cols=Math.min(dbl,5);return`<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:6px;margin-bottom:6px">${Array.from({length:dbl},(_,r)=>`<div style="padding:6px;background:var(--panel2);border-radius:var(--radius);border:1px solid var(--border);text-align:center"><div style="font-size:.6rem;color:var(--text3);margin-bottom:3px">${r+1}복식</div><div style="font-size:.77rem">${[p[r*2],p[r*2+1]].filter(Boolean).map(n=>rosterPlayerHTML(n, team.club||'', tid)).join(' / ')}</div></div>`).join('')}</div>${p.slice(mainCount).length?`<div style="font-size:.72rem;color:var(--text3)">후보: ${p.slice(mainCount).map(n=>rosterPlayerHTML(n, team.club||'', tid)).join(', ')}</div>`:''}`})()}</div></div>`;
+    <div style="padding:10px 14px">${(()=>{const dbl=team.doublesCount||(div==='테린이'?(p.length<=6?3:p.length<=8?4:5):3);const mainCount=dbl*2;const mainP=p.slice(0,mainCount);const subP=p.slice(mainCount);return`<div style="font-size:.65rem;color:var(--text3);font-weight:600;margin-bottom:6px">선수 명단 (페어는 경기 때 결정)</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:5px;margin-bottom:6px">${mainP.map((n,idx)=>`<div style="background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);padding:5px 7px;font-size:.78rem;display:flex;align-items:center;gap:4px"><span style="width:18px;height:18px;background:var(--primary);color:#fff;border-radius:50%;font-size:.62rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${idx+1}</span>${rosterPlayerHTML(n, team.club||'', tid)}</div>`).join('')}</div>${subP.length?`<div style="font-size:.72rem;color:var(--text3)">후보: ${subP.map(n=>rosterPlayerHTML(n, team.club||'', tid)).join(', ')}</div>`:''}`})()}</div></div>`;
   });
   ge('mRosterB').innerHTML=html;om('mRoster');
 }
