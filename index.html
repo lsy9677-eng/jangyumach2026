@@ -1059,8 +1059,6 @@ body{overflow-x:hidden;}
       <button class="btn btn-outline" style="padding:12px 8px;font-size:.82rem" onclick="cm('mAdminSettings');om('mBackup')">💾 백업 / 복구</button>
       <button class="btn btn-danger" style="padding:12px 8px;font-size:.82rem" onclick="recalcAllPlayerStats()">🔄 관리자 복구(승패 재계산)</button>
     
-      <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem;background:var(--primary);color:#fff;font-weight:700" onclick="migrateHistDataToFirebase()">🚀 과거대회 데이터 Firebase 이전 (HIST_DATA→DB)</button>
-      <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="cm('mAdminSettings');om('mHistExcel')">📥 엑셀로 과거대회 등록</button>
       <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="openSelectiveClearModal()">🗑️ 대회별 개별 삭제(선수기록 포함)</button>
       <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="syncAllTnames()">🔄 선수기록 대회명 전체 동기화</button>
       <button class="btn btn-outline" style="grid-column:1/-1;padding:12px 8px;font-size:.82rem" onclick="cleanupPlayerHistories()">🧹 개인기록 정리(중복/삭제대회)</button>
@@ -1149,17 +1147,6 @@ body{overflow-x:hidden;}
       <button class="btn btn-outline" style="font-size:.76rem" onclick="prefillNoticeMsg('roster')">📋 등록현황</button>
       <button class="btn btn-outline" style="font-size:.76rem" onclick="prefillNoticeMsg('bracket_draw')">🎲 추첨결과</button>
       <button class="btn btn-outline" style="font-size:.76rem" onclick="prefillNoticeMsg('final_result')">🏆 최종결과</button>
-    </div>
-    <!-- 이미지 캡처 버튼 (예상대진/추첨결과용) -->
-    <div style="padding:10px 12px;background:linear-gradient(135deg,#fff8e1,#ffecb3);border-radius:10px;border:1.5px solid #ffc107;margin-bottom:10px">
-      <div style="font-size:.78rem;font-weight:700;color:#e65100;margin-bottom:6px">🖼️ 대진표 이미지 저장 (카카오톡 공유용)</div>
-      <div style="font-size:.72rem;color:#795548;margin-bottom:8px;line-height:1.4">
-        대진표 이미지는 문자 전송이 불가합니다. 이미지를 저장 후 카카오톡 단톡방에 직접 공유하세요.
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn btn-outline" style="font-size:.76rem;border-color:#ffc107;color:#e65100" onclick="captureAndShareBracket('all')">🖼️ 전체 대진표 이미지 저장</button>
-        <button class="btn btn-outline" style="font-size:.76rem;border-color:#ffc107;color:#e65100" onclick="captureAndShareBracket('preview')">📊 예상대진 이미지 저장</button>
-      </div>
     </div>
     <textarea class="form-textarea" id="noticeMsg" rows="5" placeholder="공지 내용을 입력하거나 위 버튼으로 자동 완성하세요&#10;&#10;팁: 이미지는 대진표 탭 → 이미지 저장 버튼을 이용하세요"></textarea>
     <div id="noticeContactBtns" style="margin-top:10px"></div>
@@ -2144,17 +2131,10 @@ function renderNoticeContactBtns(){
           💛 전체 내용 복사 (${_noticeWithPhone.length}개)
         </button>
       </div>
-      <div style="font-size:.7rem;color:#78350f;line-height:1.5;background:rgba(255,255,255,.6);border-radius:6px;padding:5px 8px;margin-bottom:6px">
-        카카오톡 공유창으로 바로 보내기를 시도합니다.<br>
-        동작하지 않을 때만 아래 복사/앱열기 방식으로 사용하세요
-      </div>
-      <button class="btn" onclick="openKakaoApp()" style="width:100%;font-size:.78rem;padding:7px 10px;background:#fee500;color:#3c1e1e;border:1.5px solid #f9c400;border-radius:8px;font-weight:700">
-        📲 카카오톡 열기(예비용)
-      </button>
     </div>
 
     <div style="font-size:.7rem;color:var(--text3);line-height:1.5;padding:6px 8px;background:var(--panel2);border-radius:6px">
-      💡 <b>카톡 사용법:</b> 먼저 바로 보내기를 시도하고, 실패 시 복사 후 카카오톡에 붙여넣으세요
+      💡 내용 복사 후 카카오톡 단톡방에 붙여넣으세요
     </div>`;
 }
 
@@ -8618,7 +8598,7 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   onRegClubChange,onRegContactInput,saveRegContact,
   renderAdminContactList,saveContactFromAdmin,renderAdminNoticeSection,
   prefillNoticeMsg,renderNoticeContactBtns,captureAndShareBracket,
-  toggleClubSel,selAllClubs,sendSmsSelected,sendSmsAll,sendKakaoSelected,sendKakaoAll,copyMsgOnly,openKakaoApp,
+  toggleClubSel,selAllClubs,sendSmsSelected,sendSmsAll,sendKakaoSelected,sendKakaoAll,copyMsgOnly,
   gDS,om,cm,toast,ge,esc,setRbSc,
   buildDrawPresets,updateAdvPresets,updateMainSizeDisplay,calcGroupPresets,
   switchToRunScreen,runRoulette,leafLandReveal,initDrawStage,fillSlotWithLeaf,
