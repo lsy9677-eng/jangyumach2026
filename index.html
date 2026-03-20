@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "v26.4-reg-null-fix";
+  const APP_VERSION = "v26.5-login-rerender";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -1647,6 +1647,8 @@ function toggleAdmin(){
     const rh2=ge('regActHdr'); if(rh2) rh2.textContent='';
     cm('mAdminSettings');
     toast('로그아웃','info');
+    const _ap=document.querySelector('.nav-tab.active')?.dataset?.page;
+    if(_ap==='register'){const tid=ge('regTS')?.value;if(tid)renderRegDivisionBoard(tid);renderRL();}
   } else om('mAdmin');
 }
 function applyAdminUI(){
@@ -1668,7 +1670,7 @@ function doLogin(){
     toast('관리자 로그인 ✅','success');
     const pg=document.querySelector('.nav-tab.active').dataset.page;
     if(pg==='tournament')renderTL();
-    if(pg==='register')renderRL();
+    if(pg==='register'){const tid=ge('regTS')?.value;if(tid)renderRegDivisionBoard(tid);renderRL();}
     if(pg==='bracket')renderBracket();
   } else {
     toast('비밀번호 오류','error');
@@ -1689,7 +1691,7 @@ function toggleReg(){
     ge('aoReg') && (ge('aoReg').style.display='none');
     applyRegLoginUI();
     const _rp=document.querySelector('.nav-tab.active')?.dataset?.page;
-    if(_rp==='register') renderRL();
+    if(_rp==='register'){const tid=ge('regTS')?.value;if(tid)renderRegDivisionBoard(tid);renderRL();}
     toast('팀등록 로그아웃','info');
   } else if(AD) {
     // 관리자는 이미 팀등록 가능
@@ -1714,7 +1716,7 @@ function doRegLogin(){
     toast('팀등록 로그인 ✅ 팀을 등록할 수 있습니다','success');
     // 팀등록 페이지면 바로 렌더링
     const pg = document.querySelector('.nav-tab.active')?.dataset?.page;
-    if(pg==='register') renderRL();
+    if(pg==='register'){const tid=ge('regTS')?.value;if(tid)renderRegDivisionBoard(tid);renderRL();}
   } else {
     toast('비밀번호 오류','error');
     ge('regPwInput')?.select();
