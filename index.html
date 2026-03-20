@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "v26.1-kakao-share";
+  const APP_VERSION = "v26.4-reg-null-fix";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -3016,16 +3016,10 @@ function regRosterMiniHTML(team, key, idx, div, tid, t){
   const defaultDbl=gDS(t,div)?.doublesCount || (div==='테린이'?3:5);
   const dbl=team.doublesCount||defaultDbl;
   const mainCount=Math.min(p.length, dbl*2);
-  const pairHtml=Array.from({length:dbl},(_,r)=>{
-    const a=p[r*2], b=p[r*2+1];
-    if(!a && !b) return '';
-    return `<div style="padding:8px;background:var(--panel2);border-radius:12px;border:1px solid var(--border);text-align:center">
-      <div style="font-size:.63rem;color:var(--text3);margin-bottom:4px">${r+1}복식</div>
-      <div style="font-size:.8rem;line-height:1.45">${[a,b].filter(Boolean).map(n=>rosterPlayerHTML(n, team.club||'', tid)).join(' / ')}</div>
-    </div>`;
-  }).filter(Boolean).join('');
+  const mainPlayers=p.slice(0,mainCount);
   const subs=p.slice(mainCount);
-  return `<div style="display:grid;grid-template-columns:repeat(${Math.min(Math.max(dbl,1),5)},minmax(0,1fr));gap:8px">${pairHtml}</div>${subs.length?`<div style="margin-top:8px;font-size:.74rem;color:var(--text2)"><b>후보</b>: ${subs.map(n=>rosterPlayerHTML(n, team.club||'', tid)).join(', ')}</div>`:''}`;
+  const mainChips=mainPlayers.map((name,pi)=>`<div style="background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);padding:5px 7px;font-size:.78rem;display:flex;align-items:center;gap:4px"><span style="width:18px;height:18px;background:var(--primary);color:#fff;border-radius:50%;font-size:.62rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${pi+1}</span>${rosterPlayerHTML(name,team.club||'',tid)}</div>`).join('');
+  return `<div style="font-size:.65rem;color:var(--text3);font-weight:600;margin-bottom:6px">선수 명단 (페어는 경기 때 결정)</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:5px">${mainChips}</div>${subs.length?`<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);font-size:.72rem;color:var(--text3)">후보: ${subs.map(n=>rosterPlayerHTML(n,team.club||'',tid)).join(', ')}</div>`:''}`;
 }
 function selectRegDivision(div){
   const ds=ge('regDS');
@@ -3040,6 +3034,14 @@ function renderRegDivisionBoard(tid){
   const wrap=ge('regDivisionBoard');
   const msg=ge('regTournamentStatusMsg');
   if(!wrap) return;
+
+  // regSection이 wrap 안에 있으면 innerHTML 교체 전에 꺼내서 보존
+  const section=ge('regSection');
+  const sectionParent=section?.parentElement;
+  if(section && wrap.contains(section)){
+    document.body.appendChild(section);
+  }
+
   if(msg){ msg.style.display='none'; msg.innerHTML=''; }
   if(!tid){ wrap.innerHTML=''; return; }
   const t=G.tournaments.find(x=>x.id===tid);
@@ -3238,7 +3240,7 @@ function renderRL(){
   const isOpen = (t?.status==='open');
 
   if(section) section.style.display='block';
-  ge('aoReg').style.display=(AD||REG)?'block':'none';
+  const aoReg=ge('aoReg'); if(aoReg) aoReg.style.display=(AD||REG)?'block':'none';
 
   // 선택한 부서 카드 안에 폼을 바로 붙임
   const slot=ge('regInlineSlot_'+regDivDomId(div));
@@ -3274,8 +3276,8 @@ function renderRL(){
   }
 
   const key=tid+'_'+div,teams=G.teams[key]||[];
-  ge('regTCnt').textContent=teams.length+'팀';
-  ge('regNo').value=teams.length+1;
+  const regTCnt=ge('regTCnt'); if(regTCnt) regTCnt.textContent=teams.length+'팀';
+  const regNo=ge('regNo'); if(regNo) regNo.value=teams.length+1;
 }
 async function registerTeam(){
   const tid=ge('regTS').value,div=ge('regDS').value,club=ge('regClub').value;
