@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "2026-03-20-v26-jangyu-restore-edit-delete";
+  const APP_VERSION = "v26.1-kakao-share";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -614,6 +614,7 @@ body{overflow-x:hidden;}
 <meta name="apple-mobile-web-app-title" content="장유테니스연합회">
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
 </head>
 <body>
 <header class="app-header">
@@ -2144,16 +2145,16 @@ function renderNoticeContactBtns(){
         </button>
       </div>
       <div style="font-size:.7rem;color:#78350f;line-height:1.5;background:rgba(255,255,255,.6);border-radius:6px;padding:5px 8px;margin-bottom:6px">
-        ⚠️ 카카오톡은 전화번호로 직접 메시지 발송이 불가합니다.<br>
-        ① 버튼 클릭 → 내용 자동 복사 ② 아래 카카오톡 앱 열기 → 대화방에 붙여넣기
+        카카오톡 공유창으로 바로 보내기를 시도합니다.<br>
+        동작하지 않을 때만 아래 복사/앱열기 방식으로 사용하세요
       </div>
       <button class="btn" onclick="openKakaoApp()" style="width:100%;font-size:.78rem;padding:7px 10px;background:#fee500;color:#3c1e1e;border:1.5px solid #f9c400;border-radius:8px;font-weight:700">
-        📲 카카오톡 앱 열기
+        📲 카카오톡 열기(예비용)
       </button>
     </div>
 
     <div style="font-size:.7rem;color:var(--text3);line-height:1.5;padding:6px 8px;background:var(--panel2);border-radius:6px">
-      💡 <b>카톡 사용법:</b> ① 클럽 선택 → ② 내용 입력 → ③ "선택 클럽 내용 복사" 클릭 → ④ "카카오톡 앱 열기" → ⑤ 단톡방에서 붙여넣기
+      💡 <b>카톡 사용법:</b> 먼저 바로 보내기를 시도하고, 실패 시 복사 후 카카오톡에 붙여넣으세요
     </div>`;
 }
 
@@ -2297,25 +2298,50 @@ ${body}`;
 }
 
 // ── 카카오톡 발송 ───────────────────────────────────────────────────────────
-// 카카오톡은 전화번호로 직접 메시지 불가 → 내용 복사 후 앱 열기 방식
-function sendKakaoSelected(){
-  const body = _checkBodyAndGet(); if(!body) return;
-  const contacts = G.meta.clubContacts||{};
-  const targets = [..._selClubs].filter(c=>contacts[c]);
-  if(!targets.length){ toast('선택된 클럽이 없습니다','error'); return; }
-  _buildAndCopyKakaoMsg(targets, body);
+const KAKAO_JS_KEY = 'fdd9dd2731d4799dcd8ab27123e439d7';
+
+function ensureKakaoReady(){
+  try{
+    if(typeof window.Kakao === 'undefined'){
+      console.warn('Kakao SDK not loaded');
+      return false;
+    }
+    if(!window.Kakao.isInitialized || !window.Kakao.isInitialized()){
+      window.Kakao.init(KAKAO_JS_KEY);
+    }
+    return true;
+  }catch(err){
+    console.error('Kakao init failed', err);
+    return false;
+  }
 }
 
-function sendKakaoAll(){
-  const body = _checkBodyAndGet(); if(!body) return;
-  const contacts = G.meta.clubContacts||{};
-  const all = (G.clubs||[]).filter(c=>contacts[c]);
-  if(!all.length){ toast('등록된 번호가 없습니다','error'); return; }
-  _buildAndCopyKakaoMsg(all, body);
+async function shareViaKakaoTalk(text){
+  if(!ensureKakaoReady()) return false;
+  try{
+    window.Kakao.Share.sendDefault({
+      objectType: 'text',
+      text,
+      link: {
+        mobileWebUrl: window.location.href,
+        webUrl: window.location.href
+      },
+      buttons: [{
+        title: '앱 열기',
+        link: {
+          mobileWebUrl: window.location.href,
+          webUrl: window.location.href
+        }
+      }]
+    });
+    return true;
+  }catch(err){
+    console.error('Kakao share failed', err);
+    return false;
+  }
 }
 
-// 선택된 클럽 전체를 하나의 메시지로 합쳐서 복사
-async function _buildAndCopyKakaoMsg(clubs, body){
+async function shareOrCopyKakaoMsg(clubs, body){
   let msg;
   if(clubs.length === 1){
     msg = body;
@@ -2323,12 +2349,40 @@ async function _buildAndCopyKakaoMsg(clubs, body){
     const header = clubs.map(c=>`• ${c}`).join('\n');
     msg = `[발송 대상]\n${header}\n\n${body}`;
   }
+
+  const shared = await shareViaKakaoTalk(msg);
+  if(shared){
+    toast('카카오톡 공유창을 열었습니다.','success');
+    return;
+  }
+
   const ok = await copyTextSafe(msg);
   if(ok){
-    toast(`📋 ${clubs.length}개 클럽 발송 내용이 복사됐습니다! 카카오톡 앱을 열어 붙여넣으세요.`,'success');
+    toast(`📋 ${clubs.length}개 클럽 발송 내용이 복사됐습니다! 카카오톡에 붙여넣으세요.`,'info');
   } else {
     alert(`아래 내용을 복사하세요:\n\n${msg}`);
   }
+}
+
+async function sendKakaoSelected(){
+  const body = _checkBodyAndGet(); if(!body) return;
+  const contacts = G.meta.clubContacts||{};
+  const targets = [..._selClubs].filter(c=>contacts[c]);
+  if(!targets.length){ toast('선택된 클럽이 없습니다','error'); return; }
+  await shareOrCopyKakaoMsg(targets, body);
+}
+
+async function sendKakaoAll(){
+  const body = _checkBodyAndGet(); if(!body) return;
+  const contacts = G.meta.clubContacts||{};
+  const all = (G.clubs||[]).filter(c=>contacts[c]);
+  if(!all.length){ toast('등록된 번호가 없습니다','error'); return; }
+  await shareOrCopyKakaoMsg(all, body);
+}
+
+// 선택된 클럽 전체를 하나의 메시지로 합쳐서 복사
+async function _buildAndCopyKakaoMsg(clubs, body){
+  return shareOrCopyKakaoMsg(clubs, body);
 }
 
 function openKakaoApp(){
@@ -2350,7 +2404,7 @@ async function copyMsgOnly(){
   if(ok){
     toast('📋 내용 복사됨! 카카오톡에 붙여넣으세요','success');
   } else {
-    toast('내용을 수동으로 복사해주세요','info');
+    alert(body);
   }
 }
 
