@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "v26.5-login-rerender";
+  const APP_VERSION = "v26.7-roundrobin-preview-fix";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -1576,6 +1576,30 @@ function baseClub(club){
   m=club.match(/^(.+?)([A-D])$/);
   if(m && /[가-힣]/.test(m[1]) && m[1].trim().length>=2) return m[1].trim();
   return club;
+}
+function teamBaseClub(team){
+  return baseClub((team && team.club) || '') || ((team && team.club) || '');
+}
+function sameBaseClub(teamA,teamB){
+  return teamBaseClub(teamA) === teamBaseClub(teamB);
+}
+function countSameClubInGroup(group,candidateIdx,teams){
+  const candidateClub=teamBaseClub(teams[candidateIdx]);
+  if(!candidateClub) return 0;
+  return (group||[]).reduce((cnt,idx)=>cnt + (teamBaseClub(teams[idx])===candidateClub?1:0),0);
+}
+function calcSameClubPenalty(groups,teams){
+  let penalty=0;
+  (groups||[]).forEach(group=>{
+    const counts={};
+    (group||[]).forEach(idx=>{
+      const club=teamBaseClub(teams[idx]);
+      if(!club) return;
+      counts[club]=(counts[club]||0)+1;
+    });
+    Object.values(counts).forEach(v=>{ if(v>1) penalty += (v-1); });
+  });
+  return penalty;
 }
 function pKeyParse(key){ const i=(key||'').lastIndexOf('__'); return i>0?{name:key.slice(0,i),club:key.slice(i+2)}:{name:key,club:''}; }
 async function stP(k){try{const pk=pKeyParse(k);const pureName=cleanName(pk.name||k);await setDoc(doc(db,'players',k.replace(/[\\/\\.#\\$\\[\\]]/g,'_')),{...G.players[k],key:k,name:pureName,club:pk.club||''});}catch(e){}}
@@ -3560,7 +3584,16 @@ function renderBracketHTMLForDiv(tid,div,isAll){
     </div></div>`;
 
   if(!draw){
-    if(cfg.format==='group_knockout' && teams.length>=2){
+    if(cfg.format==='roundrobin' && teams.length>=2){
+      html+=`<div class="card" style="background:linear-gradient(135deg,#f8fffb,#eefaf3);border:1.5px dashed var(--success)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <div style="font-weight:800;color:var(--primary-dark)">🏁 풀리그 순위 결정 안내</div>
+          <span class="badge" style="background:var(--success);color:#fff">${teams.length}팀 풀리그</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--text2);margin-bottom:10px">풀리그는 결승 진출팀이 없습니다. 모든 팀이 서로 한 번씩 경기한 뒤 승수·득실로 최종 순위를 결정합니다.</div>
+        ${renderRoundRobinPreviewHTML(teams.length,'추첨 완료 후에도 본선 토너먼트가 아니라 전체 경기 결과로 순위를 확정합니다.')}
+      </div>`;
+    } else if(cfg.format==='group_knockout' && teams.length>=2){
       const preset=getPresetByGroupSize(teams.length,cfg.grpSize);
       const estGroups=preset?.groups||Math.max(1,Math.ceil(teams.length/Math.max(2,cfg.grpSize||4)));
       const estSizes=preset?.sizes||Array.from({length:estGroups},()=>Math.max(2,cfg.grpSize||4));
@@ -3679,6 +3712,12 @@ function renderBracketHTMLForDiv(tid,div,isAll){
           }
         }
       }
+    } else if(cfg.format==='roundrobin'){
+      html+=`<div class="sec-title" style="margin-top:16px">🏁 풀리그 최종 순위 결정</div>`;
+      html+=`<div class="card" style="background:linear-gradient(135deg,#f8fffb,#eefaf3);border:1.5px dashed var(--success)">
+        <div style="font-size:.78rem;color:var(--text2);margin-bottom:10px">풀리그는 결승전이나 본선 진출팀이 없습니다. 전체 경기 종료 후 순위표 기준으로 최종 순위를 확정합니다.</div>
+        ${renderRoundRobinPreviewHTML(teams.length,'전체 경기 종료 후 승수·득실·승자승 순으로 순위를 결정합니다.')}
+      </div>`;
     }
   }
 
@@ -3854,7 +3893,16 @@ function renderCombinedBracketSection(tid, div){
   }
 
   let mainHTML = '';
-  if(cfg.format==='group_knockout'){
+  if(cfg.format==='roundrobin'){
+    mainHTML = `<div class="card" style="margin:0;background:linear-gradient(135deg,#f8fffb,#eefaf3);border:1.5px dashed var(--success)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        <div class="card-title" style="color:var(--primary-dark);margin:0">🏁 풀리그 순위 결정</div>
+        <span class="badge" style="background:var(--success);color:#fff;font-size:.72rem">결승 없음</span>
+      </div>
+      <div style="font-size:.75rem;color:var(--text2);margin-bottom:10px">풀리그는 본선 나무가지가 아니라 전체 경기 결과로 최종 순위를 결정합니다.</div>
+      ${renderRoundRobinPreviewHTML(teams.length,'모든 팀이 서로 경기한 뒤 순위표로 우승·준우승·3위를 확정합니다.')}
+    </div>`;
+  } else if(cfg.format==='group_knockout'){
     const pv = buildPreviewMainSlots(draw,cfg);
     if(pv.n>=2){
       const adv=draw.advance||cfg.advance||2;
@@ -3927,17 +3975,17 @@ function renderCombinedBracketSection(tid, div){
     groupsHTML = `<div class="card" style="margin:0"><div class="empty-state" style="padding:24px"><p>예선 조별 데이터가 없습니다</p></div></div>`;
   }
 
-  const rightTitle = mMs.length ? '🏆 본선 나무가지 대진표' : '🏆 본선 나무가지 미리보기';
+  const rightTitle = cfg.format==='roundrobin' ? '🏁 풀리그 순위 결정' : (mMs.length ? '🏆 본선 나무가지 대진표' : '🏆 본선 나무가지 미리보기');
 
   return `<div style="background:linear-gradient(180deg,#f8fbff,#ffffff);border-radius:18px;padding:16px;border:1px solid #dbeafe;box-shadow:0 8px 24px rgba(0,0,0,.07);margin-bottom:18px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
       <div>
         <div style="font-size:1rem;font-weight:900;color:#1565c0">${t.name} · ${dl(div)}</div>
-        <div style="font-size:.74rem;color:#64748b">예선 + 본선을 한 화면에서 함께 보는 통합 대진표</div>
+        <div style="font-size:.74rem;color:#64748b">${cfg.format==='roundrobin' ? '풀리그는 결승 없이 전체 경기 결과로 순위를 결정합니다' : '예선 + 본선을 한 화면에서 함께 보는 통합 대진표'}</div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <span style="background:#1565c0;color:white;padding:4px 10px;border-radius:999px;font-size:.68rem;font-weight:700">예선 ${draw.groups?.length||0}조</span>
-        <span style="background:#e67e22;color:white;padding:4px 10px;border-radius:999px;font-size:.68rem;font-weight:700">${mMs.length?'본선 진행':'본선 미리보기'}</span>
+        <span style="background:#e67e22;color:white;padding:4px 10px;border-radius:999px;font-size:.68rem;font-weight:700">${cfg.format==='roundrobin'?'순위 결정':(mMs.length?'본선 진행':'본선 미리보기')}</span>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:minmax(320px,1.1fr) 44px minmax(360px,1.4fr);gap:12px;align-items:start">
@@ -4289,7 +4337,7 @@ function openDraw(tid,div){
   om('mDraw');
 }
 
-function checkSameClub(teams){const clubs=teams.map(t=>t.club);return clubs.length!==new Set(clubs).size;}
+function checkSameClub(teams){const clubs=teams.map(t=>teamBaseClub(t)).filter(Boolean);return clubs.length!==new Set(clubs).size;}
 
 function calcGroupPresets(n){
   const presets=[];const seen=new Set();
@@ -4310,7 +4358,7 @@ function buildDrawPresets(n,t,div){
   presetsEl.innerHTML='';
   let defaultIdx=presets.findIndex(p=>p.sizes[0]===(cfg.grpSize||4));if(defaultIdx<0)defaultIdx=Math.floor(presets.length/2);
   const sel=presets[defaultIdx]||presets[0];
-  DW.cfg.groups=sel.groups;DW.cfg.grpSizes=sel.sizes;DW.cfg.advance=cfg.advance||2;
+  DW.cfg.groups=sel.groups;DW.cfg.grpSizes=sel.sizes;DW.cfg.advance=cfg.advance||2;DW.cfg.format=cfg.format||'group_knockout';
   presets.forEach((p,i)=>{
     const btn=document.createElement('span');
     btn.className='grp-preset'+(i===defaultIdx?' active':'');
@@ -4337,8 +4385,34 @@ function updateAdvPresets(n){
   updateMainSizeDisplay();
 }
 
+function renderRoundRobinPreviewHTML(teamCount, labelText){
+  const rounds = Math.max(0, teamCount - 1);
+  const matches = Math.max(0, (teamCount * (teamCount - 1)) / 2);
+  return `<div style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <span class="badge" style="background:var(--primary);color:#fff">풀리그 ${teamCount}팀</span>
+      <span class="badge" style="background:var(--success);color:#fff">총 ${matches}경기 · ${rounds}라운드</span>
+    </div>
+    <div style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-lg);background:linear-gradient(135deg,#f8fffb,#eefaf3)">
+      <div style="font-weight:800;color:var(--primary-dark);margin-bottom:6px">🏁 순위 결정 방식</div>
+      <div style="font-size:.78rem;color:var(--text2);line-height:1.6">${labelText || '본선 진출 없이 전체 경기를 마친 뒤 승수·득실 등으로 최종 순위를 결정합니다.'}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(90px,1fr));gap:8px">
+      <div style="padding:10px 8px;border:1px solid var(--border);border-radius:var(--radius);background:#fff;text-align:center"><div style="font-size:.72rem;color:var(--text2)">1위</div><div style="font-weight:800;color:#1565c0;margin-top:4px">🥇 종합 1위</div></div>
+      <div style="padding:10px 8px;border:1px solid var(--border);border-radius:var(--radius);background:#fff;text-align:center"><div style="font-size:.72rem;color:var(--text2)">2위</div><div style="font-weight:800;color:#e67e22;margin-top:4px">🥈 종합 2위</div></div>
+      <div style="padding:10px 8px;border:1px solid var(--border);border-radius:var(--radius);background:#fff;text-align:center"><div style="font-size:.72rem;color:var(--text2)">3위</div><div style="font-weight:800;color:#43a047;margin-top:4px">🥉 종합 3위</div></div>
+    </div>
+  </div>`;
+}
+
 function updateMainSizeDisplay(){
-  const {groups,advance,grpSizes}=DW.cfg;if(!groups)return;
+  const {groups,advance,grpSizes,format}=DW.cfg;if(!groups)return;
+  const teamCount=(DW.teams||[]).length;
+  if(format==='roundrobin'){
+    ge('mainSizeDisplay').textContent=`풀리그 ${teamCount}팀 · 본선 진출 없이 전체 경기 후 순위 결정`;
+    updateDrawMainPreview();
+    return;
+  }
   const total=(advance||1)*groups;const np=nextPow2(total);const byes=np-total;
   ge('mainSizeDisplay').textContent=`본선 진출 ${total}팀 → ${np}강 토너먼트${byes?` (부전승 ${byes}팀)`:' (완전 대진)'}`;
   // 본선 나무가지 미리보기 갱신
@@ -4346,10 +4420,17 @@ function updateMainSizeDisplay(){
 }
 
 function updateDrawMainPreview(){
-  const {groups,advance,grpSizes}=DW.cfg;
+  const {groups,advance,grpSizes,format}=DW.cfg;
   const pvBox=ge('drawMainPreviewBox');
   const pvCont=ge('drawMainPreviewContent');
-  if(!pvBox||!pvCont||!groups||!advance) return;
+  if(!pvBox||!pvCont||!groups) return;
+  const teamCount=(DW.teams||[]).length;
+  if(format==='roundrobin'){
+    pvBox.style.display='block';
+    pvCont.innerHTML=renderRoundRobinPreviewHTML(teamCount,'풀리그는 결승 진출팀 없이 전체 경기 종료 후 최종 순위로 결정됩니다.');
+    return;
+  }
+  if(!advance) return;
   // 가상 draw 객체로 슬롯 생성
   const fakeGroups=Array.from({length:groups},(_,i)=>({i}));
   const fakeDraw={groups:fakeGroups,advance};
@@ -4397,66 +4478,57 @@ function smartShuffle(indices,teams){
     return arr;
   }
 
-  // 라운드로빈 배정 순서 (A조1→B조1→A조2→B조2→...)
-  const assignOrder=[];
-  const maxSize=Math.max(...grpSizes);
-  for(let slot=0;slot<maxSize;slot++){
-    for(let gi=0;gi<grpSizes.length;gi++){
-      if(slot<grpSizes[gi]) assignOrder.push(gi);
-    }
-  }
-
-  // 클럽별 팀 묶기
-  const byClub={};
-  indices.forEach(ti=>{
-    const c=teams[ti]?.club||'__unknown__';
-    if(!byClub[c])byClub[c]=[];
-    byClub[c].push(ti);
-  });
-
-  // 200번 시도: 매 시도마다 클럽 내 팀들을 랜덤 셔플 후, 클럽을 크기 내림차순+랜덤으로 인터리브
-  for(let attempt=0;attempt<200;attempt++){
-    // 각 클럽 내 팀 순서 랜덤화
-    const clubArrs=Object.values(byClub).map(arr=>{
-      const a=[...arr];
-      for(let i=a.length-1;i>0;i--){const j=randInt(i+1);[a[i],a[j]]=[a[j],a[i]];}
-      return a;
-    });
-    // 클럽 배열 자체도 랜덤 섞기 (같은 크기 클럽 간 순서 다양화)
-    for(let i=clubArrs.length-1;i>0;i--){const j=randInt(i+1);[clubArrs[i],clubArrs[j]]=[clubArrs[j],clubArrs[i]];}
-    // 큰 클럽 우선 인터리브 (클럽 분산 핵심)
-    clubArrs.sort((a,b)=>b.length-a.length);
-    const interleaved=[];
-    const maxLen=clubArrs[0]?.length||0;
-    for(let i=0;i<maxLen;i++){
-      for(const ca of clubArrs){if(i<ca.length)interleaved.push(ca[i]);}
-    }
-
-    // assignOrder 기준으로 조 배정 시뮬레이션
-    const grps=grpSizes.map(()=>[]);
-    assignOrder.forEach((gi,pos)=>{if(pos<interleaved.length)grps[gi].push(interleaved[pos]);});
-
-    // 충돌 검사: 같은 조에 같은 클럽 있는지
-    let conflict=false;
-    for(const grp of grps){
-      const clubs=grp.map(ti=>teams[ti]?.club);
-      if(clubs.length!==new Set(clubs).size){conflict=true;break;}
-    }
-    if(!conflict) return interleaved;
-  }
-
-  // 200번 실패 → 최선의 결과 반환 (충돌 최소화)
-  const clubArrs=Object.values(byClub).map(arr=>{
+  const shuffledCopy=(arr)=>{
     const a=[...arr];
     for(let i=a.length-1;i>0;i--){const j=randInt(i+1);[a[i],a[j]]=[a[j],a[i]];}
     return a;
-  });
-  clubArrs.sort((a,b)=>b.length-a.length);
-  const result=[];
-  const maxLen=clubArrs[0]?.length||0;
-  for(let i=0;i<maxLen;i++){for(const ca of clubArrs){if(i<ca.length)result.push(ca[i]);}}
-  toast('⚠️ 같은 클럽이 너무 많아 완전 분리가 어렵습니다','info');
-  return result;
+  };
+
+  let bestOrder=null;
+  let bestPenalty=Infinity;
+
+  for(let attempt=0;attempt<300;attempt++){
+    const order=shuffledCopy(indices);
+    const groups=grpSizes.map(()=>[]);
+
+    for(const candidateIdx of order){
+      let bestGroupIdx=-1;
+      let bestLocalPenalty=Infinity;
+      let bestGroupSize=Infinity;
+
+      for(let gi=0;gi<groups.length;gi++){
+        const group=groups[gi];
+        if(group.length>=grpSizes[gi]) continue;
+
+        const sameClubCount=countSameClubInGroup(group,candidateIdx,teams);
+        const localPenalty=sameClubCount;
+
+        if(localPenalty<bestLocalPenalty || (localPenalty===bestLocalPenalty && group.length<bestGroupSize)){
+          bestLocalPenalty=localPenalty;
+          bestGroupSize=group.length;
+          bestGroupIdx=gi;
+        }
+      }
+
+      if(bestGroupIdx!==-1) groups[bestGroupIdx].push(candidateIdx);
+    }
+
+    const penalty=calcSameClubPenalty(groups,teams);
+    if(penalty<bestPenalty){
+      bestPenalty=penalty;
+      bestOrder=[];
+      const maxSize=Math.max(...grpSizes);
+      for(let slot=0;slot<maxSize;slot++){
+        for(let gi=0;gi<groups.length;gi++){
+          if(slot<groups[gi].length) bestOrder.push(groups[gi][slot]);
+        }
+      }
+      if(bestPenalty===0) return bestOrder;
+    }
+  }
+
+  if(bestPenalty>0) toast('⚠️ 같은 클럽 완전 분리가 불가능해서 최소 충돌로 배치했습니다','info');
+  return bestOrder || [...indices];
 }
 
 /* =========================
@@ -4789,6 +4861,10 @@ function refreshRunPreview(key){
   const freshDraw=G.draws[key];
   const dst=ge('drawRunPreviewContent');
   if(!freshDraw||!dst) return;
+  if((DW.cfg?.format)==='roundrobin'){
+    dst.innerHTML=renderRoundRobinPreviewHTML((DW.teams||[]).length,'풀리그는 결승 없이 모든 경기 종료 후 순위표로 최종 순위를 확정합니다.');
+    return;
+  }
   const pv=buildPreviewMainSlots(freshDraw,{});
   if(pv.n>=2){
     const adv=freshDraw.advance||2, gc=freshDraw.groups?.length||0;
