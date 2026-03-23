@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "v26.7-roundrobin-preview-fix";
+  const APP_VERSION = "v26.9-reg-div-filter-export-fix";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -741,7 +741,14 @@ body{overflow-x:hidden;}
 </div>
 
 <div class="page" id="page-register">
-  <div class="sec-title">팀 등록</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+    <div class="sec-title" style="margin-bottom:0">팀 등록</div>
+    <div id="regExportBar" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-outline" style="font-size:.75rem;padding:5px 10px" onclick="saveRegListImage()">🖼️ 이미지 저장</button>
+      <button class="btn btn-outline" style="font-size:.75rem;padding:5px 10px;background:#fee500;border-color:#f9c400;color:#3c1e1e;font-weight:700" onclick="saveRegListKakao()">💛 카톡용 이미지</button>
+      <button class="btn btn-outline" style="font-size:.75rem;padding:5px 10px" onclick="saveRegListPDF()">📄 PDF 저장</button>
+    </div>
+  </div>
   <!-- 팀등록 로그인 안내 (비로그인 상태) -->
   <div id="regLoginPrompt" style="display:none">
     <div style="padding:20px 16px;background:linear-gradient(135deg,#e3f2fd,#bbdefb);border-radius:var(--radius-lg);border:2px solid var(--primary-light);text-align:center;margin-bottom:16px">
@@ -833,9 +840,11 @@ body{overflow-x:hidden;}
     <div class="card" id="regRosterPreviewCard" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:2px">
         <div class="card-title" style="margin-bottom:0">📋 등록 팀 현황</div>
-        <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
           <span id="regTCnt" class="badge bg-green">0팀</span>
           <span id="regRosterMiniCount" class="badge bg-blue">0명</span>
+          <button class="btn btn-outline" style="font-size:.75rem;padding:5px 10px" onclick="saveRegRosterImage()">🖼️ 이미지 저장</button>
+          <button class="btn btn-outline" style="font-size:.75rem;padding:5px 10px" onclick="saveRegRosterPDF()">📄 PDF 저장</button>
         </div>
       </div>
       <div style="font-size:.72rem;color:var(--text3);margin-bottom:12px">밑줄 + <span class="first-appearance-star">★</span> 표시는 첫 출전 선수입니다.</div>
@@ -3063,7 +3072,6 @@ function renderRegDivisionBoard(tid){
 
   // regSection이 wrap 안에 있으면 innerHTML 교체 전에 꺼내서 보존
   const section=ge('regSection');
-  const sectionParent=section?.parentElement;
   if(section && wrap.contains(section)){
     document.body.appendChild(section);
   }
@@ -3078,7 +3086,11 @@ function renderRegDivisionBoard(tid){
     msg.style.display='block';
     msg.innerHTML=`⛔ 이 대회는 현재 <b>${statusLabel}</b> 상태입니다. 팀 등록은 <b>접수중 대회</b>에서만 가능합니다.`;
   }
-  const divs=[...(t.divisions||[])].sort((a,b)=>regDivisionOrder(a)-regDivisionOrder(b));
+
+  const selectedDiv=(ge('regDS')?.value||'').trim();
+  const allDivs=[...(t.divisions||[])].sort((a,b)=>regDivisionOrder(a)-regDivisionOrder(b));
+  const divs=(selectedDiv && allDivs.includes(selectedDiv)) ? [selectedDiv] : allDivs;
+
   const html=divs.map(div=>{
     const key=tid+'_'+div;
     const teams=(G.teams[key]||[]).slice();
@@ -3255,10 +3267,12 @@ function renderRL(){
   const tid=ge('regTS').value,div=ge('regDS').value;
   const section=ge('regSection');
   const previewCard=ge('regRosterPreviewCard');
-  if(previewCard) previewCard.style.display='none';
+
+  renderRegDivisionBoard(tid);
 
   if(!tid||!div){
     if(section) section.style.display='none';
+    if(previewCard) previewCard.style.display='none';
     return;
   }
 
@@ -3304,6 +3318,7 @@ function renderRL(){
   const key=tid+'_'+div,teams=G.teams[key]||[];
   const regTCnt=ge('regTCnt'); if(regTCnt) regTCnt.textContent=teams.length+'팀';
   const regNo=ge('regNo'); if(regNo) regNo.value=teams.length+1;
+  renderRegistrationRosterPreview(tid,div,teams,key);
 }
 async function registerTeam(){
   const tid=ge('regTS').value,div=ge('regDS').value,club=ge('regClub').value;
@@ -4031,6 +4046,263 @@ async function saveBracketViewImage(){
     a.click();
     toast('이미지 저장 완료 🖼️','success');
   }catch(e){ toast('이미지 저장 실패: '+e.message,'error'); }
+}
+
+async function saveRegRosterImage(){
+  const el = ge('regRosterPreviewCard');
+  if(!el || el.style.display==='none' || !ge('regRosterPreviewBody')?.innerHTML?.trim()){
+    toast('등록 팀 현황을 먼저 표시해 주세요','info');
+    return;
+  }
+  try{
+    if(!window.html2canvas){
+      await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
+    }
+    toast('팀등록 이미지 생성 중...','info');
+    const canvas = await html2canvas(el,{backgroundColor:'#f0f4fa',scale:3,useCORS:true,logging:false});
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `팀등록현황_${new Date().toISOString().substring(0,10)}.png`;
+    a.click();
+    toast('팀등록 이미지 저장 완료 🖼️','success');
+  }catch(e){ toast('팀등록 이미지 저장 실패: '+e.message,'error'); }
+}
+
+async function saveRegRosterPDF(){
+  const el = ge('regRosterPreviewCard');
+  if(!el || el.style.display==='none' || !ge('regRosterPreviewBody')?.innerHTML?.trim()){
+    toast('등록 팀 현황을 먼저 표시해 주세요','info');
+    return;
+  }
+  try{
+    if(!window.html2canvas){
+      await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
+    }
+    if(!window.jspdf){
+      await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
+    }
+    toast('팀등록 PDF 생성 중...','info');
+    const canvas = await html2canvas(el,{backgroundColor:'#f0f4fa',scale:3,useCORS:true,logging:false});
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    const imgW = pageW - margin*2;
+    const imgH = canvas.height * imgW / canvas.width;
+    const imgData = canvas.toDataURL('image/png');
+    if(imgH <= pageH - margin*2){
+      pdf.addImage(imgData,'PNG',margin,margin,imgW,imgH);
+    }else{
+      let remaining = imgH;
+      let position = 0;
+      pdf.addImage(imgData,'PNG',margin,margin + position,imgW,imgH);
+      remaining -= (pageH - margin*2);
+      while(remaining > 0){
+        position -= (pageH - margin*2);
+        pdf.addPage();
+        pdf.addImage(imgData,'PNG',margin,margin + position,imgW,imgH);
+        remaining -= (pageH - margin*2);
+      }
+    }
+    pdf.save(`팀등록현황_${new Date().toISOString().substring(0,10)}.pdf`);
+    toast('팀등록 PDF 저장 완료 📄','success');
+  }catch(e){ toast('팀등록 PDF 저장 실패: '+e.message,'error'); }
+}
+
+// ── 팀 등록 명단 전체 내보내기 (로그인 불필요) ──────────────────────────────
+
+async function _buildRegListCaptureEl(){
+  // 현재 선택된 대회/부서 파악
+  const tid = ge('regTS')?.value || '';
+  const selDiv = ge('regDS')?.value || '';
+  const t = G.tournaments.find(x=>x.id===tid);
+  if(!t){ toast('대회를 먼저 선택해 주세요','info'); return null; }
+
+  // 부서 목록: 부서 선택 시 해당 부서만, 전체 선택 시 전 부서
+  const allDivs = [...(t.divisions||[])].sort((a,b)=>regDivisionOrder(a)-regDivisionOrder(b));
+  const targetDivs = (selDiv && allDivs.includes(selDiv)) ? [selDiv] : allDivs;
+
+  // 캡처용 임시 div 생성 (화면 밖)
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:480px;background:#f0f4fa;padding:16px;font-family:inherit;z-index:-1';
+
+  // 헤더
+  const tname = t.name || '대회';
+  const tdate = t.date ? `📅 ${t.date}` : '';
+  const divLabel = selDiv ? dl(selDiv) : '전체 부서';
+  wrap.innerHTML = `
+    <div style="text-align:center;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #3b6fd8">
+      <div style="font-size:1.1rem;font-weight:800;color:#0f1e3a">${tname}</div>
+      ${tdate ? `<div style="font-size:.78rem;color:#555;margin-top:3px">${tdate}</div>` : ''}
+      <div style="font-size:.82rem;color:#3b6fd8;font-weight:700;margin-top:4px">📋 팀 등록 현황 — ${divLabel}</div>
+    </div>`;
+
+  // 부서별 팀 목록
+  targetDivs.forEach(div=>{
+    const key = tid+'_'+div;
+    const teams = (G.teams[key]||[]).slice();
+    const sorted = teams.map((team,i)=>({team,i})).sort((x,y)=>{
+      const c=(baseClub(x.team.club||'')||x.team.club||'').localeCompare((baseClub(y.team.club||'')||y.team.club||''),'ko');
+      if(c!==0) return c;
+      return (x.team.club||'').localeCompare((y.team.club||''),'ko');
+    });
+
+    const divSection = document.createElement('div');
+    divSection.style.cssText = 'margin-bottom:14px';
+
+    let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 10px;background:#3b6fd8;border-radius:8px">
+      <span style="font-weight:800;color:#fff;font-size:.92rem">${dl(div)}</span>
+      <span style="background:rgba(255,255,255,.25);color:#fff;font-size:.72rem;font-weight:700;padding:1px 8px;border-radius:10px">${teams.length}팀</span>
+    </div>`;
+
+    if(sorted.length===0){
+      html += `<div style="font-size:.78rem;color:#888;padding:4px 6px">등록된 팀 없음</div>`;
+    } else {
+      sorted.forEach(({team,i})=>{
+        const players = (team.players||[]).filter(Boolean);
+        const dbl = team.doublesCount || 5;
+        const main = players.slice(0, dbl*2);
+        const sub = players.slice(dbl*2);
+        const no = i+1;
+        html += `<div style="border:1px solid #d1d9e6;border-radius:10px;overflow:hidden;background:#fff;margin-bottom:8px">
+          <div style="background:#0f1e3a;color:#fff;padding:7px 12px;display:flex;align-items:center;justify-content:space-between">
+            <span style="font-weight:800;font-size:.88rem">${no}. ${team.club||''}</span>
+            <span style="font-size:.72rem;opacity:.82">${players.length}명 / ${dbl}복식</span>
+          </div>
+          <div style="padding:8px 12px;display:flex;flex-wrap:wrap;gap:4px">
+            ${main.map((p,idx)=>`<span style="background:#f0f4fa;border:1px solid #cdd5e0;border-radius:6px;padding:2px 8px;font-size:.78rem;font-weight:600">${idx+1}. ${p}</span>`).join('')}
+            ${sub.map(p=>`<span style="background:#f8f9fa;border:1px dashed #b0b8c8;border-radius:6px;padding:2px 8px;font-size:.75rem;color:#666">후보. ${p}</span>`).join('')}
+          </div>
+        </div>`;
+      });
+    }
+    divSection.innerHTML = html;
+    wrap.appendChild(divSection);
+  });
+
+  // 푸터
+  const footer = document.createElement('div');
+  footer.style.cssText = 'text-align:right;font-size:.68rem;color:#999;margin-top:8px;border-top:1px solid #dde3ee;padding-top:6px';
+  footer.textContent = `출력일시: ${new Date().toLocaleString('ko-KR')}`;
+  wrap.appendChild(footer);
+
+  document.body.appendChild(wrap);
+  return wrap;
+}
+
+async function _loadHtml2canvas(){
+  if(!window.html2canvas){
+    await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
+  }
+}
+
+async function saveRegListImage(){
+  const tid = ge('regTS')?.value || '';
+  if(!tid){ toast('대회를 먼저 선택해 주세요','info'); return; }
+  try{
+    await _loadHtml2canvas();
+    toast('이미지 생성 중...','info');
+    const wrap = await _buildRegListCaptureEl();
+    if(!wrap) return;
+    const selDiv = ge('regDS')?.value || '';
+    const t = G.tournaments.find(x=>x.id===tid);
+    const divLabel = selDiv ? dl(selDiv) : '전체';
+    const filename = `팀등록명단_${(t?.name||'').replace(/\s/g,'')}_${divLabel}_${new Date().toISOString().substring(0,10)}.png`;
+    // 렌더 전 잠깐 대기 (레이아웃 안정화)
+    await new Promise(r=>setTimeout(r,80));
+    const canvas = await html2canvas(wrap,{backgroundColor:'#f0f4fa',scale:3,useCORS:true,logging:false});
+    document.body.removeChild(wrap);
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = filename;
+    a.click();
+    toast('이미지 저장 완료 🖼️','success');
+  }catch(e){ toast('이미지 저장 실패: '+e.message,'error'); }
+}
+
+async function saveRegListKakao(){
+  const tid = ge('regTS')?.value || '';
+  if(!tid){ toast('대회를 먼저 선택해 주세요','info'); return; }
+  try{
+    await _loadHtml2canvas();
+    toast('카톡용 이미지 생성 중...','info');
+    const wrap = await _buildRegListCaptureEl();
+    if(!wrap) return;
+    const selDiv = ge('regDS')?.value || '';
+    const t = G.tournaments.find(x=>x.id===tid);
+    const divLabel = selDiv ? dl(selDiv) : '전체';
+    const filename = `카톡_팀등록명단_${(t?.name||'').replace(/\s/g,'')}_${divLabel}_${new Date().toISOString().substring(0,10)}.png`;
+    await new Promise(r=>setTimeout(r,80));
+    const canvas = await html2canvas(wrap,{backgroundColor:'#f0f4fa',scale:3,useCORS:true,logging:false});
+    document.body.removeChild(wrap);
+    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    if(isMobile && navigator.share){
+      // 모바일: Web Share API → 카카오 공유 가능
+      canvas.toBlob(async(blob)=>{
+        try{
+          const file = new File([blob], filename, {type:'image/png'});
+          await navigator.share({files:[file], title:filename});
+          toast('카카오톡 공유창을 열었습니다.','success');
+        }catch(err){
+          // 공유 취소 또는 실패 → 다운로드로 대체
+          const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+          toast('이미지 저장됨 — 카카오톡에서 직접 공유하세요','info');
+        }
+      },'image/png');
+    }else{
+      // PC: 이미지 다운로드
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = filename;
+      a.click();
+      toast('이미지 저장 완료 — 카카오톡에 첨부하세요 💛','success');
+    }
+  }catch(e){ toast('카톡용 이미지 실패: '+e.message,'error'); }
+}
+
+async function saveRegListPDF(){
+  const tid = ge('regTS')?.value || '';
+  if(!tid){ toast('대회를 먼저 선택해 주세요','info'); return; }
+  try{
+    await _loadHtml2canvas();
+    if(!window.jspdf){
+      await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
+    }
+    toast('PDF 생성 중...','info');
+    const wrap = await _buildRegListCaptureEl();
+    if(!wrap) return;
+    const selDiv = ge('regDS')?.value || '';
+    const t = G.tournaments.find(x=>x.id===tid);
+    const divLabel = selDiv ? dl(selDiv) : '전체';
+    const filename = `팀등록명단_${(t?.name||'').replace(/\s/g,'')}_${divLabel}_${new Date().toISOString().substring(0,10)}.pdf`;
+    await new Promise(r=>setTimeout(r,80));
+    const canvas = await html2canvas(wrap,{backgroundColor:'#f0f4fa',scale:3,useCORS:true,logging:false});
+    document.body.removeChild(wrap);
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    const imgW = pageW - margin*2;
+    const imgH = canvas.height * imgW / canvas.width;
+    const imgData = canvas.toDataURL('image/png');
+    if(imgH <= pageH - margin*2){
+      pdf.addImage(imgData,'PNG',margin,margin,imgW,imgH);
+    }else{
+      let remaining = imgH, position = 0;
+      pdf.addImage(imgData,'PNG',margin,margin+position,imgW,imgH);
+      remaining -= (pageH-margin*2);
+      while(remaining>0){
+        position -= (pageH-margin*2);
+        pdf.addPage();
+        pdf.addImage(imgData,'PNG',margin,margin+position,imgW,imgH);
+        remaining -= (pageH-margin*2);
+      }
+    }
+    pdf.save(filename);
+    toast('PDF 저장 완료 📄','success');
+  }catch(e){ toast('PDF 저장 실패: '+e.message,'error'); }
 }
 
 function renderBracketTree(key,mMs,teams){
@@ -8683,6 +8955,7 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   onRegClubChange,onRegContactInput,saveRegContact,
   renderAdminContactList,saveContactFromAdmin,renderAdminNoticeSection,
   prefillNoticeMsg,renderNoticeContactBtns,captureAndShareBracket,
+  saveRegListImage,saveRegListKakao,saveRegListPDF,
   toggleClubSel,selAllClubs,sendSmsSelected,sendSmsAll,sendKakaoSelected,sendKakaoAll,copyMsgOnly,
   gDS,om,cm,toast,ge,esc,setRbSc,
   buildDrawPresets,updateAdvPresets,updateMainSizeDisplay,calcGroupPresets,
