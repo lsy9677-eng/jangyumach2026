@@ -4160,6 +4160,7 @@ async function _buildRegListCaptureEl(){
       html += `<div style="font-size:.78rem;color:#888;padding:4px 6px">등록된 팀 없음</div>`;
     } else {
       sorted.forEach(({team,i})=>{
+        const teamName = tdn(team, key, i);
         const players = (team.players||[]).filter(Boolean);
         const dbl = team.doublesCount || 5;
         const main = players.slice(0, dbl*2);
@@ -4167,7 +4168,7 @@ async function _buildRegListCaptureEl(){
         const no = i+1;
         html += `<div style="border:1px solid #d1d9e6;border-radius:10px;overflow:hidden;background:#fff;margin-bottom:8px">
           <div style="background:#0f1e3a;color:#fff;padding:7px 12px;display:flex;align-items:center;justify-content:space-between">
-            <span style="font-weight:800;font-size:.88rem">${no}. ${team.club||''}</span>
+            <span style="font-weight:800;font-size:.88rem">${no}. ${teamName}</span>
             <span style="font-size:.72rem;opacity:.82">${players.length}명 / ${dbl}복식</span>
           </div>
           <div style="padding:8px 12px;display:flex;flex-wrap:wrap;gap:4px">
