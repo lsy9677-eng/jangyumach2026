@@ -131,6 +131,9 @@ table tr:hover td{background:var(--panel2);}
 table tr:nth-child(even) td{background:var(--bg);}
 table tr:nth-child(even):hover td{background:var(--panel2);}
 .badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:.7rem;font-weight:700;}
+.live-blink{animation:liveBlink 1.1s ease-in-out infinite;}
+.live-card{border-color:#f5a623 !important; box-shadow:0 0 0 2px rgba(245,166,35,.14), var(--shadow);}
+@keyframes liveBlink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.04)}}
 .bg-gold{background:#fef3cd;color:#856404;border:1px solid #ffd700;}
 .bg-silver{background:#f0f0f0;color:#5a5a5a;border:1px solid #aaa;}
 .bg-bronze{background:#fde8d0;color:#8a4500;border:1px solid #cd7f32;}
@@ -3553,6 +3556,87 @@ function renderBracket(){
   if(_eb) _eb.style.display = html && html.length>200 ? 'flex' : 'none';
 }
 
+
+function renderMatchProgressSummary(key){
+  const list = G.matches[key] || [];
+  if(!list.length) return '';
+
+  function isDone(m){ return !!(m && m.winner != null); }
+  function isPlaying(m){
+    if(!m || isDone(m)) return false;
+    const rbs = Array.isArray(m.rubbers) ? m.rubbers : [];
+    return rbs.some(rb => rb && (
+      rb.score1 != null || rb.score2 != null ||
+      (Array.isArray(rb.players1) && rb.players1.length) ||
+      (Array.isArray(rb.players2) && rb.players2.length)
+    ));
+  }
+
+  const totalAll = list.length;
+  const doneAll = list.filter(isDone).length;
+  const playingAll = list.filter(isPlaying).length;
+  const remainAll = Math.max(0, totalAll - doneAll);
+
+  const groups = {};
+  let main = { total:0, done:0, playing:0 };
+
+  list.forEach(m=>{
+    if(m.phase === 'group' && m.group != null){
+      const gi = Number(m.group);
+      if(!groups[gi]) groups[gi] = { total:0, done:0, playing:0 };
+      groups[gi].total++;
+      if(isDone(m)) groups[gi].done++;
+      else if(isPlaying(m)) groups[gi].playing++;
+    }else{
+      main.total++;
+      if(isDone(m)) main.done++;
+      else if(isPlaying(m)) main.playing++;
+    }
+  });
+
+  const groupHtml = Object.keys(groups).map(Number).sort((a,b)=>a-b).map(gi=>{
+    const s = groups[gi];
+    const remain = Math.max(0, s.total - s.done);
+    const liveCls = s.playing > 0 ? ' live-card' : '';
+    const liveBadgeCls = s.playing > 0 ? ' live-blink' : '';
+    return `<div class="card${liveCls}" style="padding:10px 12px;background:linear-gradient(180deg,#fff,#f7faff)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <div style="font-weight:900;color:var(--primary-dark)">${grpLabel(gi)} 현황</div>
+        ${s.playing > 0 ? `<span class="badge${liveBadgeCls}" style="background:#fff3cd;color:#9a6400;border:1px solid #f5a623">진행중</span>` : ''}
+      </div>
+      <div style="font-size:.86rem;font-weight:800;color:var(--primary-dark);margin-top:6px">
+        진행중 ${s.playing} / 잔여 ${remain}
+      </div>
+    </div>`;
+  }).join('');
+
+  const mainRemain = Math.max(0, main.total - main.done);
+  const mainHtml = main.total ? `<div class="card${main.playing>0?' live-card':''}" style="padding:10px 12px;background:linear-gradient(180deg,#fff,#f7faff)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <div style="font-weight:900;color:var(--primary-dark)">본선 현황</div>
+        ${main.playing > 0 ? `<span class="badge live-blink" style="background:#fff3cd;color:#9a6400;border:1px solid #f5a623">진행중</span>` : ''}
+      </div>
+      <div style="font-size:.86rem;font-weight:800;color:var(--primary-dark);margin-top:6px">
+        진행중 ${main.playing} / 잔여 ${mainRemain}
+      </div>
+    </div>` : '';
+
+  return `<div class="card" style="margin-top:12px;background:linear-gradient(135deg,#f9fbff,#eef4ff);border:1.5px solid #d7e3ff">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <div style="font-weight:900;color:var(--primary-dark);font-size:.92rem">📊 경기 진행 현황</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="badge" style="background:#dbeafe;color:#1d4ed8">전체 ${totalAll}경기</span>
+        <span class="badge ${playingAll>0?'live-blink':''}" style="background:#fff7e8;color:#9a6400">${playingAll}경기 진행중</span>
+        <span class="badge" style="background:#f3f4f6;color:#374151">잔여 ${remainAll}경기</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">
+      ${groupHtml}
+      ${mainHtml}
+    </div>
+  </div>`;
+}
+
 function renderBracketHTMLForDiv(tid,div,isAll){
   const key=tid+'_'+div;
   const teams=G.teams[key]||[];
@@ -3597,6 +3681,8 @@ function renderBracketHTMLForDiv(tid,div,isAll){
       <div class="sf-step"><div class="sf-dot ${s3?'sf-done':s2?'sf-active':'sf-pend'}">${s3?'✓':3}</div><div class="sf-lbl">예선<br>${gMs.length?gDone+'/'+gMs.length:'미시작'}</div></div>
       ${cfg.format==='group_knockout'?`<div class="sf-step"><div class="sf-dot ${s4?'sf-done':s3?'sf-active':'sf-pend'}">${s4?'🏆':4}</div><div class="sf-lbl">본선<br>${mMs.length?mMs.filter(m=>m.winner!==null).length+'/'+mMs.length:'미시작'}</div></div>`:''}
     </div></div>`;
+
+  html += renderMatchProgressSummary(key);
 
   if(!draw){
     if(cfg.format==='roundrobin' && teams.length>=2){
@@ -3673,7 +3759,7 @@ function renderBracketHTMLForDiv(tid,div,isAll){
       html+=`</div>
         <div class="grp-matches-section">
           <div class="grp-matches-label">📋 경기 목록</div>`;
-      gms.forEach(m=>{
+      sortMatchesForDisplay(gms, key).forEach(m=>{
         const mt1=teams[m.t1],mt2=teams[m.t2];
         if(!mt1||!mt2)return;
         const dn1=tdn(mt1,key,m.t1),dn2=tdn(mt2,key,m.t2);
@@ -3753,7 +3839,7 @@ function renderBracketHTMLForDiv(tid,div,isAll){
 
     html+=`<div class="sec-title" style="margin-top:14px">⚡ 본선 경기 현황</div>`;
     rounds.forEach(r=>{
-      const rms=mMs.filter(m=>m.round===r).sort((a,b)=>a.slot-b.slot);
+      const rms=sortMatchesForDisplay(mMs.filter(m=>m.round===r), key);
       const lbl=r===rounds[rounds.length-1]?'결승':r===totalR-2&&totalR>2?'준결승':`${Math.pow(2,totalR-r)}강`;
       html+=`<div style="font-size:.82rem;font-weight:700;color:var(--primary-dark);margin:8px 0 4px;padding-left:4px">— ${lbl}</div>`;
       rms.forEach(m=>{
@@ -3847,8 +3933,7 @@ function mCard(m,key,dn1,dn2,done,sc1,sc2,label){
     : (mCourts.length ? `<span style="font-size:.7rem;font-weight:600;background:${isWaiting?'rgba(245,166,35,.3)':'rgba(255,255,255,.22)'};color:${isWaiting?'#ffe082':'white'};padding:2px 9px;border-radius:12px;border:1px solid ${isWaiting?'rgba(245,166,35,.6)':'rgba(255,255,255,.4)'}">${courtLabel}</span>` : '');
 
   const btn=AD?`<button class="btn ${done?'btn-gray':'btn-accent'}" style="padding:5px 12px;font-size:.77rem;white-space:nowrap" onclick="openM3('${key}','${m.id}')">${done?'✏️ 수정':'⚡ 결과입력'}</button>`:'';
-  return`<div class="m3card"><div class="m3hdr"><div style="display:flex;align-items:center;gap:7px"><span class="m3badge">${label}</span><span style="font-size:.82rem;font-weight:700">${dn1} vs ${dn2}</span></div><div style="display:flex;align-items:center;gap:7px">${grpCourtBadge} ${courtUI} ${done?'<span class="badge bg-green" style="font-size:.68rem">완료</span>':'<span style="font-size:.7rem;opacity:.7">대기중</span>'} ${btn}</div></div>
-    <div class="m3body">${done?`<div class="m3sc-row"><div class="m3tnm ${wn1?'win':'lose'}">${wn1?'🏆 ':''} ${dn1}</div><div class="m3sc">${sc1}:${sc2}</div><div class="m3tnm ${wn2?'win':'lose'}">${dn2} ${wn2?' 🏆':''}</div></div>`:`<div style="text-align:center;color:var(--text3);font-size:.8rem;margin-bottom:6px">경기 대기중</div>`}
+  return`<div class="m3card"><div class="m3hdr"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="m3badge">${label}</span><span style="font-size:.82rem;font-weight:700">${dn1} vs ${dn2}</span></div><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">${grpCourtBadge} ${courtUI} ${done?'<span class="badge bg-green" style="font-size:.68rem">완료</span>':'<span style="font-size:.7rem;opacity:.7">대기중</span>'} ${btn}</div></div>
     <div style="font-size:.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">${dbl}복식 상세 (6게임 선취 승리 · 타이브렉)</div>
     <div class="rb-rows">${rbH}</div></div></div>`;
 }
@@ -8037,6 +8122,296 @@ function runAutoOrder(){
   })();
 }
 
+
+function getMatchOrderValue(m){
+  if(m && Number.isFinite(Number(m.matchOrder))) return Number(m.matchOrder);
+  if(m && m.winner != null) return 900000 + (Number(m.round)||0)*100 + (Number(m.slot)||0);
+  return 100000 + (Number(m.round)||0)*100 + (Number(m.slot)||0);
+}
+function parseMatchTimeToMinutes(v){
+  if(!v || typeof v!=='string' || !/^\d{2}:\d{2}$/.test(v)) return null;
+  const [hh,mm]=v.split(':').map(Number);
+  if(!Number.isFinite(hh)||!Number.isFinite(mm)) return null;
+  return hh*60+mm;
+}
+function formatMinutesToHHMM(total){
+  if(!Number.isFinite(total)) return '';
+  const hh = String(Math.floor(total/60)).padStart(2,'0');
+  const mm = String(total%60).padStart(2,'0');
+  return `${hh}:${mm}`;
+}
+const MATCH_TIME_OPTIONS = Array.from({length:85},(_,i)=>formatMinutesToHHMM(8*60 + i*10));
+function getMatchDisplayOrder(m){
+  return (m && Number.isFinite(Number(m.courtOrder)) && Number(m.courtOrder) > 0) ? Number(m.courtOrder) : null;
+}
+function getMatchPrimaryCourt(m){
+  if(m?.court) return m.court;
+  const courts = Array.isArray(m?.courts) ? m.courts.filter(Boolean) : [];
+  return courts.length ? courts[0] : '';
+}
+function getMatchTimeText(m){
+  if(m?.matchStartTime) return m.matchStartTime;
+  if(Number.isFinite(Number(m?.matchSlotIndex))){
+    return formatMinutesToHHMM(9*60 + Number(m.matchSlotIndex)*50);
+  }
+  return '';
+}
+
+function getGroupDisplayPriority(key, m){
+  if(!m || m.phase !== 'group' || m.group == null) return null;
+  const grp = G.draws[key]?.groups?.[Number(m.group)];
+  const gTeams = Array.isArray(grp?.teams) ? grp.teams : [];
+  if(gTeams.length < 2) return null;
+
+  const idxs = [gTeams.indexOf(m.t1), gTeams.indexOf(m.t2)].sort((x,y)=>x-y);
+  if(idxs[0] < 0 || idxs[1] < 0) return null;
+  const pk = `${idxs[0]}-${idxs[1]}`;
+
+  if(gTeams.length === 4){
+    const map = {
+      '0-1': 0, '2-3': 1,
+      '0-2': 2, '1-3': 3,
+      '0-3': 4, '1-2': 5
+    };
+    return map[pk] ?? 999;
+  }
+
+  if(gTeams.length === 3){
+    if(pk === '0-1') return 0;
+
+    const groupMatches = (G.matches[key] || []).filter(x => x.phase === 'group' && Number(x.group) === Number(m.group));
+    const firstMatch = groupMatches.find(x => {
+      const p = [gTeams.indexOf(x.t1), gTeams.indexOf(x.t2)].sort((a,b)=>a-b).join('-');
+      return p === '0-1';
+    });
+
+    if(firstMatch && firstMatch.winner != null){
+      const waiting = gTeams[2];
+      const winnerPair = [firstMatch.winner, waiting].sort((a,b)=>String(a).localeCompare(String(b))).join('|');
+      const thisPair = [m.t1, m.t2].sort((a,b)=>String(a).localeCompare(String(b))).join('|');
+      return thisPair === winnerPair ? 1 : 2;
+    }
+
+    if(pk === '0-2') return 1;
+    if(pk === '1-2') return 2;
+  }
+
+  return null;
+}
+
+function compareMatchesBySchedule(a,b){
+  const at=parseMatchTimeToMinutes(getMatchTimeText(a));
+  const bt=parseMatchTimeToMinutes(getMatchTimeText(b));
+  if(at!=null || bt!=null){
+    if(at==null) return 1;
+    if(bt==null) return -1;
+    if(at!==bt) return at-bt;
+  }
+  const as=Number.isFinite(Number(a?.matchSlotIndex)) ? Number(a.matchSlotIndex) : 99999;
+  const bs=Number.isFinite(Number(b?.matchSlotIndex)) ? Number(b.matchSlotIndex) : 99999;
+  if(as!==bs) return as-bs;
+  const ao=Number.isFinite(Number(a?.matchOrder)) ? Number(a.matchOrder) : 99999;
+  const bo=Number.isFinite(Number(b?.matchOrder)) ? Number(b.matchOrder) : 99999;
+  if(ao!==bo) return ao-bo;
+  return (Number(a?.slot)||0) - (Number(b?.slot)||0);
+}
+function sortMatchesForDisplay(list, key){
+  return [...(list||[])].sort((a,b)=>{
+    const ag = Number(a.group ?? 999), bg = Number(b.group ?? 999);
+    if(a.phase === 'group' && b.phase === 'group' && ag !== bg) return ag - bg;
+
+    if(key && a.phase === 'group' && b.phase === 'group' && ag === bg){
+      const ap = getGroupDisplayPriority(key, a);
+      const bp = getGroupDisplayPriority(key, b);
+      if(ap != null || bp != null){
+        if(ap == null) return 1;
+        if(bp == null) return -1;
+        if(ap !== bp) return ap - bp;
+      }
+    }
+
+    const ac=getMatchPrimaryCourt(a), bc=getMatchPrimaryCourt(b);
+    const sc = compareMatchesBySchedule(a,b);
+    if(ac===bc && sc!==0) return sc;
+    const at=parseMatchTimeToMinutes(getMatchTimeText(a));
+    const bt=parseMatchTimeToMinutes(getMatchTimeText(b));
+    if(at!=null || bt!=null){
+      if(at==null) return 1;
+      if(bt==null) return -1;
+      if(at!==bt) return at-bt;
+      if(ac!==bc) return ac.localeCompare(bc,'ko');
+      if(sc!==0) return sc;
+    }
+    const ao=getMatchOrderValue(a), bo=getMatchOrderValue(b);
+    if(ao!==bo) return ao-bo;
+    const ap2=(a.phase||''), bp2=(b.phase||'');
+    if(ap2!==bp2) return ap2.localeCompare(bp2,'ko');
+    const ar=Number(a.round)||0, br=Number(b.round)||0;
+    if(ar!==br) return ar-br;
+    return (Number(a.slot)||0)-(Number(b.slot)||0);
+  });
+}
+function refreshDerivedScheduleFields(key){
+  const list = G.matches[key] || [];
+  const byCourt = {};
+  list.filter(m=>m.winner==null).forEach(m=>{
+    const c = getMatchPrimaryCourt(m) || '미정';
+    if(!byCourt[c]) byCourt[c] = [];
+    byCourt[c].push(m);
+  });
+
+  Object.keys(byCourt).forEach(court=>{
+    const arr = byCourt[court];
+    arr.sort(compareMatchesBySchedule);
+    arr.forEach((m,idx)=>{
+      m.courtOrder = idx + 1;
+      if(!m.matchStartTime && Number.isFinite(Number(m.matchSlotIndex))){
+        m.matchStartTime = formatMinutesToHHMM(9*60 + Number(m.matchSlotIndex)*50);
+      }
+    });
+  });
+
+  sortMatchesForDisplay(list, key).forEach((m,idx)=>{ m.matchOrder = idx+1; });
+}
+function buildMatchTimeSelect(key, mid, current){
+  const opts = ['<option value="">시간수정</option>'].concat(
+    MATCH_TIME_OPTIONS.map(v=>`<option value="${v}" ${current===v?'selected':''}>${v}</option>`)
+  ).join('');
+  return `<select class="input" style="height:28px;padding:2px 8px;font-size:.72rem;min-width:88px" onchange="setMatchStartTime('${key}','${mid}',this.value)">${opts}</select>`;
+}
+async function setMatchStartTime(key, mid, value){
+  if(!AD){ toast('관리자만 시간 변경 가능','info'); return; }
+  const list = G.matches[key] || [];
+  const m = list.find(x=>x.id===mid);
+  if(!m) return;
+  m.matchStartTime = value || '';
+  m.matchSlotIndex = value ? Math.max(0, Math.round((parseMatchTimeToMinutes(value) - 9*60) / 50)) : null;
+  refreshDerivedScheduleFields(key);
+  sl(true);
+  try{
+    await stM(key);
+    sl(false);
+    toast('경기 시간 변경 완료','success');
+    renderBracket();
+  }catch(e){
+    sl(false);
+    toast('시간 저장 실패: '+e.message,'error');
+  }
+}
+
+function getAllowedCourtsForMatch(key, m){
+  if(!m) return [];
+  if(m.phase === 'group'){
+    const grpCourts = (G.draws[key]?.groups?.[m.group||0]?.courts) || [];
+    if(grpCourts.length) return grpCourts.filter(Boolean);
+  }
+  if(Array.isArray(m.courts) && m.courts.length) return m.courts.filter(Boolean);
+  if(m.court) return [m.court];
+  return [];
+}
+function buildQuickCourtSelect(key, mid, currentCourt, allowedCourts){
+  const base = allowedCourts && allowedCourts.length ? allowedCourts : COURT_LIST;
+  const opts = ['<option value="">코트변경</option>']
+    .concat(base.map(c=>`<option value="${c}" ${currentCourt===c?'selected':''}>${c}</option>`))
+    .join('');
+  return `<select class="input" style="height:28px;padding:2px 8px;font-size:.72rem;min-width:92px" onchange="setMatchCourtQuick('${key}','${mid}',this.value)">${opts}</select>`;
+}
+async function setMatchCourtQuick(key, mid, court){
+  if(!AD){ toast('관리자만 코트 변경 가능','info'); return; }
+  const list = G.matches[key] || [];
+  const m = list.find(x=>x.id===mid);
+  if(!m) return;
+  m.court = court || '';
+  m.courts = court ? [court] : [];
+  refreshDerivedScheduleFields(key);
+  sl(true);
+  try{
+    await stM(key);
+    sl(false);
+    toast('코트 변경 완료','success');
+    renderBracket();
+  }catch(e){
+    sl(false);
+    toast('코트 저장 실패: ' + e.message,'error');
+  }
+}
+async function moveMatchWithinCourt(key, mid, dir){
+  if(!AD){ toast('관리자만 코트 타임라인 변경 가능','info'); return; }
+  const list = G.matches[key] || [];
+  const target = list.find(x=>x.id===mid);
+  if(!target) return;
+  const court = getMatchPrimaryCourt(target);
+  if(!court){ toast('먼저 코트를 배정하세요','info'); return; }
+
+  const sameCourt = sortMatchesForDisplay(list.filter(m => m.winner==null && getMatchPrimaryCourt(m)===court));
+  const idx = sameCourt.findIndex(m=>m.id===mid);
+  if(idx < 0) return;
+
+  let swapIdx = idx;
+  if(dir === 'up') swapIdx = Math.max(0, idx-1);
+  else if(dir === 'down') swapIdx = Math.min(sameCourt.length-1, idx+1);
+  if(swapIdx === idx) return;
+
+  const other = sameCourt[swapIdx];
+  const tempTime = target.matchStartTime || '';
+  const tempSlot = target.matchSlotIndex;
+  target.matchStartTime = other.matchStartTime || '';
+  target.matchSlotIndex = other.matchSlotIndex;
+  other.matchStartTime = tempTime;
+  other.matchSlotIndex = tempSlot;
+
+  refreshDerivedScheduleFields(key);
+  sl(true);
+  try{
+    await stM(key);
+    sl(false);
+    toast('코트 타임라인 순서 변경 완료','success');
+    renderBracket();
+  }catch(e){
+    sl(false);
+    toast('타임라인 저장 실패: ' + e.message,'error');
+  }
+}
+
+
+function renumberMatchOrders(list){
+  sortMatchesForDisplay(list).forEach((m,idx)=>{ m.matchOrder = idx + 1; });
+}
+async function moveMatchOrder(key, mid, dir){
+  if(!AD){ toast('관리자만 순서 변경 가능','info'); return; }
+  const list = G.matches[key] || [];
+  const ordered = sortMatchesForDisplay(list.filter(m=>m.winner==null), key);
+  const idx = ordered.findIndex(m=>m.id===mid);
+  if(idx<0) return;
+  let target = idx;
+  if(dir==='up') target = Math.max(0, idx-1);
+  else if(dir==='down') target = Math.min(ordered.length-1, idx+1);
+  else if(dir==='top') target = 0;
+  else if(dir==='bottom') target = ordered.length-1;
+  if(target===idx) return;
+
+  const a = ordered[idx], b = ordered[target];
+  const tmpTime = a.matchStartTime || '';
+  const tmpCourt = a.court || '';
+  a.matchStartTime = b.matchStartTime || '';
+  a.court = b.court || '';
+  b.matchStartTime = tmpTime;
+  b.court = tmpCourt;
+
+  refreshDerivedScheduleFields(key);
+
+  sl(true);
+  try{
+    await stM(key);
+    sl(false);
+    toast('경기 순서 변경 완료','success');
+    renderBracket();
+  }catch(e){
+    sl(false);
+    toast('순서 저장 실패: '+e.message,'error');
+  }
+}
+
 // ─── 경기 순서 자동 배열 ──────────────────────────────────────────────────
 // 규칙:
 //  1순위: 같은 코트에 같은 클럽 팀이 있는 경기 (클럽 내 대기 최소화)
@@ -8045,86 +8420,158 @@ function runAutoOrder(){
 async function autoOrderMatches(key){
   if(!AD){ toast('관리자만 순서 배열 가능','info'); return; }
   const list = G.matches[key] || [];
-  const teams = G.teams[key] || [];
   const pending = list.filter(m => m.winner == null);
-  const done    = list.filter(m => m.winner != null);
+  const done = list.filter(m => m.winner != null);
+  const courtAvail = {};
+  const teamAvail = {};
+  const START_MIN = 9 * 60;
+  const SLOT_MIN = 50;
 
-  // 팀 클럽 조회 헬퍼
-  function getClub(tid){
-    const t = teams.find(t => t.id === tid || t.name === tid);
-    return t ? (t.club || '') : '';
+  function getAllowedCourts(m){
+    if(m.phase === 'group'){
+      const grpCourts = (G.draws[key]?.groups?.[m.group||0]?.courts) || [];
+      if(grpCourts.length) return grpCourts.filter(Boolean);
+    }
+    if(Array.isArray(m.courts) && m.courts.length) return m.courts.filter(Boolean);
+    if(m.court) return [m.court];
+    return [];
   }
-  // 경기의 코트 목록
-  function getCourts(m){
-    return Array.isArray(m.courts) ? m.courts : (m.court ? [m.court] : []);
+  function getTeamIds(m){
+    return [m.t1, m.t2].filter(v => v !== null && v !== undefined);
   }
-
-  // 1단계: 미완료 경기를 "코트 있음 / 없음" 분리
-  const withCourt    = pending.filter(m => getCourts(m).length > 0);
-  const withoutCourt = pending.filter(m => getCourts(m).length === 0);
-
-  // 2단계: 코트 있는 경기들을 greedy 로 겹치지 않는 라운드로 묶기
-  // 같은 클럽 경기를 우선 배치 (클럽 내부 경기 = 두 팀이 같은 클럽)
-  function sameClub(m){
-    const c1 = getClub(m.t1), c2 = getClub(m.t2);
-    return c1 && c2 && c1 === c2;
+  function pairKeyFromMatch(m, groupTeams){
+    const ids = getTeamIds(m);
+    const a = groupTeams.indexOf(ids[0]);
+    const b = groupTeams.indexOf(ids[1]);
+    if(a < 0 || b < 0) return '';
+    return [a,b].sort((x,y)=>x-y).join('-');
   }
+  function getGroupPriority(m){
+    const gi = Number(m.group || 0);
+    const grp = G.draws[key]?.groups?.[gi];
+    const gTeams = Array.isArray(grp?.teams) ? grp.teams : [];
+    const size = gTeams.length;
+    const pk = pairKeyFromMatch(m, gTeams);
+    if(!pk) return 999;
 
-  // 점수: 같은 클럽이면 높은 점수
-  withCourt.sort((a, b) => {
-    const sa = sameClub(a) ? 1 : 0;
-    const sb = sameClub(b) ? 1 : 0;
-    if(sb !== sa) return sb - sa;
-    // 코트 알파벳 순
-    return (getCourts(a)[0]||'').localeCompare(getCourts(b)[0]||'');
-  });
+    if(size === 4){
+      const roundMap = {
+        '0-1': 0, '2-3': 0,
+        '0-2': 1, '1-3': 1,
+        '0-3': 2, '1-2': 2
+      };
+      return roundMap[pk] ?? 999;
+    }
 
-  // greedy 라운드 배치 → 코트 겹침 없는 순서 생성
-  const ordered = [];
-  const remaining = [...withCourt];
-  while(remaining.length > 0){
-    const usedInRound = new Set();
-    const nextRemaining = [];
-    for(const m of remaining){
-      const mc = getCourts(m);
-      const conflict = mc.some(c => usedInRound.has(c));
-      if(!conflict){
-        mc.forEach(c => usedInRound.add(c));
-        ordered.push(m);
-      } else {
-        nextRemaining.push(m);
+    if(size === 3){
+      if(pk === '0-1') return 0;
+
+      const allGroupMatches = list.filter(x => x.phase === 'group' && Number(x.group || 0) === gi);
+      const firstMatch = allGroupMatches.find(x => pairKeyFromMatch(x, gTeams) === '0-1');
+
+      if(firstMatch && firstMatch.winner != null){
+        const winnerId = firstMatch.winner;
+        const waitingId = gTeams[2];
+        const winnerPair = [winnerId, waitingId].sort((a,b)=>String(a).localeCompare(String(b))).join('|');
+        const thisPair = [m.t1, m.t2].sort((a,b)=>String(a).localeCompare(String(b))).join('|');
+        return thisPair === winnerPair ? 1 : 2;
+      }
+
+      if(pk === '0-2') return 1;
+      if(pk === '1-2') return 2;
+    }
+
+    return 100 + (Number(m.slot) || 0);
+  }
+  function sortBase(arr){
+    return [...arr].sort((a,b)=>{
+      if(a.phase === 'group' && b.phase === 'group'){
+        const ag = Number(a.group ?? 999), bg = Number(b.group ?? 999);
+        if(ag !== bg) return ag - bg;
+        const ap = getGroupPriority(a), bp = getGroupPriority(b);
+        if(ap !== bp) return ap - bp;
+      }
+      const ar = Number(a.round ?? 999), br = Number(b.round ?? 999);
+      if(ar !== br) return ar - br;
+      return (Number(a.slot)||0) - (Number(b.slot)||0);
+    });
+  }
+  function chooseCourtAndSlot(pool, teamIds){
+    let best = null;
+    const teamReady = teamIds.reduce((mx,tid)=>Math.max(mx, teamAvail[tid]||0), 0);
+    for(const c of pool){
+      const courtReady = courtAvail[c] || 0;
+      const slot = Math.max(teamReady, courtReady);
+      const cand = {court:c, slot};
+      if(!best || cand.slot < best.slot || (cand.slot===best.slot && cand.court.localeCompare(best.court, 'ko') < 0)){
+        best = cand;
       }
     }
-    if(nextRemaining.length === remaining.length) {
-      // 더 이상 줄지 않으면 그냥 다 추가
-      ordered.push(...nextRemaining);
-      break;
-    }
-    remaining.length = 0;
-    remaining.push(...nextRemaining);
+    return best;
+  }
+  function applySchedule(m, chosen){
+    m.court = chosen.court;
+    m.matchSlotIndex = chosen.slot;
+    m.matchStartTime = formatMinutesToHHMM(START_MIN + chosen.slot * SLOT_MIN);
+    const teamIds = getTeamIds(m);
+    courtAvail[chosen.court] = chosen.slot + 1;
+    teamIds.forEach(tid => { teamAvail[tid] = chosen.slot + 1; });
   }
 
-  // 3단계: 최종 순서 = done + ordered + withoutCourt
-  const finalOrder = [...done, ...ordered, ...withoutCourt];
+  const groupMatches = sortBase(pending.filter(m => m.phase === 'group'));
+  const nonGroupMatches = sortBase(pending.filter(m => m.phase !== 'group'));
+  const unscheduled = [];
 
-  // 4단계: courtAssignedAt 을 순서 기반 타임스탬프로 재설정
-  const base = new Date('2000-01-01').getTime();
-  finalOrder.forEach((m, i) => {
-    if(getCourts(m).length > 0){
-      m.courtAssignedAt = new Date(base + i * 1000).toISOString();
+  const grouped = {};
+  groupMatches.forEach(m=>{
+    const g = Number(m.group||0);
+    if(!grouped[g]) grouped[g] = [];
+    grouped[g].push(m);
+  });
+
+  Object.keys(grouped).map(Number).sort((a,b)=>a-b).forEach(g=>{
+    grouped[g].forEach(m=>{
+      const pool = getAllowedCourts(m);
+      if(!pool.length){
+        unscheduled.push(m);
+        return;
+      }
+      applySchedule(m, chooseCourtAndSlot(pool, getTeamIds(m)));
+    });
+  });
+
+  nonGroupMatches.forEach(m=>{
+    const pool = getAllowedCourts(m);
+    if(!pool.length){
+      unscheduled.push(m);
+      return;
+    }
+    applySchedule(m, chooseCourtAndSlot(pool, getTeamIds(m)));
+  });
+
+  unscheduled.forEach(m=>{
+    m.matchStartTime = '';
+    m.matchSlotIndex = null;
+    m.courtOrder = null;
+  });
+
+  done.forEach(m=>{
+    if(!m.matchStartTime && Number.isFinite(Number(m.matchSlotIndex))){
+      m.matchStartTime = formatMinutesToHHMM(START_MIN + Number(m.matchSlotIndex) * SLOT_MIN);
     }
   });
 
+  refreshDerivedScheduleFields(key);
+
   sl(true);
-  try{
-    await stM(key);
+  stM(key).then(()=>{
     sl(false);
-    toast(`경기 순서 자동 배열 완료 ✅ (${ordered.length}경기)`, 'success');
+    toast('경기 순서 자동 배열 완료 ✅ (예선 표준 순서 반영)', 'success');
     renderBracket();
-  }catch(e){
+  }).catch(e=>{
     sl(false);
-    toast('저장 실패: '+e.message, 'error');
-  }
+    toast('저장 실패: ' + e.message, 'error');
+  });
 }
 
 async function saveGroupCourtModal(){
@@ -8944,7 +9391,7 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   onBrTC,renderBracket,openDraw,confirmDraw,startDraw,buildMain,openMainDraw,startMainDraw,spawnConfetti,celebrateGroupComplete,resetDrawOnly,saveBracketDivSetting,applyBracketDivSettingRecommend,
   openManualEdit,saveManualEdit,toggleByeEdit,
   openM3,saveM3,tC,setCourt,toggleGroupCourtUI,onGroupCourtChange,openGroupCourtModal,saveGroupCourtModal,
-  openMatchCourtModal,saveMatchCourtModal,autoOrderMatches,runAutoOrder,
+  openMatchCourtModal,saveMatchCourtModal,autoOrderMatches,runAutoOrder,moveMatchOrder,setMatchStartTime,
   openPD,openEditPlayer,saveEditPlayer,deletePlayer,mergePlayer,openSelectiveClearModal,selectiveClearTournament,cleanupPlayerHistories,hardResetAllData,migrateHistDataToFirebase,syncAllTnames,syncTnameInPlayers,
   resetMatchRecords,recalcAllPlayerStats,
   backupJSON,restoreFromJSON,backupPlayersExcel,exportPlayersCSV,exportPlayersExcel,
