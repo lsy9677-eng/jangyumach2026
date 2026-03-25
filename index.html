@@ -421,7 +421,7 @@ body{overflow-x:hidden;}
 
 .m3card{background:var(--panel);border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px;box-shadow:var(--shadow);}
 .m3hdr{background:linear-gradient(90deg,#091225,#0f1e3a);color:white;padding:9px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
-.m3badge{font-size:.66rem;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:10px;}
+.m3badge{font-size:.8rem;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:10px;font-weight:600;}
 .m3body{padding:10px 14px;}
 .m3sc-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px;}
 .m3sc{font-family:'Oswald',sans-serif;font-size:2rem;font-weight:700;color:var(--primary);text-align:center;}
@@ -1618,11 +1618,11 @@ async function stP(k){try{const pk=pKeyParse(k);const pureName=cleanName(pk.name
 async function fbLog(t,i='📌'){try{await addDoc(collection(db,'activityLog'),{text:t,icon:i,time:new Date().toISOString()});}catch(e){}}
 function onDU(){
   // 새로고침 후 관리자 세션 복원
-  if(!AD && sessionStorage.getItem('adm')==='1'){
+  if(!AD && localStorage.getItem('adm')==='1'){
     applyAdminUI();
   }
   // 팀등록 세션 복원
-  if(!REG && sessionStorage.getItem('reg')==='1'){
+  if(!REG && localStorage.getItem('reg')==='1'){
     REG=true;
     ge('regToggleBtn') && (ge('regToggleBtn').textContent='팀등록 로그아웃');
     ge('regToggleBtn') && (ge('regToggleBtn').style.background='#388e3c');
@@ -1674,7 +1674,7 @@ function showPage(n){
 function toggleAdmin(){
   if(AD){
     AD=false;
-    sessionStorage.removeItem('adm');
+    localStorage.removeItem('adm');
     document.body.classList.remove('admin-mode');
     ge('adminBadge').classList.remove('show');
     ge('adminToggleBtn').classList.remove('active');
@@ -1700,7 +1700,7 @@ function doLogin(){
   const pw=ge('adminPw').value;
   if(pw===G.meta.pw){
     applyAdminUI();
-    sessionStorage.setItem('adm','1');
+    localStorage.setItem('adm','1');
     cm('mAdmin');
     ge('adminPw').value='';
     toast('관리자 로그인 ✅','success');
@@ -1720,7 +1720,7 @@ function toggleReg(){
   if(REG && !AD){
     // 로그아웃
     REG=false;
-    sessionStorage.removeItem('reg');
+    localStorage.removeItem('reg');
     ge('regToggleBtn').textContent='팀등록 로그인';
     ge('regToggleBtn').style.background='var(--success)';
     ge('regLoginBadge') && (ge('regLoginBadge').style.display='none');
@@ -1742,7 +1742,7 @@ function doRegLogin(){
   const pw = (ge('regPwInput')?.value||'').trim();
   if(pw === G.meta.regPw){
     REG=true;
-    sessionStorage.setItem('reg','1');
+    localStorage.setItem('reg','1');
     cm('mRegLogin');
     ge('regPwInput').value='';
     ge('regToggleBtn').textContent='팀등록 로그아웃';
@@ -3727,8 +3727,8 @@ function renderBracketHTMLForDiv(tid,div,isAll){
 
       const grpCourts = (grp.courts||[]);
       const courtBadges = grpCourts.length
-        ? grpCourts.map(c=>`<span class="badge bg-blue" style="font-size:.65rem">🎾 ${c}</span>`).join(' ')
-        : (AD ? `<span class="badge bg-gray" style="font-size:.65rem">코트: 미배정</span>` : ``);
+        ? grpCourts.map(c=>`<span class="badge bg-blue" style="font-size:.82rem;padding:3px 9px">🎾 ${c}</span>`).join(' ')
+        : (AD ? `<span class="badge bg-gray" style="font-size:.82rem;padding:3px 9px">코트: 미배정</span>` : ``);
       const gcuiId = `gcui_${key}_${gi}`;
       const gcOpen = !!(GC_OPEN[key] && GC_OPEN[key].has(gi));
       const doneCnt=gms.filter(m=>m.winner!==null).length;
@@ -3742,7 +3742,7 @@ function renderBracketHTMLForDiv(tid,div,isAll){
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
             ${courtBadges}
-            ${AD?`<button class="btn btn-outline" style="padding:3px 9px;font-size:.7rem;white-space:nowrap;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.5);color:white;border-radius:999px" onclick="openGroupCourtModal('${key}',${gi})">🎾 코트배정</button>`:''}
+            ${AD?`<button class="btn btn-outline" style="padding:5px 13px;font-size:.88rem;white-space:nowrap;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.5);color:white;border-radius:999px;font-weight:600" onclick="openGroupCourtModal('${key}',${gi})">🎾 코트배정</button>`:''}
           </div>
         </div>
         <div style="border-bottom:2px solid var(--border)">`;
@@ -3890,9 +3890,9 @@ function mCard(m,key,dn1,dn2,done,sc1,sc2,label){
     const gi = m.group;
     const grpCourts = (G.draws[key]?.groups?.[gi]?.courts) || [];
     if(grpCourts.length){
-      grpCourtBadge = `<span style="font-size:.7rem;font-weight:600;background:rgba(255,255,255,.22);color:white;padding:2px 9px;border-radius:12px;border:1px solid rgba(255,255,255,.4)">🎾 ${grpLabel(gi)}: ${grpCourts.join('/')}</span>`;
+      grpCourtBadge = `<span style="font-size:.88rem;font-weight:700;background:rgba(255,255,255,.22);color:white;padding:3px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.4)">🎾 ${grpLabel(gi)}: ${grpCourts.join('/')}</span>`;
     } else if(AD){
-      grpCourtBadge = `<span style="font-size:.7rem;font-weight:600;background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);padding:2px 9px;border-radius:12px;border:1px dashed rgba(255,255,255,.35)">🎾 미배정</span>`;
+      grpCourtBadge = `<span style="font-size:.88rem;font-weight:600;background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);padding:3px 12px;border-radius:12px;border:1px dashed rgba(255,255,255,.45)">🎾 미배정</span>`;
     }
   }
   // 개별 경기 코트 상태 계산
@@ -3917,23 +3917,23 @@ function mCard(m,key,dn1,dn2,done,sc1,sc2,label){
   let courtLabel, courtBtnStyle;
   if(!mCourts.length){
     courtLabel = '🎾 코트배정';
-    courtBtnStyle = 'padding:3px 10px;font-size:.72rem;white-space:nowrap;background:rgba(255,255,255,.1);color:rgba(255,255,255,.75);border:1.5px dashed rgba(255,255,255,.4);border-radius:999px;cursor:pointer';
+    courtBtnStyle = 'padding:5px 14px;font-size:.88rem;white-space:nowrap;background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1.5px dashed rgba(255,255,255,.5);border-radius:999px;cursor:pointer';
   } else if(isWaiting){
     courtLabel = `⏳ 대기(${[...waitingCourts].join('/')})`;
-    courtBtnStyle = 'padding:3px 10px;font-size:.72rem;white-space:nowrap;background:rgba(245,166,35,.3);color:#ffe082;border:1.5px solid rgba(245,166,35,.7);border-radius:999px;font-weight:700;cursor:pointer';
+    courtBtnStyle = 'padding:5px 14px;font-size:.88rem;white-space:nowrap;background:rgba(245,166,35,.3);color:#ffe082;border:1.5px solid rgba(245,166,35,.7);border-radius:999px;font-weight:700;cursor:pointer';
   } else if(isPartialWait){
     courtLabel = `🎾 ${activeCourts.join('/')} + ⏳${[...waitingCourts].join('/')}`;
-    courtBtnStyle = 'padding:3px 10px;font-size:.72rem;white-space:nowrap;background:rgba(255,255,255,.2);color:white;border:1.5px solid rgba(255,255,255,.5);border-radius:999px;font-weight:700;cursor:pointer';
+    courtBtnStyle = 'padding:5px 14px;font-size:.88rem;white-space:nowrap;background:rgba(255,255,255,.2);color:white;border:1.5px solid rgba(255,255,255,.5);border-radius:999px;font-weight:700;cursor:pointer';
   } else {
     courtLabel = `🎾 ${mCourts.join('/')}`;
-    courtBtnStyle = 'padding:3px 10px;font-size:.72rem;white-space:nowrap;background:rgba(255,255,255,.25);color:white;border:1.5px solid rgba(255,255,255,.6);border-radius:999px;font-weight:700;cursor:pointer';
+    courtBtnStyle = 'padding:5px 14px;font-size:.88rem;white-space:nowrap;background:rgba(255,255,255,.25);color:white;border:1.5px solid rgba(255,255,255,.6);border-radius:999px;font-weight:700;cursor:pointer';
   }
   const courtUI = AD
     ? `<button style="${courtBtnStyle}" onclick="openMatchCourtModal('${key}','${m.id}')">${courtLabel}</button>`
-    : (mCourts.length ? `<span style="font-size:.7rem;font-weight:600;background:${isWaiting?'rgba(245,166,35,.3)':'rgba(255,255,255,.22)'};color:${isWaiting?'#ffe082':'white'};padding:2px 9px;border-radius:12px;border:1px solid ${isWaiting?'rgba(245,166,35,.6)':'rgba(255,255,255,.4)'}">${courtLabel}</span>` : '');
+    : (mCourts.length ? `<span style="font-size:.88rem;font-weight:700;background:${isWaiting?'rgba(245,166,35,.3)':'rgba(255,255,255,.22)'};color:${isWaiting?'#ffe082':'white'};padding:3px 12px;border-radius:12px;border:1px solid ${isWaiting?'rgba(245,166,35,.6)':'rgba(255,255,255,.4)'}">${courtLabel}</span>` : '');
 
   const btn=AD?`<button class="btn ${done?'btn-gray':'btn-accent'}" style="padding:5px 12px;font-size:.77rem;white-space:nowrap" onclick="openM3('${key}','${m.id}')">${done?'✏️ 수정':'⚡ 결과입력'}</button>`:'';
-  return`<div class="m3card"><div class="m3hdr"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="m3badge">${label}</span><span style="font-size:.82rem;font-weight:700">${dn1} vs ${dn2}</span></div><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">${grpCourtBadge} ${courtUI} ${done?'<span class="badge bg-green" style="font-size:.68rem">완료</span>':'<span style="font-size:.7rem;opacity:.7">대기중</span>'} ${btn}</div></div>
+  return`<div class="m3card"><div class="m3hdr"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="m3badge">${label}</span><span style="font-size:.95rem;font-weight:700">${dn1} vs ${dn2}</span></div><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">${grpCourtBadge} ${courtUI} ${done?'<span class="badge bg-green" style="font-size:.82rem;padding:3px 9px">완료</span>':'<span style="font-size:.82rem;opacity:.8;font-weight:600">대기중</span>'} ${btn}</div></div>
     <div style="font-size:.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">${dbl}복식 상세 (6게임 선취 승리 · 타이브렉)</div>
     <div class="rb-rows">${rbH}</div></div></div>`;
 }
@@ -7938,14 +7938,14 @@ function openMatchCourtModal(key,mid){
       const bg=isMine?'#e8f4fd':isUsed?'#fff8e1':'white';
       const border=isMine?'#1565c0':isUsed?'#f5a623':'var(--border)';
       const extra=isUsed?`<span style="font-size:.62rem;color:#e67e22">⚠️ ${usedBy[0]} 대기중</span>`:'';
-      return `<label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:1.5px solid ${border};border-radius:999px;background:${bg};font-size:.8rem;cursor:pointer;flex-wrap:wrap">
+      return `<label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1.5px solid ${border};border-radius:999px;background:${bg};font-size:.95rem;cursor:pointer;flex-wrap:wrap">
         <input type="checkbox" value="${c}" ${isMine?'checked':''}>
         <span style="font-weight:${isMine?700:400}">${c}${isMine?' ✅':''}</span>
         ${extra}
       </label>`;
     }).join('');
     return `<div style="margin-bottom:12px">
-      <div style="font-size:.75rem;font-weight:900;color:var(--primary-dark);margin:2px 2px 8px">📍 ${g.title}</div>
+      <div style="font-size:.9rem;font-weight:900;color:var(--primary-dark);margin:2px 2px 10px">📍 ${g.title}</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px">${labels}</div>
     </div>`;
   }).join('');
@@ -8084,13 +8084,13 @@ function openGroupCourtModal(key,gi){
   const sectionsHtml = COURT_GROUPS.map(g=>{
     const labels = g.courts.map(c=>{
       const chk = grpCourts.includes(c) ? 'checked' : '';
-      return `<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:white;font-size:.8rem;cursor:pointer">
+      return `<label style="display:flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--border);border-radius:999px;background:white;font-size:.95rem;cursor:pointer">
         <input type="checkbox" value="${c}" ${chk}>
         <span>${c}</span>
       </label>`;
     }).join('');
     return `<div style="margin-bottom:12px">
-      <div style="font-size:.75rem;font-weight:900;color:var(--primary-dark);margin:2px 2px 8px">📍 ${g.title}</div>
+      <div style="font-size:.9rem;font-weight:900;color:var(--primary-dark);margin:2px 2px 10px">📍 ${g.title}</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px">${labels}</div>
     </div>`;
   }).join('');
@@ -8314,7 +8314,7 @@ function buildQuickCourtSelect(key, mid, currentCourt, allowedCourts){
   const opts = ['<option value="">코트변경</option>']
     .concat(base.map(c=>`<option value="${c}" ${currentCourt===c?'selected':''}>${c}</option>`))
     .join('');
-  return `<select class="input" style="height:28px;padding:2px 8px;font-size:.72rem;min-width:92px" onchange="setMatchCourtQuick('${key}','${mid}',this.value)">${opts}</select>`;
+  return `<select class="input" style="height:32px;padding:3px 8px;font-size:.88rem;min-width:100px" onchange="setMatchCourtQuick('${key}','${mid}',this.value)">${opts}</select>`;
 }
 async function setMatchCourtQuick(key, mid, court){
   if(!AD){ toast('관리자만 코트 변경 가능','info'); return; }
