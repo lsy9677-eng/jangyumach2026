@@ -3192,13 +3192,13 @@ function updateRegisterSlots(){
   // 제목 레이블 업데이트
   const lbl=ge('regModeLabel');
   if(lbl){
-    if(isTerinee) lbl.textContent=`— 선수 명단만 등록 | 최소 ${mainCount}명, 최대 ${mainCount+2}명`;
-    else lbl.textContent='— 선수 명단만 등록 | 최소 10명, 최대 12명';
+    if(isTerinee) lbl.textContent=`— 선수 명단만 등록 | 최소 ${mainCount}명, 후보 포함 최대 12명`;
+    else lbl.textContent='— 선수 명단만 등록 | 후보 포함 최대 12명';
   }
   // 선수 레이블 업데이트
   const pl=ge('regPlayerLabel');
   if(pl){
-    pl.innerHTML=`선수 명단 <span style="color:var(--text3);font-size:.72rem;font-weight:400">페어는 경기 결과 입력 때 선택합니다 · 최소 ${mainCount}명, 최대 ${mainCount+2}명</span>`;
+    pl.innerHTML=`선수 명단 <span style="color:var(--text3);font-size:.72rem;font-weight:400">페어는 경기 결과 입력 때 선택합니다 · 최소 ${mainCount}명, 후보 포함 최대 12명</span>`;
   }
 }
 
@@ -3327,9 +3327,9 @@ async function registerTeam(){
   if(!club){toast('클럽 선택','error');return;}
   const dbl=getRegDoublesCount();
   const mainCount=dbl*2;
-  const names=collectSanitizedPlayerNames('p', mainCount+2, club);
+  const names=collectSanitizedPlayerNames('p', 12, club);
   if(names.length<mainCount){toast(`최소 ${mainCount}명 입력해주세요`,'error');return;}
-  if(names.length>mainCount+2){toast(`최대 ${mainCount+2}명까지 등록할 수 있습니다`,'error');return;}
+  if(names.length>12){toast('최대 12명까지 등록할 수 있습니다','error');return;}
   const uniq=new Set(names);if(uniq.size!==names.length){toast('이름 중복 있음','error');return;}
   const missing2026=missingMembers2026(names, club, t);
   if(missing2026.length){showMissingMembers2026(missing2026);return;}
@@ -3446,8 +3446,8 @@ function openETeam(key,idx){
   ge('mETeamB').innerHTML=`<div style="margin-bottom:12px;padding:8px 14px;background:var(--primary);color:white;border-radius:var(--radius);font-weight:700">${tdn(team,key,idx)} — ${dl(div)}</div>
     ${terineeSelHtml}
     <div class="form-group"><label class="form-label">클럽</label><select class="form-select" id="etTC">${G.clubs.map(c=>`<option ${c===team.club?'selected':''}>${c}</option>`).join('')}</select></div>
-    <div class="form-group"><label class="form-label" id="editRosterLabel">선수 명단 (최소 ${mainCount}명, 최대 ${totalCount}명)</label>
-      <div id="etSlots">${buildRosterInputsHTML('ep',totalCount,p)}</div>
+    <div class="form-group"><label class="form-label" id="editRosterLabel">선수 명단 (최소 ${mainCount}명, 후보 포함 최대 12명)</label>
+      <div id="etSlots">${buildRosterInputsHTML('ep',12,p)}</div>
       <div style="font-size:.72rem;color:var(--text3);margin-top:6px">페어는 경기 결과 입력 때 선택합니다.</div>
     </div>`;
   om('mETeam');
@@ -3458,15 +3458,14 @@ function etUpdateSlots(newDbl,origIdx){
   const p=team.players||[];
   const dbl=parseInt(newDbl,10);
   const mainCount=dbl*2;
-  const totalCount=mainCount+2;
   const curVals=[];
   for(let i=1;i<=12;i++){
     const el=ge('ep'+i);
     if(el) curVals.push(el.value.trim());
   }
-  ge('etSlots').innerHTML=buildRosterInputsHTML('ep',totalCount,curVals.length?curVals:p);
+  ge('etSlots').innerHTML=buildRosterInputsHTML('ep',12,curVals.length?curVals:p);
   const lbl=ge('editRosterLabel');
-  if(lbl) lbl.textContent=`선수 명단 (최소 ${mainCount}명, 최대 ${totalCount}명)`;
+  if(lbl) lbl.textContent=`선수 명단 (최소 ${mainCount}명, 후보 포함 최대 12명)`;
 }
 async function saveETeam(){
   const teams=G.teams[CE_key]||[];
@@ -3485,8 +3484,9 @@ async function saveETeam(){
   const dbl=dblEl?parseInt(dblEl.value):(team.doublesCount||(isT?3:3));
   const mainCount=dbl*2;
   const newClub=ge('etTC').value;
-  const np=collectSanitizedPlayerNames('ep', mainCount+2, newClub);
+  const np=collectSanitizedPlayerNames('ep', 12, newClub);
   if(np.length<mainCount){toast(`최소 ${mainCount}명 입력해주세요`,'error');return;}
+  if(np.length>12){toast('최대 12명까지 등록할 수 있습니다','error');return;}
   const uniq=new Set(np);if(uniq.size!==np.length){toast('이름 중복','error');return;}
   const tid=CE_key.split('_')[0];
   const tournament=G.tournaments.find(t=>t.id===tid);
