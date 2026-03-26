@@ -698,6 +698,11 @@ body{overflow-x:hidden;}
     <div class="frow">
       <div class="form-group"><label class="form-label">장소</label><input class="form-input" id="tVenue" placeholder="경기 장소"></div>
       <div class="form-group"><label class="form-label">접수 마감</label><input class="form-input" type="date" id="tDeadline"></div>
+      <div class="form-group">
+        <label class="form-label">📅 경기이사 등록 기한 <span style="font-size:.72rem;color:var(--text3);font-weight:400">(이 시간 이후 경기이사 등록 불가)</span></label>
+        <input class="form-input" type="datetime-local" id="tRegDl">
+        <div style="font-size:.71rem;color:var(--text3);margin-top:3px">비워두면 제한 없음. 관리자는 항상 등록 가능.</div>
+      </div>
     </div>
     <div class="form-group"><label class="form-label">운영 부서 &amp; 복식 수<span class="req">*</span></label>
       <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
@@ -1469,7 +1474,7 @@ Object.defineProperty(window,'MY_CLUB_FILTER',{get:()=>MY_CLUB_FILTER,set:(v)=>{
 // ── 과거 대회 내장 데이터 ─────────────────────────────────
 let HIST_DATA = []; // 과거 대회 데이터는 Firebase로 이전 완료 (tournaments/registrations 컬렉션)
 
-let G={meta:{pw:'jangyu1234',regPw:'202601',clubContacts:{},clubPasswords:{}},clubs:['하모니','능동','모던','테사모','불사조'],tournaments:[],teams:{},draws:{},matches:{},players:{},log:[]};
+let G={meta:{pw:'jangyu1234',regPw:'202601',clubContacts:{},clubPasswords:{},regDeadlineDt:''},clubs:['하모니','능동','모던','테사모','불사조'],tournaments:[],teams:{},draws:{},matches:{},players:{},log:[]};
 let CE_tid=null,CE_key=null,CE_idx=null,CM_key=null,CM_id=null,CD_key=null;
 let PF={club:'',div:'',search:''};
 
@@ -1576,8 +1581,8 @@ async function initFB(){
     sl(false);toast('🔥 연결 완료','success');
   }catch(e){sl(false);toast('연결 실패: '+e.message,'error');}
 }
-async function loadMeta(){try{const s=await getDoc(doc(db,'meta','config'));if(s.exists()){const d=s.data();G.meta={pw:'jangyu1234',regPw:'202601',clubContacts:{},...d};if(d.clubs)G.clubs=d.clubs;if(!G.meta.adminPhone)G.meta.adminPhone='';if(!G.meta.regPw)G.meta.regPw='202601';if(!G.meta.clubContacts||typeof G.meta.clubContacts!=='object')G.meta.clubContacts={};if(!Array.isArray(G.meta.memberRegistry2026))G.meta.memberRegistry2026=[];}else await setDoc(doc(db,'meta','config'),{pw:'jangyu1234',regPw:'202601',clubs:G.clubs,adminPhone:'',clubContacts:{}});}catch(e){}}
-async function saveMeta(){try{await setDoc(doc(db,'meta','config'),{pw:G.meta.pw,regPw:(G.meta.regPw||'202601'),clubs:G.clubs,adminPhone:(G.meta.adminPhone||''),memberRegistry2026:Array.isArray(G.meta.memberRegistry2026)?G.meta.memberRegistry2026:[],clubContacts:(G.meta.clubContacts||{}),clubPasswords:(G.meta.clubPasswords||{})});}catch(e){}}
+async function loadMeta(){try{const s=await getDoc(doc(db,'meta','config'));if(s.exists()){const d=s.data();G.meta={pw:'jangyu1234',regPw:'202601',clubContacts:{},...d};if(d.clubs)G.clubs=d.clubs;if(!G.meta.adminPhone)G.meta.adminPhone='';if(!G.meta.regPw)G.meta.regPw='202601';if(!G.meta.clubContacts||typeof G.meta.clubContacts!=='object')G.meta.clubContacts={};if(!Array.isArray(G.meta.memberRegistry2026))G.meta.memberRegistry2026=[];if(!G.meta.regDeadlineDt)G.meta.regDeadlineDt='';}else await setDoc(doc(db,'meta','config'),{pw:'jangyu1234',regPw:'202601',clubs:G.clubs,adminPhone:'',clubContacts:{}});}catch(e){}}
+async function saveMeta(){try{await setDoc(doc(db,'meta','config'),{pw:G.meta.pw,regPw:(G.meta.regPw||'202601'),clubs:G.clubs,adminPhone:(G.meta.adminPhone||''),memberRegistry2026:Array.isArray(G.meta.memberRegistry2026)?G.meta.memberRegistry2026:[],clubContacts:(G.meta.clubContacts||{}),clubPasswords:(G.meta.clubPasswords||{}),regDeadlineDt:(G.meta.regDeadlineDt||'')});}catch(e){}}
 async function fbSet(col,key,data){await setDoc(doc(db,col,key),{...data,_u:new Date().toISOString()});}
 
 /** ===== 문서형 구조(마이그레이션): registrations / matches ===== */
@@ -1960,6 +1965,43 @@ function toggleShowRegPw(btn){
     btn.textContent='보기';
   }
 }
+
+
+// ── 등록 기한 관련 함수들 ─────────────────────────────────────────────
+// ── 등록 기한: 시합별 관리 ─────────────────────────
+function isRegDeadlinePassed(tid){
+  const _tid=tid||ge('regTS')?.value||'';
+  const t=G.tournaments.find(t=>t.id===_tid);
+  const dt=t?.regDeadlineDt||'';
+  if(!dt) return false;
+  return new Date()>new Date(dt);
+}
+function regDeadlineLabel(tid){
+  const _tid=tid||ge('regTS')?.value||'';
+  const t=G.tournaments.find(t=>t.id===_tid);
+  const dt=t?.regDeadlineDt||'';
+  if(!dt) return '기한 없음 (항상 허용)';
+  const d=new Date(dt);
+  const passed=new Date()>d;
+  const fmt=`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  return passed?`⛔ 기한 만료 — ${fmt}`:`✅ ${fmt} 까지 허용`;
+}
+async function saveRegDeadline(){
+  const val=ge('etRegDl')?.value||'';
+  const tid=CE_tid;
+  if(!tid){toast('대회를 선택하세요','error');return;}
+  const t=G.tournaments.find(t=>t.id===tid);
+  if(!t) return;
+  t.regDeadlineDt=val?new Date(val).toISOString():'';
+  sl(true);
+  try{
+    await updateDoc(doc(db,'tournaments',tid),{regDeadlineDt:t.regDeadlineDt});
+    sl(false);
+    toast(val?`등록 기한 저장 ✅ — ${regDeadlineLabel(tid)}`:'등록 기한 해제 완료 ✅','success');
+  }catch(e){sl(false);toast('저장 실패: '+e.message,'error');}
+}
+function refreshRegDeadlineUI(){}
+async function clearRegDeadline(){}
 
 function openAdminSettings(){
   if(!AD){toast('관리자 로그인 필요','info');return;}
@@ -2748,7 +2790,8 @@ async function createTournament(){
       ds[d]={format:fmt,grpSize:gs,advance:adv,doublesCount:rub};
     });
     // guideAssets는 Firebase Storage에 업로드 → URL만 tourGuides에 저장
-    const tRef=await addDoc(collection(db,'tournaments'),{name:nm,date:dt,venue:ge('tVenue').value.trim(),deadline:ge('tDeadline').value,divisions:divs,format:fmt,grpSize:gs,advance:adv,divSettings:ds,notice:ge('tNotice').value.trim(),guideText:ge('tGuideText')?.value.trim()||'',guideUrl:ge('tGuideUrl')?.value.trim()||'',hasGuideAssets:(GUIDE_FILES_CREATE||[]).length>0||(GUIDE_FILES_CREATE_PENDING||[]).length>0,status:'open',createdAt:serverTimestamp()});
+    const _tRegDl=ge('tRegDl')?.value;
+const tRef=await addDoc(collection(db,'tournaments'),{name:nm,date:dt,venue:ge('tVenue').value.trim(),deadline:ge('tDeadline').value,regDeadlineDt:_tRegDl?new Date(_tRegDl).toISOString():'',divisions:divs,format:fmt,grpSize:gs,advance:adv,divSettings:ds,notice:ge('tNotice').value.trim(),guideText:ge('tGuideText')?.value.trim()||'',guideUrl:ge('tGuideUrl')?.value.trim()||'',hasGuideAssets:(GUIDE_FILES_CREATE||[]).length>0||(GUIDE_FILES_CREATE_PENDING||[]).length>0,status:'open',createdAt:serverTimestamp()});
     // 선택한 파일들을 Storage에 업로드
     await flushGuideUploads(tRef.id, 'create');
     const assets=GUIDE_FILES_CREATE||[];
@@ -2756,7 +2799,7 @@ async function createTournament(){
       await setDoc(doc(db,'tourGuides',tRef.id),{assets,updatedAt:serverTimestamp()});
     }
     await fbLog('대회 생성: '+nm,'🏆');
-    ['tName','tDate','tVenue','tDeadline','tNotice','tGuideText','tGuideUrl'].forEach(id=>ge(id).value=''); GUIDE_FILES_CREATE=[]; GUIDE_FILES_CREATE_PENDING=[]; renderGuidePreview('create');
+    ['tName','tDate','tVenue','tDeadline','tRegDl','tNotice','tGuideText','tGuideUrl'].forEach(id=>{const el=ge(id);if(el)el.value='';}); GUIDE_FILES_CREATE=[]; GUIDE_FILES_CREATE_PENDING=[]; renderGuidePreview('create');
     sl(false);toast('"'+nm+'" 생성됨','success');
   }catch(e){sl(false);toast('생성 실패: '+e.message,'error');}
 }
@@ -2850,6 +2893,17 @@ function openET(tid){
   ge('mETB').innerHTML=`<div class="form-group"><label class="form-label">대회명</label><input class="form-input" id="etN" value="${t.name||''}"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="form-group"><label class="form-label">일자</label><input class="form-input" type="date" id="etDt" value="${t.date||''}"></div><div class="form-group"><label class="form-label">장소</label><input class="form-input" id="etVn" value="${t.venue||''}"></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="form-group"><label class="form-label">마감</label><input class="form-input" type="date" id="etDl" value="${t.deadline||''}"></div><div class="form-group"><label class="form-label">상태</label><select class="form-select" id="etSt"><option value="open" ${t.status==='open'?'selected':''}>접수중</option><option value="closed" ${t.status==='closed'?'selected':''}>마감</option><option value="ongoing" ${t.status==='ongoing'?'selected':''}>진행중</option><option value="finished" ${t.status==='finished'?'selected':''}>종료</option></select></div></div>
+    <div class="form-group" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #16a34a;border-radius:10px;padding:10px 12px">
+      <label class="form-label" style="color:#166534">📅 경기이사 등록 기한</label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input class="form-input" type="datetime-local" id="etRegDl" style="flex:1;min-width:180px"
+          value="${(()=>{const _d=t.regDeadlineDt?new Date(t.regDeadlineDt):null;return _d?new Date(_d.getTime()-_d.getTimezoneOffset()*60000).toISOString().slice(0,16):'';})()}">
+        <button class="btn btn-primary" style="white-space:nowrap;background:#166534" onclick="saveRegDeadline()">💾 저장</button>
+        <button class="btn btn-gray" style="white-space:nowrap" onclick="ge('etRegDl').value='';saveRegDeadline()">🗑 해제</button>
+      </div>
+      <div id="etRegDlStatus" style="font-size:.75rem;margin-top:6px;color:#166534">${regDeadlineLabel(t.id)}</div>
+      <div style="font-size:.7rem;color:var(--text3);margin-top:3px">비워두면 제한 없음. 관리자는 항상 등록 가능.</div>
+    </div>
     <div class="form-group"><label class="form-label">부서</label><div style="display:flex;gap:12px;flex-wrap:wrap;padding:10px;background:var(--panel2);border-radius:var(--radius);border:1px solid var(--border);margin-top:6px">${aD.map(d=>{
     const has=(t.divisions||[]).includes(d);
     const cnt=(G.teams[tid+'_'+d]||[]).length;
@@ -2909,7 +2963,8 @@ async function saveET(){
     // Storage 업로드 flush 먼저
     await flushGuideUploads(CE_tid, 'edit');
     const assets=GUIDE_FILES_EDIT||[];
-    await updateDoc(doc(db,'tournaments',CE_tid),{name:nm,date:ge('etDt').value,venue:ge('etVn').value.trim(),deadline:ge('etDl').value,status:ge('etSt').value,divisions:newD,divSettings:ds,notice:ge('etNt').value.trim(),guideText:ge('etGuideText')?.value.trim()||'',guideUrl:ge('etGuideUrl')?.value.trim()||'',hasGuideAssets:assets.length>0});
+    const _etRdl=ge('etRegDl')?.value||'';
+await updateDoc(doc(db,'tournaments',CE_tid),{name:nm,date:ge('etDt').value,venue:ge('etVn').value.trim(),deadline:ge('etDl').value,regDeadlineDt:_etRdl?new Date(_etRdl).toISOString():'',status:ge('etSt').value,divisions:newD,divSettings:ds,notice:ge('etNt').value.trim(),guideText:ge('etGuideText')?.value.trim()||'',guideUrl:ge('etGuideUrl')?.value.trim()||'',hasGuideAssets:assets.length>0});
     if(assets.length>0) await setDoc(doc(db,'tourGuides',CE_tid),{assets,updatedAt:serverTimestamp()});
 
     // ✅ 대회명이 바뀌었으면 → 모든 선수 history의 tname도 일괄 업데이트
@@ -3300,7 +3355,7 @@ function renderRegDivisionBoard(tid){
     });
     const detailHtml=sorted.length
       ? sorted.map(({team,i},viewIdx)=>{
-          const canManageTeam = AD || REG;
+          const canManageTeam = (AD || REG) && (AD || !isRegDeadlinePassed());
           const teamActions = canManageTeam
             ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
                 <span style="font-size:.72rem;opacity:.82">${(team.players||[]).filter(Boolean).length}명</span>
@@ -3436,7 +3491,7 @@ function renderRegistrationRosterPreview(tid,div,teams,key){
     const mainPlayers=p.slice(0,mainCount);
     const subPlayers=p.slice(mainCount);
     const mainChips=mainPlayers.map((name,pi)=>`<div style="background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);padding:5px 7px;font-size:.78rem;display:flex;align-items:center;gap:4px"><span style="width:18px;height:18px;background:var(--primary);color:#fff;border-radius:50%;font-size:.62rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${pi+1}</span>${rosterPlayerHTML(name,team.club||'',tid)}</div>`).join('');
-    const canManageTeam = AD || REG;
+    const canManageTeam = (AD || REG) && (AD || !isRegDeadlinePassed());
     const adminBtns=canManageTeam
       ?`<div class="rr-admin-btns">
           <button class="btn rr-btn-edit" style="background:#f8fafc;color:#0f1e3a;border:1px solid #cbd5e1" onclick="openETeam('${esc(key)}',${i})">✏️ 수정</button>
@@ -3477,9 +3532,22 @@ function renderRL(){
 
   const t=G.tournaments.find(t=>t.id===tid);
   const isOpen = (t?.status==='open');
+  const deadlinePassed = !AD && isRegDeadlinePassed();
 
   if(section) section.style.display='block';
-  const aoReg=ge('aoReg'); if(aoReg) aoReg.style.display=(AD||REG)?'block':'none';
+  const aoReg=ge('aoReg'); if(aoReg) aoReg.style.display=(AD||(REG&&!deadlinePassed))?'block':'none';
+  // 기한 만료 안내
+  let _dlMsg=ge('regDeadlineMsg');
+  if(!_dlMsg){
+    _dlMsg=document.createElement('div');
+    _dlMsg.id='regDeadlineMsg';
+    _dlMsg.style.cssText='margin:8px 0;padding:10px 12px;border-radius:10px;border:1px solid #f87171;background:#fef2f2;font-size:.78rem;color:#dc2626;line-height:1.5;display:none;';
+    ge('regDivisionBoard')?.insertAdjacentElement('afterbegin',_dlMsg);
+  }
+  if(deadlinePassed&&REG){
+    _dlMsg.style.display='block';
+    _dlMsg.innerHTML=`⛔ <b>등록 기한이 만료</b>되어 팀 등록·수정·삭제가 불가합니다.<br><span style="font-size:.75rem;color:#b91c1c">${regDeadlineLabel()}</span>`;
+  }else{_dlMsg.style.display='none';}
 
   // 선택한 부서 카드 안에 폼을 바로 붙임
   const slot=ge('regInlineSlot_'+regDivDomId(div));
@@ -3498,8 +3566,8 @@ function renderRL(){
       }
     },200);
   }
-  // ✅ 접수중(open) 대회가 아니면(일반 사용자) 팀 등록 UI 비활성화
-  const lock = (!AD && !isOpen);
+  // ✅ 접수중(open) 대회가 아니면(일반 사용자) 또는 기한 만료 시 팀 등록 UI 비활성화
+  const lock = (!AD && !isOpen) || deadlinePassed;
 
   // 클럽/선수 입력/등록버튼 비활성화
   const clubSel=ge('regClub'); if(clubSel) clubSel.disabled = lock;
@@ -3531,6 +3599,7 @@ function renderRL(){
 }
 async function registerTeam(){
   const tid=ge('regTS').value,div=ge('regDS').value,club=ge('regClub').value;
+  if(!AD&&isRegDeadlinePassed()){toast(`등록 기한이 만료되어 등록할 수 없습니다.\n${regDeadlineLabel()}`,'error');return;}
   if(!tid||!div){toast('대회/부서 선택','error');return;}
   const t=G.tournaments.find(t=>t.id===tid);if(t?.status&&t.status!=='open'){toast('접수중인 대회만 등록 가능','error');return;}
   if(!club){toast('클럽 선택','error');return;}
@@ -3600,6 +3669,10 @@ async function delTeam(key,idx){
     toast('경기이사 로그인 후 삭제할 수 있습니다','error');
     return;
   }
+  if(!AD&&isRegDeadlinePassed()){
+    toast(`등록 기한이 만료되어 삭제할 수 없습니다.\n${regDeadlineLabel()}`,'error');
+    return;
+  }
 
   if(!confirm('팀을 삭제하면 해당 선수들의 참가 기록도 함께 삭제됩니다.\n삭제하시겠습니까?')) return;
 
@@ -3640,6 +3713,10 @@ function openETeam(key,idx){
   const canManage = AD || REG;
   if(!canManage){
     toast('경기이사 로그인 후 수정할 수 있습니다','error');
+    return;
+  }
+  if(!AD&&isRegDeadlinePassed()){
+    toast(`등록 기한이 만료되어 수정할 수 없습니다.\n${regDeadlineLabel()}`,'error');
     return;
   }
 
@@ -3685,6 +3762,10 @@ async function saveETeam(){
 
   if(!canManage){
     toast('경기이사 로그인 후 수정할 수 있습니다','error');
+    return;
+  }
+  if(!AD&&isRegDeadlinePassed()){
+    toast(`등록 기한이 만료되어 수정할 수 없습니다.\n${regDeadlineLabel()}`,'error');
     return;
   }
   const[,div]=CE_key.split('_');
@@ -3738,10 +3819,49 @@ function renderBracket(){
     const _bp=ge('page-bracket');
     if(_bp) _bp.insertBefore(_bBanner,_bp.firstChild);
   }
-  _bBanner.innerHTML=(MY_CLUB_FILTER&&REG_CLUB)
-    ?`<div style="padding:8px 12px;background:#dcfce7;border:1.5px solid #16a34a;border-radius:10px;font-size:.8rem;color:#166534;font-weight:600;margin-bottom:8px">
-        🏆 ${REG_CLUB} 경기 강조 중 (흐린 경기는 타 클럽) &nbsp;<button onclick="toggleMyClubFilter('bracket')" style="font-size:.74rem;padding:2px 8px;border:1px solid #16a34a;border-radius:999px;background:white;color:#166534;cursor:pointer">전체 보기</button>
-      </div>` : '';
+  if(MY_CLUB_FILTER&&REG_CLUB){
+    const _mbc=baseClub(REG_CLUB);
+    const _atid=ge('brTS').value;
+    const _at=G.tournaments.find(t=>t.id===_atid);
+    let _myMatchCards='';
+    if(_at){
+      (_at.divisions||[]).forEach(_div=>{
+        const _key=_atid+'_'+_div;
+        const _tms=G.teams[_key]||[];
+        const _allMs=G.matches[_key]||[];
+        const _myMs=_allMs.filter(_m=>{
+          const _t1=_tms[_m.t1]??_tms.find(t=>t.id===_m.t1);
+          const _t2=_tms[_m.t2]??_tms.find(t=>t.id===_m.t2);
+          return !_m.bye&&((_t1&&baseClub(_t1.club||'')===_mbc)||(_t2&&baseClub(_t2.club||'')===_mbc));
+        });
+        if(_myMs.length){
+          _myMatchCards+=`<div style="font-size:.75rem;font-weight:700;color:#166534;margin:8px 0 4px">${dl(_div)}</div>`;
+          _myMs.forEach(_m=>{
+            const _t1=_tms[_m.t1]??_tms.find(t=>t.id===_m.t1);
+            const _t2=_tms[_m.t2]??_tms.find(t=>t.id===_m.t2);
+            const _n1=tdn(_t1,_key,_m.t1)||'?'; const _n2=tdn(_t2,_key,_m.t2)||'?';
+            const _courts=Array.isArray(_m.courts)&&_m.courts.length?` 🎾${_m.courts.join('/')}`:(_m.court?` 🎾${_m.court}`:'');
+            const _done=_m.winner!==null;
+            const _winNm=_done?(baseClub((_tms[_m.winner]??_tms.find(t=>t.id===_m.winner))?.club||'')===_mbc?'🏆 승':'😢 패'):'⏳ 대기';
+            _myMatchCards+=`<div style="background:white;border:1.5px solid #16a34a;border-radius:10px;padding:8px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+              <div style="font-size:.85rem;font-weight:700">${_n1} <span style="color:var(--text3)">vs</span> ${_n2}</div>
+              <div style="display:flex;gap:6px;align-items:center">
+                ${_courts?`<span style="font-size:.78rem;color:var(--primary)">${_courts}</span>`:''}
+                <span style="font-size:.78rem;font-weight:700;color:${_done?'#16a34a':'#e67e22'}">${_winNm}</span>
+              </div>
+            </div>`;
+          });
+        }
+      });
+    }
+    _bBanner.innerHTML=`<div style="padding:10px 12px;background:#dcfce7;border:1.5px solid #16a34a;border-radius:10px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${_myMatchCards?'8px':'0'}">
+        <span style="font-size:.88rem;font-weight:700;color:#166534">🏆 ${REG_CLUB} 내 경기 모아보기</span>
+        <button onclick="toggleMyClubFilter('bracket')" style="font-size:.74rem;padding:3px 10px;border:1px solid #16a34a;border-radius:999px;background:white;color:#166534;cursor:pointer">전체 보기</button>
+      </div>
+      ${_myMatchCards||'<div style="font-size:.78rem;color:#166534">등록된 경기가 없습니다</div>'}
+    </div>`;
+  }else{_bBanner.innerHTML='';}
 
   if(!tid){
     cont.innerHTML='<div class="empty-state card"><div class="empty-icon">🎲</div><p>대회를 선택하세요</p></div>';
@@ -9752,7 +9872,7 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   onRankTC,renderRanking,
   filterP,showP,renderAllP,openPD,openRoster,
   openClubMgr,addClub,delClub,renderCL,
-  toggleReg,doRegLogin,applyRegLoginUI,saveRegPw,toggleShowRegPw,saveFirstLoginPhone,_completeRegLogin,updateMyClubUI,goMyClubBracket,toggleMyClubFilter,saveClubPassword,
+  toggleReg,doRegLogin,applyRegLoginUI,saveRegPw,toggleShowRegPw,saveFirstLoginPhone,_completeRegLogin,updateMyClubUI,goMyClubBracket,toggleMyClubFilter,saveClubPassword,saveRegDeadline,clearRegDeadline,refreshRegDeadlineUI,
   onRegClubChange,onRegContactInput,saveRegContact,
   renderAdminContactList,saveContactFromAdmin,renderAdminNoticeSection,
   prefillNoticeMsg,renderNoticeContactBtns,captureAndShareBracket,
