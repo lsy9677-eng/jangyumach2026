@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "v26.10-bracket-win-fix-match-nav-fix";
+  const APP_VERSION = "v26.11-deploy-hotfix-no-sw-match-nav";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -6962,10 +6962,23 @@ function updateMyClubHomeCard(){
 function goMyClubBracket(){
   const at=G.tournaments.find(t=>t.status==='ongoing')||G.tournaments.find(t=>t.status==='open')||G.tournaments[0];
   if(!at) return;
+  PENDING_MATCH_FOCUS = null;
   showPage('bracket');
   const brTS=ge('brTS');
-  if(brTS){ brTS.value=at.id; onBrTC&&onBrTC(); }
-  setTimeout(()=>toggleMyClubFilter('bracket',true),300);
+  if(brTS) brTS.value=at.id;
+  if(typeof onBrTC==='function') onBrTC();
+
+  const settle=()=>{
+    const brDS=ge('brDS');
+    if(brDS) brDS.value='__ALL__';
+    MY_CLUB_FILTER=true;
+    updateFilterBtnUI('bracket', true);
+    renderBracket();
+  };
+
+  requestAnimationFrame(()=>{
+    setTimeout(settle,220);
+  });
 }
 
 function toggleMyClubFilter(tab, forceOn){
@@ -8089,14 +8102,16 @@ function goBracketMatch(tid,div,matchId){
       const hasOpt=[...brDS.options].some(o=>o.value===div);
       brDS.value = hasOpt ? div : '__ALL__';
     }
+    MY_CLUB_FILTER=true;
+    updateFilterBtnUI('bracket', true);
     renderBracket();
-    if(MY_CLUB_FILTER) updateFilterBtnUI('bracket', true);
-    // ✅ 렌더링 완료 후 충분한 딜레이 후 포커스 적용
     setTimeout(()=>{ schedulePendingMatchFocus(); }, 350);
+    setTimeout(()=>{ schedulePendingMatchFocus(); }, 900);
+    setTimeout(()=>{ schedulePendingMatchFocus(); }, 1600);
   };
 
   requestAnimationFrame(()=>{
-    setTimeout(selectAndRender, 200);
+    setTimeout(selectAndRender, 220);
   });
 }
 function dl(d){return{'금':'🥇 금배부','은':'🥈 은배부','동':'🥉 동배부','테린이':'🌱 테린이부','gold':'🥇 금배부','silver':'🥈 은배부','bronze':'🥉 동배부','terinee':'🌱 테린이부','women':'👩 여성부'}[d]||d;}
@@ -10039,6 +10054,7 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   openPD,openEditPlayer,saveEditPlayer,deletePlayer,mergePlayer,openSelectiveClearModal,selectiveClearTournament,cleanupPlayerHistories,hardResetAllData,migrateHistDataToFirebase,syncAllTnames,syncTnameInPlayers,
   resetMatchRecords,recalcAllPlayerStats,
   backupJSON,restoreFromJSON,backupPlayersExcel,exportPlayersCSV,exportPlayersExcel,
+  goBracketMatch,
   bracketToImage,bracketToPDF,openBracketView,switchBVTab,renderBracketView,saveBracketViewImage,
   onRankTC,renderRanking,
   filterP,showP,renderAllP,openPD,openRoster,
@@ -10061,28 +10077,30 @@ document.addEventListener('DOMContentLoaded',()=>initFB());
 </script>
 
 <script>
-  // PWA - 업데이트 자동 감지 및 적용
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").then(reg => {
-        // 새 SW 발견 시 즉시 활성화 요청
-        reg.addEventListener("updatefound", () => {
-          const newSW = reg.installing;
-          newSW.addEventListener("statechange", () => {
-            if (newSW.state === "installed" && navigator.serviceWorker.controller) {
-              newSW.postMessage({ type: "SKIP_WAITING" });
-            }
-          });
-        });
-        // 5분마다 업데이트 체크
-        setInterval(() => reg.update(), 5 * 60 * 1000);
-      }).catch(() => {});
-      // SW 교체 완료 시 자동 새로고침
-      navigator.serviceWorker.addEventListener("controllerchange", () => {
-        window.location.reload();
-      });
+  // 배포 안정화 핫픽스:
+  // 예전 service worker / 캐시 때문에 배포본에서 클릭 이동이 안 먹는 문제를 막기 위해
+  // 현재 버전에서는 기존 SW를 해제하고 새 SW 등록은 하지 않습니다.
+  (function(){
+    const SW_HOTFIX_KEY = 'SW_DISABLED_VERSION';
+    if (!('serviceWorker' in navigator)) return;
+    window.addEventListener('load', async () => {
+      try{
+        const prev = localStorage.getItem(SW_HOTFIX_KEY);
+        if (prev !== APP_VERSION) {
+          localStorage.setItem(SW_HOTFIX_KEY, APP_VERSION);
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister().catch(() => false)));
+          if ('caches' in window) {
+            const keys = await caches.keys().catch(() => []);
+            await Promise.all((keys || []).map(k => caches.delete(k).catch(() => false)));
+          }
+          if (navigator.serviceWorker.controller) {
+            setTimeout(() => location.reload(), 120);
+          }
+        }
+      }catch(_e){}
     });
-  }
+  })();
 </script>
 <script>
 /* ===============================
