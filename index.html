@@ -11,7 +11,7 @@
 <script>
   // ✅ 배포할 때마다 아래 버전 문자열만 바꾸면, 사용자가 앱을 열 때 자동으로 새 버전을 적용합니다.
   // 예) "2026-02-27-02" 처럼 숫자만 올려도 됩니다.
-  const APP_VERSION = "v26.11-deploy-hotfix-no-sw-match-nav";
+  const APP_VERSION = "v26.12-multi-division-bracket-filter";
 
   (function forceUpdateOnNewVersion() {
     const key = "APP_VERSION";
@@ -604,6 +604,12 @@ body{overflow-x:hidden;}
 .nav-tab .nbadge{color:white;} 
 .hero-chip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);} 
 
+.multi-div-wrap{display:flex;flex-wrap:wrap;gap:8px;min-height:42px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius);background:white;}
+.multi-div-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1.5px solid var(--border);background:var(--panel2);color:var(--text2);font-size:.78rem;font-weight:700;cursor:pointer;user-select:none;transition:all .18s;}
+.multi-div-chip:hover{border-color:var(--primary);color:var(--primary);}
+.multi-div-chip.active{background:var(--primary);border-color:var(--primary);color:white;box-shadow:0 2px 8px rgba(15,30,58,.16);}
+.multi-div-chip.all.active{background:linear-gradient(135deg,#0f1e3a,#1b2f5a);}
+
 </style>
 
 <!-- PWA -->
@@ -902,7 +908,7 @@ body{overflow-x:hidden;}
   <div class="card">
     <div class="frow">
       <div class="form-group"><label class="form-label">대회</label><select class="form-select" id="brTS" onchange="onBrTC()"><option value="">-- 대회 선택 --</option></select></div>
-      <div class="form-group"><label class="form-label">부서</label><select class="form-select" id="brDS" onchange="renderBracket()"><option value="__ALL__">전체</option></select></div>
+      <div class="form-group"><label class="form-label">부서</label><input type="hidden" id="brDS" value="__ALL__"><div id="brMultiSelect" class="multi-div-wrap"></div><div style="font-size:.72rem;color:var(--text3);margin-top:6px">전체 또는 원하는 부서를 여러 개 선택해서 함께 볼 수 있습니다.</div></div>
     </div>
   </div>
   <div id="bracketContent"><div class="empty-state card"><div class="empty-icon">🎲</div><p>대회와 부서를 선택하세요</p></div></div>
@@ -3790,27 +3796,85 @@ async function saveETeam(){
 }
 
 
+function brGetAvailableDivs(tid){
+  const t=G.tournaments.find(t=>t.id===tid);
+  return [...(t?.divisions||[])];
+}
+function brNormalizeDivs(raw, tid){
+  const available=brGetAvailableDivs(tid);
+  if(!available.length) return ['__ALL__'];
+  let arr=[];
+  if(Array.isArray(raw)) arr=raw.slice();
+  else arr=String(raw||'__ALL__').split(',').map(v=>v.trim()).filter(Boolean);
+  if(!arr.length||arr.includes('__ALL__')) return ['__ALL__'];
+  const uniq=[];
+  arr.forEach(v=>{ if(available.includes(v) && !uniq.includes(v)) uniq.push(v); });
+  return uniq.length?uniq:['__ALL__'];
+}
+function brRenderSelector(tid){
+  const wrap=ge('brMultiSelect');
+  const input=ge('brDS');
+  if(!wrap||!input) return;
+  const available=brGetAvailableDivs(tid);
+  const selected=brNormalizeDivs(input.value, tid);
+  if(!tid||!available.length){
+    input.value='__ALL__';
+    wrap.innerHTML='<div style="font-size:.78rem;color:var(--text3)">대회를 먼저 선택하세요</div>';
+    return;
+  }
+  const isAll=selected.includes('__ALL__');
+  wrap.innerHTML = [`<button type="button" class="multi-div-chip all ${isAll?'active':''}" onclick="toggleBracketDiv('__ALL__')">전체</button>`]
+    .concat(available.map(d=>`<button type="button" class="multi-div-chip ${!isAll&&selected.includes(d)?'active':''}" onclick="toggleBracketDiv('${d}')">${dl(d)}</button>`))
+    .join('');
+}
+function brSetSelectedDivs(divs, renderNow=true){
+  const tid=ge('brTS')?.value||'';
+  const input=ge('brDS');
+  if(!input) return;
+  const normalized=brNormalizeDivs(divs, tid);
+  input.value = normalized.includes('__ALL__') ? '__ALL__' : normalized.join(',');
+  brRenderSelector(tid);
+  if(renderNow) renderBracket();
+}
+function brGetSelectedDivs(){
+  const tid=ge('brTS')?.value||'';
+  const input=ge('brDS');
+  return brNormalizeDivs(input?.value||'__ALL__', tid);
+}
+function toggleBracketDiv(div){
+  const tid=ge('brTS')?.value||'';
+  const current=brGetSelectedDivs();
+  if(div==='__ALL__'){
+    brSetSelectedDivs(['__ALL__']);
+    return;
+  }
+  let next=current.includes('__ALL__')?[]:current.slice();
+  if(next.includes(div)) next=next.filter(v=>v!==div);
+  else next.push(div);
+  const available=brGetAvailableDivs(tid);
+  if(next.length===0||next.length===available.length) next=['__ALL__'];
+  brSetSelectedDivs(next);
+}
+
 function onBrTC(){
   const tid=ge('brTS').value, ds=ge('brDS');
-  // 기본: 전체 유지
-  const prev = ds.value || '__ALL__';
+  const prev = ds?.value || '__ALL__';
 
   if(!tid){
-    ds.innerHTML='<option value="__ALL__">전체</option>';
+    if(ds) ds.value='__ALL__';
+    brRenderSelector('');
     ge('bracketContent').innerHTML='<div class="empty-state card"><div class="empty-icon">🎲</div><p>대회를 선택하세요</p></div>';
     return;
   }
-  const t=G.tournaments.find(t=>t.id===tid);
-  ds.innerHTML='<option value="__ALL__">전체</option>'+t.divisions.map(d=>`<option value="${d}">${dl(d)}</option>`).join('');
-  // 이전 선택 복원(없으면 전체)
-  const hasPrev=[...ds.options].some(o=>o.value===prev);
-  ds.value = hasPrev ? prev : '__ALL__';
+  if(ds) ds.value = brNormalizeDivs(prev, tid).includes('__ALL__') ? '__ALL__' : brNormalizeDivs(prev, tid).join(',');
+  brRenderSelector(tid);
   renderBracket();
 }
 
 function renderBracket(){
   const tid=ge('brTS').value;
-  const div=ge('brDS').value; // '__ALL__' = 전체
+  const selectedDivs=brGetSelectedDivs();
+  const div=selectedDivs.includes('__ALL__') ? '__ALL__' : selectedDivs.join(',');
   const cont=ge('bracketContent');
   updateFilterBtnUI('bracket', MY_CLUB_FILTER);
 
@@ -3906,27 +3970,15 @@ function renderBracket(){
     return;
   }
 
-  // ✅ 전체 부서 보기
-  if(div==='__ALL__'){
-    const parts = (t.divisions||[]).map(d=>{
-      return renderBracketHTMLForDiv(tid,d,false);
-    }).filter(Boolean);
+  const displayDivs = div==='__ALL__' ? (t.divisions||[]) : selectedDivs;
+  const parts = displayDivs.map(d=>renderBracketHTMLForDiv(tid,d,false)).filter(Boolean);
 
-    cont.innerHTML = parts.length
-      ? parts.join('<div style="height:14px"></div>')
-      : '<div class="empty-state card"><div class="empty-icon">🎲</div><p>표시할 부서가 없습니다</p></div>';
+  cont.innerHTML = parts.length
+    ? parts.join('<div style="height:14px"></div>')
+    : '<div class="empty-state card"><div class="empty-icon">🎲</div><p>표시할 부서가 없습니다</p></div>';
 
-    const _eb=ge('bracketExportBar');
-    if(_eb) _eb.style.display = parts.length ? 'flex' : 'none';
-    schedulePendingMatchFocus();
-    return;
-  }
-
-  // ✅ 단일 부서 보기
-  const html = renderBracketHTMLForDiv(tid,div,false);
-  cont.innerHTML = html;
   const _eb=ge('bracketExportBar');
-  if(_eb) _eb.style.display = html && html.length>200 ? 'flex' : 'none';
+  if(_eb) _eb.style.display = parts.length ? 'flex' : 'none';
   schedulePendingMatchFocus();
 }
 
@@ -6970,7 +7022,7 @@ function goMyClubBracket(){
 
   const settle=()=>{
     const brDS=ge('brDS');
-    if(brDS) brDS.value='__ALL__';
+    if(brDS) brSetSelectedDivs(['__ALL__'], false);
     MY_CLUB_FILTER=true;
     updateFilterBtnUI('bracket', true);
     renderBracket();
@@ -8077,11 +8129,8 @@ function goBracket(tid,div){
   if(typeof onBrTC==='function') onBrTC();
   // 딜레이 충분히 확보 후 부서 선택 + 렌더링
   setTimeout(()=>{
-    const brDS=ge('brDS');
-    if(!brDS) return;
-    // 해당 div 옵션이 있으면 선택, 없으면 __ALL__
-    const hasOpt=[...brDS.options].some(o=>o.value===div);
-    brDS.value = hasOpt ? div : '__ALL__';
+    if(!ge('brDS')) return;
+    brSetSelectedDivs([div], false);
     renderBracket();
     // 필터 ON 상태면 유지
     if(MY_CLUB_FILTER) updateFilterBtnUI('bracket', true);
@@ -8097,10 +8146,8 @@ function goBracketMatch(tid,div,matchId){
   if(typeof onBrTC==='function') onBrTC();
 
   const selectAndRender=()=>{
-    const brDS=ge('brDS');
-    if(brDS){
-      const hasOpt=[...brDS.options].some(o=>o.value===div);
-      brDS.value = hasOpt ? div : '__ALL__';
+    if(ge('brDS')){
+      brSetSelectedDivs([div], false);
     }
     MY_CLUB_FILTER=true;
     updateFilterBtnUI('bracket', true);
@@ -8765,11 +8812,11 @@ function openGroupCourtModal(key,gi){
 // ─── 경기순서 자동배열 실행 (현재 선택된 대회/부서) ─────────────────────
 function runAutoOrder(){
   const tid=ge('brTS')?.value;
-  const divSel=ge('brDS')?.value;
+  const divSelList=brGetSelectedDivs();
   if(!tid){ toast('대회를 먼저 선택하세요','info'); return; }
   const t=G.tournaments.find(t=>t.id===tid);
   if(!t){ return; }
-  const divs = (divSel && divSel!=='__ALL__') ? [divSel] : (t.divisions||[]);
+  const divs = (divSelList.includes('__ALL__')) ? (t.divisions||[]) : divSelList;
   if(divs.length===0){ toast('부서가 없습니다','info'); return; }
   // 부서별 순차 실행
   (async()=>{
@@ -10071,7 +10118,8 @@ Object.assign(window,{ openQuickAddPlayer, quickAddPlayer, fillAdminPlayerClub, 
   activateSlot,celebrateGroupComplete,refreshRunPreview,buildRouletteStrip,updateDrawMainPreview
 ,
   toggleDivRubber,selRub,getDivRubbers,
-  etToggleRub,etSelRub,etGetRubbers});
+  etToggleRub,etSelRub,etGetRubbers,
+  brGetAvailableDivs,brNormalizeDivs,brRenderSelector,brSetSelectedDivs,brGetSelectedDivs,toggleBracketDiv});
 
 document.addEventListener('DOMContentLoaded',()=>initFB());
 </script>
