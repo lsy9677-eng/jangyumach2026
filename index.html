@@ -4298,14 +4298,9 @@ function renderBracketHTMLForDiv(tid,div,isAll){
 }
 function mCard(m,key,dn1,dn2,matchDone,sc1,sc2,label){
   const wn1=matchDone&&m.winner===m.t1,wn2=matchDone&&m.winner===m.t2;
-  const rbs=m.rubbers||[];
-  // 복식 수 결정 - divSettings 우선 → 팀 저장값 → 기본값 3
-  const[,div]=key.split('_');
-  const teams=G.teams[key]||[];const t1=teams[m.t1];
-  const p1=t1?.players||[];
-  const _t=G.tournaments.find(t=>t.id===key.split('_')[0]);
-  const _cfg=_t?.divSettings?.[div];
-  const dbl=(_cfg?.doublesCount)||(t1?.doublesCount)||3;
+  // 복식 수 결정 - 현재 부서 설정을 최우선으로 사용하고, 렌더링도 해당 개수까지만 제한
+  const dbl=getMatchDoublesCount(key,m);
+  const rbs=Array.isArray(m.rubbers)?m.rubbers.slice(0,dbl):[];
   const rbLabels=['1복식','2복식','3복식','4복식','5복식'];
   const rbH=rbs.length?rbs.map((rb,r)=>{
     if(!rb||rb.score1==null)return`<div class="rb-row pend"><span class="rb-p1">${rb.players1?.join('/')||dn1+' '+(r+1)+'복식'}</span><span class="rb-sc">- : -</span><span class="rb-p2">${rb.players2?.join('/')||dn2+' '+(r+1)+'복식'}</span></div>`;
@@ -4986,7 +4981,7 @@ function getMatchDoublesCount(key,m){
 function getMatchResultState(key,m){
   const dbl=getMatchDoublesCount(key,m);
   const need=Math.floor(dbl/2)+1;
-  const rubbers=Array.isArray(m?.rubbers)?m.rubbers:[];
+  const rubbers=Array.isArray(m?.rubbers)?m.rubbers.slice(0,dbl):[];
   let sc1=0, sc2=0, completed=0;
   rubbers.forEach(rb=>{
     if(!rb || rb.winner==null || rb.score1==null || rb.score2==null) return;
@@ -5918,6 +5913,49 @@ async function resetDrawOnly(tid,div){
 // ═══════════════════════════════════════════════════════
 let MD = {key:null,tid:null,div:null,advT:[],bracketSize:0,byeCount:0,isRunning:false};
 
+async function hasMainBracket(key){
+  return (G.matches[key]||[]).some(m=>m.phase==='main');
+}
+
+function isGroupStageComplete(key){
+  const draw=G.draws[key];
+  if(!draw?.groups?.length) return false;
+  const ms=(G.matches[key]||[]).filter(m=>m.phase==='group');
+  let expected=0;
+  (draw.groups||[]).forEach(g=>{
+    const n=Array.isArray(g) ? g.length : ((g?.teams||[]).length||0);
+    expected += (n*(n-1))/2;
+  });
+  if(expected<=0) return false;
+  if(ms.length < expected) return false;
+  return ms.every(m=>getMatchResultState(key,m).isDone);
+}
+
+async function autoBuildMainIfReady(key){
+  const i=key.lastIndexOf('_');
+  const tid=key.slice(0,i), div=key.slice(i+1);
+  const t=G.tournaments.find(t=>t.id===tid);
+  if(!t) return false;
+  const cfg=gDS(t,div);
+  if(cfg.format!=='group_knockout') return false;
+  if(hasMainBracket(key)) return false; // 이미 본선이 있으면 절대 건드리지 않음
+  if(!isGroupStageComplete(key)) return false; // 예선이 다 끝난 경우에만 자동 생성
+
+  const draw=G.draws[key], teams=G.teams[key]||[];
+  const advT=getAdvT(key,draw,teams,cfg);
+  if(advT.length<2) return false;
+
+  const n=np2(advT.length);
+  const plan=buildHybridMainSlots([...(advT.filter(a=>a.rk===1)||[]),...(advT.filter(a=>a.rk!==1)||[])],n);
+  const matchSlots=plan.matchSlots||[];
+  const mainMs=buildMainMatches(matchSlots,n,teams,key);
+  const allMs=(G.matches[key]||[]).filter(m=>m.phase!=='main');
+  G.matches[key]=[...allMs,...mainMs];
+  await stM(key);
+  await fbLog('본선 자동확정: '+(t?.name||'')+' '+dl(div),'🌳');
+  return true;
+}
+
 async function buildMain(tid,div){
   const key=tid+'_'+div, t=G.tournaments.find(t=>t.id===tid),
         draw=G.draws[key], teams=G.teams[key]||[], cfg=gDS(t,div);
@@ -6498,10 +6536,9 @@ async function saveM3(){
   const m=list[idx];
   if(!canEditMatchByDirector(key,m)){toast('해당 경기 참가 클럽의 경기이사만 저장할 수 있습니다','error');return;}
   const teams=G.teams[key]||[];const t1=teams[m.t1],t2=teams[m.t2];if(!t1||!t2)return;
-  // 복식 수 결정
-  const[,div]=key.split('_');const isT=(div==='테린이'||div==='terinee');
+  // 복식 수 결정 - 현재 부서/경기 설정을 기준으로 고정
+  const dbl=getMatchDoublesCount(key,m);
   const p1=t1.players||[];
-  const dbl=t1.doublesCount||(isT?(p1.length<=6?3:p1.length<=8?4:5):3);
   const newRb=[];
   for(let r=0;r<dbl;r++){
     const s1v=ge('rs1_'+r)?.value,s2v=ge('rs2_'+r)?.value;
@@ -6563,8 +6600,12 @@ async function saveM3(){
     const logSc1 = nextState?.sc1 ?? rbSc(m,0);
     const logSc2 = nextState?.sc2 ?? rbSc(m,1);
     await fbLog(`결과: ${dn1} ${logSc1}:${logSc2} ${dn2}`,'⚡');
-    if(m.phase==='main')await autoAdv(key,m.id);
-    sl(false);cm('mM3');toast('결과 저장 ✅','success');renderBracket();
+    if(m.phase==='main') await autoAdv(key,m.id);
+    let autoMainBuilt=false;
+    if(m.phase==='group') autoMainBuilt = await autoBuildMainIfReady(key);
+    sl(false);cm('mM3');
+    toast(autoMainBuilt?'결과 저장 ✅ 본선 대진 자동 확정':'결과 저장 ✅','success');
+    renderBracket();
   }catch(e){sl(false);toast('저장 실패: '+e.message,'error');}
 }
 
