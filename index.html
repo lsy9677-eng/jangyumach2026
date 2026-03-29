@@ -3434,7 +3434,7 @@ function getRegDoublesCount(){
 // 등록 폼 슬롯 업데이트 (테린이부 복식 수 변경 시)
 function updateRegisterSlots(){
   const div=ge('regDS')?.value||'';
-  const isTerinee=div==='terinee';
+  const isTerinee=(div==='테린이'||div==='terinee');
   const dbl=getRegDoublesCount();
   const mainCount=dbl*2;
 
@@ -4337,7 +4337,8 @@ function mCard(m,key,dn1,dn2,matchDone,sc1,sc2,label){
   const _cfg=_t?.divSettings?.[div];
   const dbl=(_cfg?.doublesCount)||(t1?.doublesCount)||3;
   const rbLabels=['1복식','2복식','3복식','4복식','5복식'];
-  const rbH=rbs.length?rbs.map((rb,r)=>{
+  const shownRbs=rbs.slice(0,dbl);
+  const rbH=shownRbs.length?shownRbs.map((rb,r)=>{
     if(!rb||rb.score1==null)return`<div class="rb-row pend"><span class="rb-p1">${rb.players1?.join('/')||dn1+' '+(r+1)+'복식'}</span><span class="rb-sc">- : -</span><span class="rb-p2">${rb.players2?.join('/')||dn2+' '+(r+1)+'복식'}</span></div>`;
     const rw1=rb.winner===0,rw2=rb.winner===1;
     return`<div class="rb-row ${rw1?'win1':rw2?'win2':'pend'}"><span class="rb-p1" style="color:${rw1?'var(--success)':rw2?'var(--text3)':'inherit'}">${rb.players1?.join('/')||'-'}</span><span class="rb-sc" style="color:${rw1?'var(--success)':rw2?'var(--danger)':'var(--text2)'}">${rb.tiebreak?`<b>${rb.score1}:${rb.score2}</b><small style="font-size:.6em">TB</small>`:`${rb.score1}:${rb.score2}`}</span><span class="rb-p2" style="color:${rw2?'var(--success)':rw1?'var(--text3)':'inherit'}">${rb.players2?.join('/')||'-'}</span></div>`;
@@ -4996,13 +4997,17 @@ function calcGS(key,gi,tidxs,teams){
   return tidxs.map(ti=>{
     const tm=teams[ti];let w=0,l=0,gw=0,gl=0;
     (G.matches[key]||[]).filter(m=>m.phase==='group'&&m.group===gi&&(m.t1===ti||m.t2===ti)).forEach(m=>{
-      if(m.winner===null)return;const isT1=m.t1===ti,sc=rbSc(m,isT1?0:1),scO=rbSc(m,isT1?1:0);
+      if(m.winner===null)return;const isT1=m.t1===ti,sc=rbSc(m,isT1?0:1,key),scO=rbSc(m,isT1?1:0,key);
       if(m.winner===ti)w++;else l++;gw+=sc;gl+=scO;
     });
     return{ti,nm:tdn(tm,key,ti),w,l,gw,gl,diff:gw-gl};
   }).sort((a,b)=>b.w-a.w||b.diff-a.diff);
 }
-function rbSc(m,idx){if(!m.rubbers)return 0;return m.rubbers.filter(rb=>rb&&rb.winner===idx).length;}
+function rbSc(m,idx,key){
+  if(!m.rubbers) return 0;
+  const dbl=key?getMatchDoublesCount(key,m):(Array.isArray(m.rubbers)?m.rubbers.length:0);
+  return (m.rubbers||[]).slice(0,dbl).filter(rb=>rb&&rb.winner===idx).length;
+}
 
 function getMatchDoublesCount(key,m){
   const teams=G.teams[key]||[];
@@ -5016,7 +5021,7 @@ function getMatchDoublesCount(key,m){
 function getMatchResultState(key,m){
   const dbl=getMatchDoublesCount(key,m);
   const need=Math.floor(dbl/2)+1;
-  const rubbers=Array.isArray(m?.rubbers)?m.rubbers:[];
+  const rubbers=(Array.isArray(m?.rubbers)?m.rubbers:[]).slice(0,dbl);
   let sc1=0, sc2=0, completed=0;
   rubbers.forEach(rb=>{
     if(!rb || rb.winner==null || rb.score1==null || rb.score2==null) return;
@@ -6533,7 +6538,7 @@ async function saveM3(){
   // 복식 수 결정
   const[,div]=key.split('_');const isT=(div==='테린이'||div==='terinee');
   const p1=t1.players||[];
-  const dbl=t1.doublesCount||(isT?(p1.length<=6?3:p1.length<=8?4:5):3);
+  const dbl=getMatchDoublesCount(key,m);
   const newRb=[];
   for(let r=0;r<dbl;r++){
     const c1=ge('rp1_'+r),c2=ge('rp2_'+r);
