@@ -4093,6 +4093,39 @@ function renderMatchProgressSummary(key){
   </div>`;
 }
 
+
+function renderRoundRobinFinalPanel(key, draw, teams){
+  if(!draw || !draw.groups || !draw.groups.length) return renderRoundRobinPreviewHTML(teams.length,'풀리그는 결승전이나 본선 진출팀이 없습니다. 전체 경기 종료 후 순위표 기준으로 최종 순위를 확정합니다.');
+  const grp=draw.groups[0];
+  const stats=calcGS(key,0,grp.teams,teams)||[];
+  if(!stats.length) return renderRoundRobinPreviewHTML(teams.length,'풀리그는 결승전이나 본선 진출팀이 없습니다. 전체 경기 종료 후 순위표 기준으로 최종 순위를 확정합니다.');
+  const top3=stats.slice(0,3);
+  return `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="badge" style="background:var(--primary);color:#fff">풀리그 ${teams.length}팀</span>
+        <span class="badge" style="background:var(--success);color:#fff">최종 순위 반영</span>
+      </div>
+      <div style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-lg);background:linear-gradient(135deg,#f8fffb,#eefaf3)">
+        <div style="font-weight:800;color:var(--primary-dark);margin-bottom:6px">🏁 최종 순위표</div>
+        <div style="display:grid;gap:8px">
+          ${stats.map((s,i)=>`<div style="display:grid;grid-template-columns:52px 1fr auto;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);background:#fff">
+            <div style="font-weight:900;color:${i===0?'#1565c0':i===1?'#e67e22':i===2?'#43a047':'var(--text2)'}">${i+1}위</div>
+            <div style="font-weight:800;color:var(--primary-dark)">${s.nm}</div>
+            <div style="font-size:.76rem;color:var(--text2)">${s.w}승 ${s.l}패 · 득실 ${s.diff>0?'+':''}${s.diff}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(90px,1fr));gap:8px">
+        ${top3.map((s,i)=>`<div style="padding:10px 8px;border:1px solid var(--border);border-radius:var(--radius);background:#fff;text-align:center">
+          <div style="font-size:.72rem;color:var(--text2)">${i+1}위</div>
+          <div style="font-weight:800;color:${i===0?'#1565c0':i===1?'#e67e22':'#43a047'};margin-top:4px">${['🥇','🥈','🥉'][i]} ${s.nm}</div>
+          <div style="font-size:.72rem;color:var(--text2);margin-top:4px">${s.w}승 ${s.l}패 · 득실 ${s.diff>0?'+':''}${s.diff}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
 function renderBracketHTMLForDiv(tid,div,isAll){
   const key=tid+'_'+div;
   const teams=G.teams[key]||[];
@@ -4274,7 +4307,7 @@ function renderBracketHTMLForDiv(tid,div,isAll){
       html+=`<div class="sec-title" style="margin-top:16px">🏁 풀리그 최종 순위 결정</div>`;
       html+=`<div class="card" style="background:linear-gradient(135deg,#f8fffb,#eefaf3);border:1.5px dashed var(--success)">
         <div style="font-size:.78rem;color:var(--text2);margin-bottom:10px">풀리그는 결승전이나 본선 진출팀이 없습니다. 전체 경기 종료 후 순위표 기준으로 최종 순위를 확정합니다.</div>
-        ${renderRoundRobinPreviewHTML(teams.length,'전체 경기 종료 후 승수·득실·승자승 순으로 순위를 결정합니다.')}
+        ${renderRoundRobinFinalPanel(key, draw, teams)}
       </div>`;
     }
   }
