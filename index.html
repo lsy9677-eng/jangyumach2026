@@ -3973,9 +3973,39 @@ function renderBracket(){
   const displayDivs = div==='__ALL__' ? (t.divisions||[]) : selectedDivs;
   const parts = displayDivs.map(d=>renderBracketHTMLForDiv(tid,d,false)).filter(Boolean);
 
-  cont.innerHTML = parts.length
+  const mainPickBar = AD ? (() => {
+    const divBtns = (t.divisions||[]).map(d => {
+      const k = tid+'_'+d;
+      const hasMain = (G.matches[k]||[]).some(m => m.phase==='main');
+      const hasDraw = !!G.draws[k];
+      const label = hasMain ? '🎲 본선 재추첨' : '🏆 본선 생성';
+      const btnCls = hasMain ? 'btn-outline' : 'btn-primary';
+      const disabled = hasDraw ? '' : 'disabled';
+      const hint = hasDraw ? '' : '<div style="font-size:.68rem;color:var(--text3);margin-top:4px">예선 추첨 후 가능</div>';
+      return `<div style="border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:white">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span class="dpill ${dc(d)}">${dl(d)}</span>
+            <span class="badge ${hasMain?'bg-blue':'bg-gray'}" style="font-size:.68rem">${hasMain?'본선 있음':'본선 없음'}</span>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+            <button class="btn ${btnCls}" style="font-size:.74rem;padding:5px 10px" onclick="openMainDraw('${tid}','${d}')" ${disabled}>${label}</button>
+            ${hasMain?`<button class="btn btn-outline" style="font-size:.74rem;padding:5px 10px;border-color:var(--danger);color:var(--danger)" onclick="openManualEdit('${tid}','${d}')">✏️ 비상 수동수정</button>`:''}
+          </div>
+        </div>
+        ${hasMain?'<div style="font-size:.68rem;color:var(--danger);margin-top:6px">관리자 비상수단: 꼭 필요할 때만 본선 대진을 직접 수정하세요.</div>':hint}
+      </div>`;
+    }).join('');
+    return `<div class="card" style="margin-bottom:12px">
+      <div class="card-title">🎯 본선 부서별 선택</div>
+      <div style="font-size:.76rem;color:var(--text2);margin-bottom:10px">원하는 부서만 골라서 본선 생성 또는 재추첨할 수 있습니다.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">${divBtns}</div>
+    </div>`;
+  })() : '';
+
+  cont.innerHTML = mainPickBar + (parts.length
     ? parts.join('<div style="height:14px"></div>')
-    : '<div class="empty-state card"><div class="empty-icon">🎲</div><p>표시할 부서가 없습니다</p></div>';
+    : '<div class="empty-state card"><div class="empty-icon">🎲</div><p>표시할 부서가 없습니다</p></div>');
 
   const _eb=ge('bracketExportBar');
   if(_eb) _eb.style.display = parts.length ? 'flex' : 'none';
@@ -6307,6 +6337,8 @@ function buildMainMatches(matchSlots,n){
 // ─── 수동 수정 ──────────────────────────────────────────
 let ME={key:null,tid:null,div:null};
 function openManualEdit(tid,div){
+  if(!AD){toast('관리자만 사용할 수 있습니다','error');return;}
+  if(!confirm(`${dl(div)} 본선 대진표를 수동 수정하시겠습니까?\n\n⚠️ 비상용 기능입니다. 진행 중인 본선 배정이 직접 변경될 수 있습니다.`)) return;
   const key=tid+'_'+div;
   ME={key,tid,div};
   const teams=G.teams[key]||[];
