@@ -4544,7 +4544,7 @@ function renderCombinedBracketSection(tid, div){
         <span class="badge" style="background:var(--success);color:#fff;font-size:.72rem">결승 없음</span>
       </div>
       <div style="font-size:.75rem;color:var(--text2);margin-bottom:10px">풀리그는 본선 나무가지가 아니라 전체 경기 결과로 최종 순위를 결정합니다.</div>
-      ${renderRoundRobinPreviewHTML(teams.length,'모든 팀이 서로 경기한 뒤 순위표로 우승·준우승·3위를 확정합니다.')}
+      ${renderRoundRobinFinalPanel(key, draw, teams)}
     </div>`;
   } else if(cfg.format==='group_knockout'){
     const pv = buildPreviewMainSlots(draw,cfg);
