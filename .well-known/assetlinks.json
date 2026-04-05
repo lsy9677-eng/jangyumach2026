@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "kr.or.jangyutennis",
+      "sha256_cert_fingerprints": [
+        "34:E6:09:25:EB:88:F7:E6:8E:CB:76:DF:EB:AC:76:A7:57:41:1A:A1:A0:F1:2D:0A:30:5B:AA:E3:A4:1A:4B:1B"
+      ]
+    }
+  }
+]
